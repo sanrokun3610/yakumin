@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0">
+<title>木村 敦 | やくみん（薬速搭載）– 医療ITコンサルタント</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700;900&family=Inter:wght@300;400;600;700&display=swap');
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Noto Sans JP','Inter',-apple-system,sans-serif;background:#eff6ff;min-height:100vh;}
+.card-wrap{max-width:440px;margin:0 auto;padding:0 0 40px;}
+
+/* ヘッダー */
+.header{background:linear-gradient(135deg,#1d4ed8 0%,#2563eb 40%,#3b82f6 100%);padding:48px 24px 32px;text-align:center;position:relative;overflow:hidden;}
+.header::before{content:'';position:absolute;top:-50%;right:-30%;width:300px;height:300px;background:rgba(255,255,255,.06);border-radius:50%;}
+.header::after{content:'';position:absolute;bottom:-40%;left:-20%;width:250px;height:250px;background:rgba(255,255,255,.04);border-radius:50%;}
+.avatar{width:140px;height:140px;border-radius:50%;border:4px solid rgba(255,255,255,.5);object-fit:contain;margin-bottom:16px;background:#fff;margin-left:auto;margin-right:auto;position:relative;z-index:1;box-shadow:0 8px 24px rgba(0,0,0,.18);padding:6px;display:block;}
+@media(min-width:441px){.avatar{width:180px;height:180px;}}
+.brand-badge{display:inline-block;font-size:11px;font-weight:700;color:#fff;letter-spacing:1.5px;background:rgba(255,255,255,.18);padding:4px 14px;border-radius:100px;margin-bottom:10px;position:relative;z-index:1;backdrop-filter:blur(4px);}
+.name{font-size:28px;font-weight:900;color:#fff;letter-spacing:2px;position:relative;z-index:1;}
+.name-en{font-size:13px;color:rgba(255,255,255,.7);font-weight:400;letter-spacing:3px;margin-top:4px;position:relative;z-index:1;}
+.title{font-size:14px;color:rgba(255,255,255,.9);margin-top:12px;position:relative;z-index:1;}
+.catchcopy{font-size:16px;font-weight:700;color:#fff;margin-top:16px;padding:8px 20px;background:rgba(255,255,255,.15);border-radius:100px;display:inline-block;position:relative;z-index:1;}
+
+/* セクション */
+.section{padding:20px;background:#fff;margin-top:8px;}
+.section-title{font-size:16px;font-weight:800;color:#1d4ed8;margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+.section-title::before{content:'';width:4px;height:20px;background:#3b82f6;border-radius:2px;}
+
+/* About */
+.about-text{font-size:14px;line-height:1.9;color:#444;}
+
+/* やくみんヒーロー */
+.yakumin-hero{display:flex;align-items:center;gap:14px;padding:16px;background:linear-gradient(135deg,#dbeafe 0%,#eff6ff 100%);border-radius:16px;border:1px solid #bfdbfe;}
+.yakumin-hero img{width:96px;height:96px;object-fit:contain;flex-shrink:0;}
+.yakumin-hero-text{flex:1;}
+.yakumin-hero-title{font-size:16px;font-weight:900;color:#1d4ed8;}
+.yakumin-hero-sub{font-size:12px;color:#3730a3;margin-top:4px;line-height:1.6;}
+.skill-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px;}
+.skill-tag{padding:4px 12px;border-radius:100px;font-size:11px;font-weight:600;background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;}
+
+/* 資格 */
+.quals{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;}
+.qual{padding:6px 14px;border-radius:10px;font-size:12px;font-weight:600;background:linear-gradient(135deg,#eff6ff,#dbeafe);color:#1d4ed8;border:1px solid #bfdbfe;}
+
+/* 実績カード */
+.work-card{background:#fafaf9;border-radius:16px;padding:14px;margin-bottom:12px;border:1px solid #e5e5e5;transition:transform .2s;}
+.work-card:active{transform:scale(.98);}
+.work-header{display:flex;align-items:center;gap:12px;}
+.work-icon{width:56px;height:56px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0;}
+.work-icon.yakumin{background:#fff;border:2px solid #3b82f6;overflow:hidden;padding:0;}
+.work-icon.yakumin img{width:100%;height:100%;object-fit:contain;}
+.work-icon.photo{background:#000;overflow:hidden;padding:0;}
+.work-icon.photo img{width:100%;height:100%;object-fit:cover;border-radius:12px;}
+.work-icon.photo.white-bg{background:#fff;border:1px solid #e5e7eb;}
+.work-icon.photo.white-bg img{object-fit:contain;padding:4px;}
+.work-icon.duo{width:88px;background:transparent;display:flex;align-items:center;justify-content:center;border-radius:0;flex-shrink:0;}
+.work-icon.duo img{width:50px;height:50px;border-radius:50%;border:2px solid #fff;background:#fff;object-fit:cover;box-shadow:0 2px 6px rgba(0,0,0,.12);}
+.work-icon.duo img:first-child{margin-right:-14px;z-index:1;}
+.work-title{font-size:15px;font-weight:700;color:#333;}
+.work-sub{font-size:12px;color:#888;margin-top:2px;}
+.work-desc{font-size:13px;color:#555;margin-top:8px;line-height:1.7;}
+.work-badge{display:inline-block;padding:2px 10px;border-radius:100px;font-size:10px;font-weight:700;margin-top:8px;}
+.work-badge.blue{background:#dbeafe;color:#1e40af;}
+.work-badge.green{background:#dcfce7;color:#166534;}
+.work-badge.orange{background:#ffedd5;color:#c2410c;}
+.work-link{display:inline-flex;align-items:center;gap:8px;margin-top:10px;padding:8px 20px;border-radius:10px;font-size:13px;font-weight:700;text-decoration:none;background:#3b82f6;color:#fff;transition:background .2s;}
+.work-link:hover{background:#2563eb;}
+.work-link.youtube{background:#FF0000;}
+.work-link.youtube:hover{background:#cc0000;}
+.work-link .yt-icon{width:18px;height:18px;flex-shrink:0;}
+
+/* 実績ハイライト */
+.highlight-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.highlight-card{background:linear-gradient(135deg,#eff6ff 0%,#dbeafe 100%);border-radius:12px;padding:14px;text-align:center;border:1px solid #bfdbfe;}
+.highlight-num{font-size:24px;font-weight:900;color:#1d4ed8;}
+.highlight-label{font-size:11px;color:#3730a3;margin-top:4px;font-weight:600;}
+
+/* サービス */
+.service-list{list-style:none;}
+.service-list li{padding:10px 0;border-bottom:1px solid #f0f0f0;font-size:14px;color:#444;display:flex;align-items:center;gap:8px;}
+.service-list li:last-child{border:none;}
+.service-list .dot{width:8px;height:8px;border-radius:50%;background:#3b82f6;flex-shrink:0;}
+
+/* 店舗情報 */
+.store-card{display:flex;align-items:center;gap:16px;padding:16px;background:#eff6ff;border-radius:16px;}
+.store-info{flex:1;}
+.store-name{font-size:15px;font-weight:700;color:#1d4ed8;}
+.store-addr{font-size:12px;color:#888;margin-top:2px;}
+
+/* premediカード */
+.premedi-card{padding:16px;background:linear-gradient(135deg,#eef2ff 0%,#dbeafe 100%);border-radius:16px;margin-top:12px;border:1px solid #bfdbfe;}
+.premedi-role{font-size:11px;font-weight:700;color:#3730a3;background:#fff;display:inline-block;padding:4px 12px;border-radius:100px;margin-bottom:10px;border:1px solid #c7d2fe;letter-spacing:1px;}
+.premedi-banner-link{display:block;border-radius:12px;overflow:hidden;box-shadow:0 4px 14px rgba(30,27,75,.12);transition:transform .2s;}
+.premedi-banner-link:active{transform:scale(.98);}
+.premedi-banner{width:100%;display:block;background:#fff;}
+.premedi-meishi{width:100%;border-radius:12px;margin-top:10px;box-shadow:0 4px 16px rgba(30,27,75,.12);display:block;}
+.premedi-org{font-size:12px;color:#6366f1;margin-top:10px;font-weight:600;text-align:center;}
+
+/* CTA */
+.cta-section{padding:24px 20px;background:linear-gradient(135deg,#1d4ed8,#3b82f6);margin-top:8px;text-align:center;}
+.cta-text{color:#fff;font-size:16px;font-weight:700;margin-bottom:16px;}
+.cta-btn{display:block;max-width:320px;margin:0 auto;padding:14px 24px;background:#fff;color:#1d4ed8;font-size:16px;font-weight:800;border-radius:14px;text-decoration:none;transition:transform .2s;box-shadow:0 4px 12px rgba(0,0,0,.15);}
+.cta-btn.outline{background:transparent;color:#fff;border:2px solid rgba(255,255,255,.7);box-shadow:none;margin-top:10px;}
+.cta-btn:active{transform:scale(.97);}
+
+/* フッター */
+.footer{padding:24px;text-align:center;font-size:11px;color:#aaa;background:#fff;margin-top:8px;}
+</style>
+</head>
+<body>
+<div class="card-wrap">
+
+<!-- ヘッダー -->
+<div class="header">
+<img src="yakumin_profile.png" alt="やくみん" class="avatar">
+<div class="brand-badge">やくみん（薬速搭載）</div>
+<div class="name">木村 敦</div>
+<div class="name-en">ATSUSHI KIMURA</div>
+<div class="title">薬剤師・医療ITコンサルタント / 医療情報技師 / Apple Developer</div>
+<div class="catchcopy">医療×AIで、現場を変える</div>
+</div>
+
+<!-- 実績ハイライト -->
+<div class="section">
+<div class="section-title">実績ハイライト</div>
+<div class="highlight-grid">
+<div class="highlight-card">
+<div class="highlight-num">20万+</div>
+<div class="highlight-label">薬速ダウンロード</div>
+</div>
+<div class="highlight-card">
+<div class="highlight-num">8.4万回</div>
+<div class="highlight-label">YouTube再生</div>
+</div>
+<div class="highlight-card">
+<div class="highlight-num">20年+</div>
+<div class="highlight-label">医療現場経験</div>
+</div>
+<div class="highlight-card">
+<div class="highlight-num">🏆</div>
+<div class="highlight-label">Apple FileMaker Award</div>
+</div>
+</div>
+</div>
+
+<!-- アプリ -->
+<div class="section">
+<div class="section-title">アプリ</div>
+<div class="yakumin-hero">
+<img src="yakumin_icon.png" alt="やくみん">
+<div class="yakumin-hero-text">
+<div class="yakumin-hero-title">やくみん（薬速搭載）</div>
+<div class="yakumin-hero-sub">調剤薬局・病院向け<br>業務効率化アプリの新ブランド</div>
+</div>
+</div>
+</div>
+
+<!-- About -->
+<div class="section">
+<div class="section-title">About</div>
+<p class="about-text">
+徳島大学医学部大学院修了。調剤薬局・総合病院で20年以上の実務経験を持つ薬剤師。現場の課題をテクノロジーで解決するため、iOSアプリ・LINE Bot・AI活用ソリューションを自ら開発。災害支援から日常業務まで、医療現場に寄り添ったシステムを提供しています。
+</p>
+<div class="quals">
+<span class="qual">💊 薬剤師</span>
+<span class="qual">🏥 医療情報技師</span>
+<span class="qual">🍎 Apple Developer</span>
+<span class="qual">🎓 徳島大学医学部大学院</span>
+</div>
+<div class="skill-tags">
+<span class="skill-tag">LINE Bot開発</span>
+<span class="skill-tag">AI活用（Gemini/GPT）</span>
+<span class="skill-tag">iOSアプリ開発</span>
+<span class="skill-tag">Google Apps Script</span>
+<span class="skill-tag">薬局DX</span>
+<span class="skill-tag">FileMaker</span>
+</div>
+</div>
+
+<!-- 開発実績 -->
+<div class="section">
+<div class="section-title">開発実績</div>
+
+<div class="work-card">
+<div class="work-header">
+<div class="work-icon yakumin"><img src="yakumin_character.png" alt="やくみん"></div>
+<div>
+<div class="work-title">やくみん（薬速搭載）</div>
+<div class="work-sub">iOSアプリ</div>
+</div>
+</div>
+<div class="work-desc">
+調剤薬局・病院向け業務効率化アプリ。東日本大震災・熊本地震の支援活動として20万ダウンロード配布。Apple FileMaker Award受賞。オフライン添付文書表示機能はAppleからの開発依頼で実現。
+</div>
+<span class="work-badge blue">iOS</span>
+<span class="work-badge orange">災害支援</span>
+<span class="work-badge green">受賞歴あり</span>
+</div>
+
+<div class="work-card">
+<div class="work-header">
+<div class="work-icon photo white-bg"><img src="sanro_hokenshitsu.PNG" alt="LINE FAX サンロくん"></div>
+<div>
+<div class="work-title">LINE FAX サンロくん</div>
+<div class="work-sub">LINE Bot アプリ</div>
+</div>
+</div>
+<div class="work-desc">
+処方せんをLINEで薬局に送信できるアプリ。写真を撮って送るだけで調剤予約が完了。待ち時間を大幅短縮。
+</div>
+<span class="work-badge green">LINE Bot</span>
+<span class="work-badge blue">GAS</span>
+<a href="https://youtube.com/shorts/HbpMHeWKN3U?feature=share" class="work-link youtube" target="_blank" rel="noopener" aria-label="YouTubeで観る">
+<svg class="yt-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path fill="#fff" d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.872.505 9.377.505 9.377.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.546 15.568V8.432L15.818 12l-6.272 3.568z"/></svg>
+YouTubeで観る
+</a>
+</div>
+
+<div class="work-card">
+<div class="work-header">
+<div class="work-icon photo white-bg"><img src="LINE_FAX.PNG" alt="サンロくんのほけんしつ"></div>
+<div>
+<div class="work-title">サンロくんのほけんしつ</div>
+<div class="work-sub">食事写真でカロリー計算</div>
+</div>
+</div>
+<div class="work-desc">
+食事写真をAIが分析してカロリー・栄養素を即座に表示。外食チェーン80店舗1,255メニューのDB搭載。管理栄養士の指導を身近にする健康管理アプリ。
+</div>
+<span class="work-badge green">Gemini AI</span>
+<span class="work-badge blue">LIFF</span>
+<span class="work-badge orange">食品DB</span>
+</div>
+</div>
+
+<!-- その他の実績 -->
+<div class="section">
+<div class="section-title">その他の活動</div>
+
+<div class="work-card">
+<div class="work-header">
+<div class="work-icon photo"><img src="youtube.png" alt="YouTube病院薬剤師の1日"></div>
+<div>
+<div class="work-title">8.4万回再生！YouTube 病院薬剤師の1日動画</div>
+<div class="work-sub">松波総合病院</div>
+</div>
+</div>
+<div class="work-desc">
+社会医療法人蘇西厚生会 松波総合病院の薬剤師動画を企画・撮影・管理。8.4万回再生を達成し、2024年病院薬剤師動画視聴数No.1に。
+</div>
+<span class="work-badge orange">8.4万回再生</span>
+<span class="work-badge blue">2024年No.1</span>
+<a href="https://youtu.be/XpAa06YvEeQ?si=BMmukdYpgxMK5yD4" class="work-link youtube" target="_blank" rel="noopener" aria-label="YouTubeで観る">
+<svg class="yt-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path fill="#fff" d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.872.505 9.377.505 9.377.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.546 15.568V8.432L15.818 12l-6.272 3.568z"/></svg>
+YouTubeで観る
+</a>
+</div>
+
+<div class="work-card">
+<div class="work-header">
+<div class="work-icon duo">
+<img src="sanro_kun.png" alt="サンロくん">
+<img src="road_tyan.png" alt="ロードちゃん">
+</div>
+<div>
+<div class="work-title">医療キャラクター制作</div>
+<div class="work-sub">企画・デザインディレクション</div>
+</div>
+</div>
+<div class="work-desc">
+キットくん（松波総合病院）、サンロくん（クスリのサンロード）など、医療機関向けのオリジナルキャラクターを制作。親しみやすいコミュニケーションツールとして活用。
+</div>
+<span class="work-badge green">キャラクターデザイン</span>
+</div>
+
+<div class="work-card">
+<div class="work-header">
+<div class="work-icon photo"><img src="js.png" alt="学会発表・講演"></div>
+<div>
+<div class="work-title">学会発表・講演</div>
+<div class="work-sub">日本ユーザーメード医療IT研究会</div>
+</div>
+</div>
+<div class="work-desc">
+医療IT分野での学会発表・講演多数。薬局DXの実践事例を広く共有し、業界全体のIT活用促進に貢献。
+</div>
+<span class="work-badge blue">学会発表多数</span>
+<a href="https://xtech.nikkei.com/dm/article/FEATURE/20140129/330644/?P=2" class="work-link" target="_blank" rel="noopener">日経xTECH 掲載記事 →</a>
+</div>
+</div>
+
+<!-- 提供サービス -->
+<div class="section">
+<div class="section-title">提供サービス</div>
+<ul class="service-list">
+<li><span class="dot"></span>LINE公式アカウント構築・Bot開発</li>
+<li><span class="dot"></span>AI搭載アプリケーション開発（Gemini/GPT）</li>
+<li><span class="dot"></span>iOSアプリ開発</li>
+<li><span class="dot"></span>薬局・病院向けDXコンサルティング</li>
+<li><span class="dot"></span>Google Workspace / GAS活用支援</li>
+<li><span class="dot"></span>YouTube企画・撮影・運用支援</li>
+<li><span class="dot"></span>医療キャラクター企画・制作</li>
+</ul>
+</div>
+
+<!-- 所属・コンサルティング先 -->
+<div class="section">
+<div class="section-title">所属・主なコンサルティング先</div>
+<div class="store-card">
+<img src="kusurinosunroad.png" alt="クスリのサンロード" style="width:56px;height:56px;object-fit:contain;border-radius:10px;flex-shrink:0;">
+<div class="store-info">
+<div class="store-name">クスリのサンロード薬局</div>
+<div class="store-addr">薬剤師 / DX推進担当</div>
+</div>
+</div>
+<div class="premedi-card">
+<span class="premedi-role">医療×AI事業 / コンサルティング</span>
+<a href="https://premedi.kirin.co.jp/" class="premedi-banner-link" target="_blank" rel="noopener">
+<img src="premedi_banner.png" alt="premedi - キリンのAI予測を使った薬局版・処方薬の置き薬" class="premedi-banner">
+</a>
+<img src="meishi.png" alt="木村 敦 名刺" class="premedi-meishi">
+<div class="premedi-org">Cowellnex株式会社 / premedi＋</div>
+</div>
+</div>
+
+<!-- CTA -->
+<div class="cta-section">
+<div class="cta-text">お気軽にご相談ください</div>
+<a href="https://line.me/ti/p/7B2V3RAdb3" class="cta-btn" target="_blank" rel="noopener">💬 LINEで相談する</a>
+<a href="tel:08042690167" class="cta-btn outline" aria-label="電話をかける 080-4269-0167">📞 080-4269-0167</a>
+</div>
+
+<!-- フッター -->
+<div class="footer">
+<p>© 2026 やくみん / 薬速</p>
+<p style="margin-top:4px;">医療×AIで、現場を変える</p>
+</div>
+
+</div>
+</body>
+</html>
