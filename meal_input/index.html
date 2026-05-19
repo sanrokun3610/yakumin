@@ -13,10 +13,11 @@ body{padding-bottom:120px}
 .header{background:linear-gradient(135deg,#fef9c3,#fde68a);padding:16px;border-bottom:1px solid #fcd34d;position:sticky;top:0;z-index:10}
 .header-title{font-size:18px;font-weight:bold;color:#78350f}
 .header-sub{font-size:12px;color:#92400e;margin-top:2px}
-.search-box{padding:12px 16px 8px;background:#fff;border-bottom:1px solid #eee;position:sticky;top:64px;z-index:9}
-.search-box input{width:100%;padding:12px 14px;font-size:16px;border:2px solid #fcd34d;border-radius:10px;background:#fffbeb;outline:none}
-.search-box input:focus{border-color:#f59e0b;background:#fff}
-.hint{font-size:11px;color:#888;margin-top:4px;padding-left:4px}
+.search-box{padding:14px 16px 10px;background:#fff;border-bottom:1px solid #eee;position:sticky;top:64px;z-index:9}
+.search-box input{width:100%;padding:14px 16px;font-size:17px;border:3px solid #f59e0b;border-radius:12px;background:#fffbeb;outline:none;box-shadow:0 2px 6px rgba(245,158,11,0.15);transition:all .15s;font-weight:500}
+.search-box input::placeholder{color:#b45309;opacity:.7}
+.search-box input:focus{border-color:#d97706;background:#fff;box-shadow:0 0 0 4px rgba(245,158,11,0.2)}
+.hint{font-size:12px;color:#92400e;margin-top:6px;padding-left:4px;font-weight:500}
 .categories{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:12px 16px;background:#fafaf9;border-bottom:1px solid #eee}
 .cat{padding:10px 6px;font-size:13px;border:1px solid #e5e5e5;border-radius:8px;background:#fff;color:#444;cursor:pointer}
 .cat:active{background:#fef3c7}
@@ -58,8 +59,8 @@ body{padding-bottom:120px}
 </div>
 
 <div class="search-box">
-  <input type="text" id="q" placeholder="例: すき家 / マグロ / おにぎり" autocomplete="off" inputmode="text">
-  <div class="hint">1文字入力するたびに候補が出ます</div>
+  <input type="text" id="q" placeholder="ここに食事名を入力（例: すき家 / マグロ）" autocomplete="off" inputmode="text" autofocus enterkeyhint="search">
+  <div class="hint">⬇ 上の欄をタップして食事を入力 / 1文字ごとに候補が出ます</div>
 </div>
 
 <div id="categories" class="categories">
@@ -191,7 +192,14 @@ function showFatalError(msg) {
 function onReady() {
   var box = $("results");
   if (box) box.innerHTML = "";
-  try { $("q").focus(); } catch(e) {}
+  // モバイルブラウザでは JS からの focus は制限される事が多いが、複数タイミングで試みる
+  var tryFocus = function() {
+    try { var q = $("q"); if (q) { q.focus(); q.click(); } } catch(e) {}
+  };
+  tryFocus();
+  setTimeout(tryFocus, 100);
+  setTimeout(tryFocus, 400);
+  setTimeout(tryFocus, 900);
 }
 
 // 検索 (debounce + searching表示)
