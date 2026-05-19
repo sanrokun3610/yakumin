@@ -22,8 +22,9 @@ body{padding-bottom:120px}
 .cat{padding:10px 6px;font-size:13px;border:1px solid #e5e5e5;border-radius:8px;background:#fff;color:#444;cursor:pointer}
 .cat:active{background:#fef3c7}
 .results{padding:8px 16px}
-.result-item{padding:14px 12px;margin-bottom:8px;background:#fff;border:1px solid #e5e5e5;border-radius:10px;cursor:pointer;display:flex;justify-content:space-between;align-items:center}
-.result-item:active{background:#fffbeb}
+.result-item{padding:14px 12px;margin-bottom:8px;background:#fff;border:1px solid #e5e5e5;border-radius:10px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;transition:all .12s;-webkit-tap-highlight-color:rgba(254,243,199,0.5)}
+.result-item:active{background:#fef3c7;transform:scale(0.98)}
+.result-item.selecting{background:#fde68a !important;opacity:0.7;pointer-events:none;border-color:#f59e0b}
 .result-item .label{font-size:14px;flex:1}
 .result-item .kcal{font-size:13px;color:#92400e;font-weight:600;margin-left:8px;white-space:nowrap}
 .result-item.history{border-left:4px solid #10b981}
@@ -257,14 +258,30 @@ function renderResults(cands) {
     div.className = cls;
     div.innerHTML = "<div class=\"label\">" + esc(c.label || "") + "</div>" +
       "<div class=\"kcal\">" + (c.kcal != null ? c.kcal + "kcal" : "") + "</div>";
-    div.addEventListener("click", function() { onCandidatePick(c); });
+    div.addEventListener("click", function() {
+      if (div.classList.contains("selecting")) return;
+      // 全候補から selecting を外し、自分にだけ付与
+      Array.prototype.forEach.call(document.querySelectorAll(".result-item"), function(el) {
+        el.classList.remove("selecting");
+      });
+      div.classList.add("selecting");
+      onCandidatePick(c);
+    });
     box.appendChild(div);
   });
 }
 
 function onCandidatePick(c) {
+  if (state.processing) return;  // 連打防止
+  state.processing = true;
   state.selected = c;
   state.sizes = null;
+  // タップ感ある視覚フィードバック
+  showToast("📌 " + (c.label || "選択中..."), "info");
+  setTimeout(function() { hideToast(); }, 600);
+  // 短時間ロック解除（モーダル開いてからは pointer-events で safe）
+  setTimeout(function() { state.processing = false; }, 800);
+
   if (c.source === "restaurant_exact" || c.source === "restaurant_partial" || c.source === "restaurant_chain_partial") {
     fetchSizesAndShow(c);
   } else if (c.source === "history") {
@@ -324,6 +341,7 @@ function showAmountModal(c, _) {
     saveRecord(c, null, kcal, null, { amount: rounded, unit: unit });
   };
   $("amount-modal").classList.remove("hidden");
+  state.processing = false;
 }
 
 function showSizeModal(c, sizes) {
@@ -339,14 +357,23 @@ function showSizeModal(c, sizes) {
   $("amount-manual").classList.add("hidden");
   $("amount-manual-confirm").classList.add("hidden");
   $("amount-modal").classList.remove("hidden");
+  state.processing = false;
 }
 
 $("amount-close").addEventListener("click", function() {
+  state.processing = false;
+  Array.prototype.forEach.call(document.querySelectorAll(".result-item"), function(el) {
+    el.classList.remove("selecting");
+  });
   $("amount-modal").classList.add("hidden");
 });
 
 function saveRecord(c, size, kcal, sizeRow, amountInfo) {
   $("amount-modal").classList.add("hidden");
+  state.processing = false;
+  Array.prototype.forEach.call(document.querySelectorAll(".result-item"), function(el) {
+    el.classList.remove("selecting");
+  });
   showToast("📡 記録中...", "info");
   var body = {
     userId: APP.userId, sig: APP.sig, mealType: APP.mealType,
