@@ -4,6 +4,31 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0">
 <title>木村 敦 | やくみん（薬速搭載）– 医療ITコンサルタント</title>
+<script>
+// === LIFF経由アクセスの早期振り分け（サンロくんのほけんしつ用） ===
+// LIFF が path 拡張を ?liff.state= 経由で渡してくるため、ルート index.html で
+// state を読んで該当ページに redirect する。名刺ページがレンダリングされる前に発火。
+(function(){
+  try {
+    var params = new URLSearchParams(window.location.search);
+    var state = params.get('liff.state') || '';
+    if (state) {
+      if (state.charAt(0) !== '/') state = '/' + state;
+      // 既知のサンロくんパスのみ許可（オープンリダイレクト防止）
+      var allow = ['/meal_input', '/settings', '/weight', '/records', '/blood_pressure'];
+      var matched = false;
+      for (var i = 0; i < allow.length; i++) {
+        if (state.indexOf(allow[i]) === 0) { matched = true; break; }
+      }
+      if (matched) {
+        var rest = window.location.search.replace(/[?&]?liff\.state=[^&]*/, '').replace(/^&/, '');
+        if (rest && rest.charAt(0) !== '?') rest = '?' + rest;
+        window.location.replace(state + (rest || '') + window.location.hash);
+      }
+    }
+  } catch(e) {}
+})();
+</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700;900&family=Inter:wght@300;400;600;700&display=swap');
 *{margin:0;padding:0;box-sizing:border-box;}
