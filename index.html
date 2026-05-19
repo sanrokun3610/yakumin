@@ -6,21 +6,24 @@
 <title>木村 敦 | やくみん（薬速搭載）– 医療ITコンサルタント</title>
 <script>
 // === LIFF経由アクセスの早期振り分け（サンロくんのほけんしつ用） ===
-// 対応形式:
-//   1. ?p=weight 形式 (推奨)
-//   2. ?liff.state=/weight/ 形式 (LIFF v2 path拡張のフォールバック)
-//   3. /#weight 形式 (hash フォールバック)
+// 対応形式: #xxx (推奨)、?p=xxx、?liff.state=/xxx/
 (function(){
   try {
     var allow = ['meal_input', 'settings', 'weight', 'records', 'blood_pressure'];
     var params = new URLSearchParams(window.location.search);
     var dst = null;
 
-    // 1. ?p=xxx
-    var p = params.get('p');
-    if (p && allow.indexOf(p) >= 0) dst = '/' + p + '/';
-
-    // 2. ?liff.state=/xxx/
+    // 1. #xxx (hash)
+    if (window.location.hash) {
+      var h = window.location.hash.replace('#', '').replace(/\/$/, '');
+      if (allow.indexOf(h) >= 0) dst = '/' + h + '/';
+    }
+    // 2. ?p=xxx
+    if (!dst) {
+      var p = params.get('p');
+      if (p && allow.indexOf(p) >= 0) dst = '/' + p + '/';
+    }
+    // 3. ?liff.state=/xxx/
     if (!dst) {
       var state = params.get('liff.state') || '';
       if (state) {
@@ -30,18 +33,35 @@
         }
       }
     }
-
-    // 3. #xxx
-    if (!dst && window.location.hash) {
-      var h = window.location.hash.replace('#', '');
-      if (allow.indexOf(h) >= 0) dst = '/' + h + '/';
-    }
-
     if (dst) {
       window.location.replace(dst);
+      return;
+    }
+    // 振分しなかった場合、デバッグ用に URL を表示するためフラグを残す
+    window.__SANRO_DEBUG_URL__ = window.location.href;
+  } catch(e) { window.__SANRO_DEBUG_ERR__ = String(e); }
+})();
+</script>
+<script>
+// LINE 内ブラウザ判定 + デバッグ表示
+window.addEventListener('DOMContentLoaded', function() {
+  try {
+    var ua = navigator.userAgent || '';
+    var isLine = ua.indexOf('Line/') >= 0 || ua.indexOf('LIFF') >= 0;
+    if (isLine && window.__SANRO_DEBUG_URL__) {
+      // LINE内アクセスで振分しなかった = 何かおかしい → デバッグ表示
+      var box = document.createElement('div');
+      box.style.cssText = 'position:fixed;top:0;left:0;right:0;background:#fef3c7;color:#78350f;padding:12px;font-size:11px;border-bottom:2px solid #f59e0b;z-index:99999;font-family:monospace;word-break:break-all;line-height:1.5';
+      box.innerHTML = '<b>🐻 サンロくんデバッグ</b><br>' +
+        '<b>URL:</b> ' + window.__SANRO_DEBUG_URL__ + '<br>' +
+        '<b>hash:</b> ' + (window.location.hash || '(なし)') + '<br>' +
+        '<b>search:</b> ' + (window.location.search || '(なし)') + '<br>' +
+        '<b>UA:</b> ' + ua.substring(0, 100) + '<br>' +
+        '<button onclick="this.parentNode.style.display=\'none\'" style="margin-top:6px;padding:4px 8px">閉じる</button>';
+      document.body.insertBefore(box, document.body.firstChild);
     }
   } catch(e) {}
-})();
+});
 </script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700;900&family=Inter:wght@300;400;600;700&display=swap');
