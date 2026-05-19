@@ -347,7 +347,7 @@ $("amount-close").addEventListener("click", function() {
 
 function saveRecord(c, size, kcal, sizeRow, amountInfo) {
   $("amount-modal").classList.add("hidden");
-  showToast("記録中...");
+  showToast("📡 記録中...", "info");
   var body = {
     userId: APP.userId, sig: APP.sig, mealType: APP.mealType,
     candidate: c, size: size, kcal: kcal, sizeRow: sizeRow, amountInfo: amountInfo,
@@ -357,16 +357,25 @@ function saveRecord(c, size, kcal, sizeRow, amountInfo) {
     headers: { "Content-Type": "text/plain;charset=UTF-8" },
     body: JSON.stringify(body),
     redirect: "follow",
-  }).then(function(r){return r.json();}).then(function(data) {
-    if (data && data.ok) {
-      hideToast();
-      addToRecorded(data);
-      $("q").value = "";
-      renderResults([]);
-    } else {
-      showToast("記録できませんでした: " + (data && data.error ? data.error : "unknown"));
-    }
-  }).catch(function(err) { showToast("通信に失敗しました: " + err); });
+  }).then(function(r){
+    return r.text().then(function(txt) {
+      var data = null;
+      try { data = JSON.parse(txt); } catch (e) {
+        showToast("⚠ レスポンス解析失敗: " + txt.substring(0, 150), "error");
+        return;
+      }
+      if (data && data.ok) {
+        showToast("✅ 記録しました " + (data.label || "") + " " + (data.kcal || "?") + "kcal", "success");
+        addToRecorded(data);
+        $("q").value = "";
+        renderResults([]);
+      } else {
+        showToast("⚠ 記録失敗: " + (data && data.error ? data.error : "unknown") + " (HTTP " + r.status + ")", "error");
+      }
+    });
+  }).catch(function(err) {
+    showToast("⚠ 通信失敗: " + (err && err.message ? err.message : err), "error");
+  });
 }
 
 function addToRecorded(saved) {
@@ -406,7 +415,19 @@ $("finish").addEventListener("click", function() {
   setTimeout(function(){ try { history.back(); } catch(e){} }, 200);
 });
 
-function showToast(msg) { var t = $("toast"); t.textContent = msg; t.classList.remove("hidden"); }
+function showToast(msg, type) {
+  var t = $("toast");
+  t.textContent = msg;
+  t.classList.remove("hidden");
+  t.style.background = type === "success" ? "rgba(22,163,74,0.95)" :
+                       type === "error"   ? "rgba(220,38,38,0.95)" :
+                                            "rgba(31,41,55,0.9)";
+  // タップで閉じる
+  t.onclick = function() { t.classList.add("hidden"); };
+  // 自動非表示時間: success=2.5秒、error=8秒、info=継続
+  if (type === "success") setTimeout(function() { t.classList.add("hidden"); }, 2500);
+  else if (type === "error") setTimeout(function() { t.classList.add("hidden"); }, 8000);
+}
 function hideToast() { setTimeout(function() { $("toast").classList.add("hidden"); }, 800); }
 function esc(s) { var d = document.createElement("div"); d.textContent = String(s == null ? "" : s); return d.innerHTML; }
 
