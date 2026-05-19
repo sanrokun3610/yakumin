@@ -6,25 +6,39 @@
 <title>木村 敦 | やくみん（薬速搭載）– 医療ITコンサルタント</title>
 <script>
 // === LIFF経由アクセスの早期振り分け（サンロくんのほけんしつ用） ===
-// LIFF が path 拡張を ?liff.state= 経由で渡してくるため、ルート index.html で
-// state を読んで該当ページに redirect する。名刺ページがレンダリングされる前に発火。
+// 対応形式:
+//   1. ?p=weight 形式 (推奨)
+//   2. ?liff.state=/weight/ 形式 (LIFF v2 path拡張のフォールバック)
+//   3. /#weight 形式 (hash フォールバック)
 (function(){
   try {
+    var allow = ['meal_input', 'settings', 'weight', 'records', 'blood_pressure'];
     var params = new URLSearchParams(window.location.search);
-    var state = params.get('liff.state') || '';
-    if (state) {
-      if (state.charAt(0) !== '/') state = '/' + state;
-      // 既知のサンロくんパスのみ許可（オープンリダイレクト防止）
-      var allow = ['/meal_input', '/settings', '/weight', '/records', '/blood_pressure'];
-      var matched = false;
-      for (var i = 0; i < allow.length; i++) {
-        if (state.indexOf(allow[i]) === 0) { matched = true; break; }
+    var dst = null;
+
+    // 1. ?p=xxx
+    var p = params.get('p');
+    if (p && allow.indexOf(p) >= 0) dst = '/' + p + '/';
+
+    // 2. ?liff.state=/xxx/
+    if (!dst) {
+      var state = params.get('liff.state') || '';
+      if (state) {
+        if (state.charAt(0) !== '/') state = '/' + state;
+        for (var i = 0; i < allow.length; i++) {
+          if (state.indexOf('/' + allow[i]) === 0) { dst = state; break; }
+        }
       }
-      if (matched) {
-        var rest = window.location.search.replace(/[?&]?liff\.state=[^&]*/, '').replace(/^&/, '');
-        if (rest && rest.charAt(0) !== '?') rest = '?' + rest;
-        window.location.replace(state + (rest || '') + window.location.hash);
-      }
+    }
+
+    // 3. #xxx
+    if (!dst && window.location.hash) {
+      var h = window.location.hash.replace('#', '');
+      if (allow.indexOf(h) >= 0) dst = '/' + h + '/';
+    }
+
+    if (dst) {
+      window.location.replace(dst);
     }
   } catch(e) {}
 })();
