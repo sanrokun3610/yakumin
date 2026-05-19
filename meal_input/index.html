@@ -13,7 +13,14 @@ body{padding-bottom:120px}
 .header{background:linear-gradient(135deg,#fef9c3,#fde68a);padding:16px;border-bottom:1px solid #fcd34d;position:sticky;top:0;z-index:10}
 .header-title{font-size:18px;font-weight:bold;color:#78350f}
 .header-sub{font-size:12px;color:#92400e;margin-top:2px}
+.tap-area{cursor:pointer;text-align:center;padding:24px 16px;background:linear-gradient(135deg,#fbbf24,#f59e0b);border-radius:14px;margin-bottom:12px;color:#fff;box-shadow:0 4px 12px rgba(245,158,11,0.3);user-select:none;-webkit-user-select:none}
+.tap-area:active{transform:scale(0.97);box-shadow:0 2px 6px rgba(245,158,11,0.4)}
+.tap-arrow{font-size:32px;line-height:1;animation:bounce 1.2s infinite}
+.tap-text{font-size:18px;font-weight:bold;margin-top:8px}
+.tap-hint{font-size:12px;opacity:0.95;margin-top:4px}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(6px)}}
 .search-box{padding:14px 16px 10px;background:#fff;border-bottom:1px solid #eee;position:sticky;top:64px;z-index:9}
+.search-box input.hidden-init{display:none}
 .search-box input{width:100%;padding:14px 16px;font-size:17px;border:3px solid #f59e0b;border-radius:12px;background:#fffbeb;outline:none;box-shadow:0 2px 6px rgba(245,158,11,0.15);transition:all .15s;font-weight:500}
 .search-box input::placeholder{color:#b45309;opacity:.7}
 .search-box input:focus{border-color:#d97706;background:#fff;box-shadow:0 0 0 4px rgba(245,158,11,0.2)}
@@ -62,8 +69,13 @@ body{padding-bottom:120px}
 </div>
 
 <div class="search-box">
+  <div id="tap-area" class="tap-area">
+    <div class="tap-arrow">⬇</div>
+    <div class="tap-text">タップして食事を入力</div>
+    <div class="tap-hint">例: すき家 / マグロ / おにぎり</div>
+  </div>
   <input type="text" id="q" placeholder="ここに食事名を入力（例: すき家 / マグロ）" autocomplete="off" inputmode="text" autofocus enterkeyhint="search">
-  <div class="hint">⬇ 上の欄をタップして食事を入力 / 1文字ごとに候補が出ます</div>
+  <div class="hint">1文字ごとに候補が出ます</div>
 </div>
 
 <div id="categories" class="categories">
@@ -195,14 +207,27 @@ function showFatalError(msg) {
 function onReady() {
   var box = $("results");
   if (box) box.innerHTML = "";
-  // モバイルブラウザでは JS からの focus は制限される事が多いが、複数タイミングで試みる
-  var tryFocus = function() {
-    try { var q = $("q"); if (q) { q.focus(); q.click(); } } catch(e) {}
-  };
-  tryFocus();
-  setTimeout(tryFocus, 100);
-  setTimeout(tryFocus, 400);
-  setTimeout(tryFocus, 900);
+  // タップエリア → 入力欄フォーカス（ユーザー操作経由なのでモバイルでも確実に focus できる）
+  var tap = $("tap-area");
+  if (tap) {
+    tap.addEventListener("click", function() {
+      try {
+        $("q").focus();
+        $("q").click();
+        tap.style.display = "none";
+      } catch(e) {}
+    });
+  }
+  // input が焦点になったらタップ案内を隠す
+  $("q").addEventListener("focus", function() {
+    if (tap) tap.style.display = "none";
+  });
+  // input から外れたら（値があるなら隠したまま、空ならまた案内出す）
+  $("q").addEventListener("blur", function() {
+    if (tap && !$("q").value.trim()) {
+      tap.style.display = "block";
+    }
+  });
 }
 
 // 検索 (debounce + searching表示)

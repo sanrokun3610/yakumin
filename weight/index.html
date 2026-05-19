@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>体重を記録 - サンロくんのほけんしつ</title>
+<script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<link rel="stylesheet" href="/common/common.css">
+</head>
+<body>
+<div class="sanro-header">
+  <div class="sanro-header-title">⚖️ 体重を記録</div>
+  <div class="sanro-username"></div>
+</div>
+<div id="sanro-status" class="sanro-status"></div>
+
+<div id="content" class="hidden">
+  <div class="sanro-section">
+    <div class="sanro-section-title">📝 今日の体重</div>
+    <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:12px">
+      <input type="text" id="weight-input" class="sanro-input" placeholder="例: 55.5" inputmode="decimal" autocomplete="off">
+      <span style="font-size:18px;font-weight:bold;color:#78350f">kg</span>
+    </div>
+    <button id="btn-save" class="sanro-btn primary">記録する</button>
+  </div>
+
+  <div class="sanro-section">
+    <div class="sanro-section-title">📊 直近の記録</div>
+    <div id="recent-list">読込中…</div>
+    <div style="height:8px"></div>
+    <button class="sanro-btn outline" id="btn-graph">📈 グラフを見る</button>
+  </div>
+
+  <div style="padding:16px">
+    <button class="sanro-btn outline" id="btn-close">完了してLINEに戻る</button>
+  </div>
+</div>
+
+<script src="/common/common.js"></script>
+<script>
+SanroBoot.init({
+  liffId: '2009608282-1Fi3wC1S',
+  deployUrl: 'https://script.google.com/macros/s/AKfycbwqJPueCoeMtpY8WcCAHQjYXIROi8VAaqsbZmuf2iUQ65MG6teaJOC2CwZiGrUNlsd6/exec',
+  onReady: function(APP) {
+    document.getElementById('content').classList.remove('hidden');
+    loadRecent();
+    // 入力欄を即座にフォーカス可能にするだけ（自動 focus はモバイル制限）
+    setTimeout(function() { try { document.getElementById('weight-input').focus(); } catch(e) {} }, 200);
+  }
+});
+
+function loadRecent() {
+  SanroBoot.apiGet('weight_recent').then(function(data) {
+    var box = document.getElementById('recent-list');
+    if (!data || !data.ok || !data.items || data.items.length === 0) {
+      box.innerHTML = '<div style="padding:12px;color:#888;font-size:12px;text-align:center">記録がまだありません</div>';
+      return;
+    }
+    box.innerHTML = '';
+    data.items.forEach(function(item) {
+      var row = document.createElement('div');
+      row.className = 'sanro-list-item';
+      row.innerHTML = '<span class="date">' + SanroBoot.esc(item.date || '') + '</span><span class="value">' + SanroBoot.esc(item.weight || '') + ' kg</span>';
+      box.appendChild(row);
+    });
+  }).catch(function(err) {
+    document.getElementById('recent-list').innerHTML = '<div style="color:#dc2626">読込失敗</div>';
+  });
+}
+
+document.getElementById('btn-save').addEventListener('click', function() {
+  var v = document.getElementById('weight-input').value.trim()
+    .replace(/[０-９]/g, function(ch){return String.fromCharCode(ch.charCodeAt(0)-0xFEE0);})
+    .replace(/．/g, '.').replace(/[kgKG\s]/g, '');
+  var n = Number(v);
+  if (isNaN(n) || n < 20 || n > 200) { SanroBoot.toast('20〜200 kg の範囲で入力してください', 'error'); return; }
+  SanroBoot.apiPost('weight_save', { weight: n }).then(function(data) {
+    if (data && data.ok) {
+      SanroBoot.toast('✅ ' + n + 'kg を記録しました', 'success');
+      document.getElementById('weight-input').value = '';
+      loadRecent();
+    } else {
+      SanroBoot.toast('記録失敗: ' + (data && data.error ? data.error : 'unknown'), 'error');
+    }
+  });
+});
+
+document.getElementById('btn-graph').addEventListener('click', function() {
+  var APP = SanroBoot.getApp();
+  window.location.href = APP.deployUrl + '?page=weight_graph&userId=' + encodeURIComponent(APP.userId) + '&sig=' + encodeURIComponent(APP.sig);
+});
+
+document.getElementById('btn-close').addEventListener('click', function() { SanroBoot.close(); });
+</script>
+</body>
+</html>

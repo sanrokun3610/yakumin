@@ -1,0 +1,48 @@
+/* サンロくんのほけんしつ 共通スタイル (v3.14.0 / Phase 7) */
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{font-family:-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif;background:#f5f5f4;color:#1f2937;line-height:1.5}
+body{padding-bottom:80px}
+
+.sanro-header{background:linear-gradient(135deg,#fef9c3,#fde68a);padding:16px;border-bottom:1px solid #fcd34d;position:sticky;top:0;z-index:10}
+.sanro-header-title{font-size:18px;font-weight:bold;color:#78350f}
+.sanro-header-sub,.sanro-username{font-size:12px;color:#92400e;margin-top:2px}
+
+.sanro-section{padding:16px;background:#fff;margin-bottom:8px}
+.sanro-section-title{font-size:14px;font-weight:bold;color:#78350f;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+
+.sanro-status{padding:24px 16px;text-align:center;color:#92400e;font-size:14px}
+.sanro-loading{padding:24px 16px;text-align:center;color:#92400e;font-size:14px;font-weight:600;background:#fffbeb;border:1px dashed #fcd34d;border-radius:8px;margin:8px 16px;animation:sanro-pulse 1.2s infinite}
+.sanro-error{padding:18px 16px;text-align:center;color:#dc2626;font-size:14px;font-weight:600;background:#fef2f2;border:1px dashed #fca5a5;border-radius:8px;margin:8px 16px}
+@keyframes sanro-pulse{0%,100%{opacity:1}50%{opacity:0.5}}
+
+.sanro-input{width:100%;padding:14px 16px;font-size:17px;border:3px solid #f59e0b;border-radius:12px;background:#fffbeb;outline:none;box-shadow:0 2px 6px rgba(245,158,11,0.15);font-weight:500}
+.sanro-input:focus{border-color:#d97706;background:#fff}
+
+.sanro-btn{padding:14px;font-size:15px;border:none;border-radius:10px;font-weight:bold;cursor:pointer;display:block;width:100%;margin-bottom:8px}
+.sanro-btn.primary{background:#16a34a;color:#fff}
+.sanro-btn.primary:active{background:#15803d}
+.sanro-btn.secondary{background:#fffbeb;color:#78350f;border:1px solid #fcd34d}
+.sanro-btn.secondary:active{background:#fde68a}
+.sanro-btn.outline{background:#fff;color:#444;border:1px solid #d1d5db}
+
+.sanro-chip-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:8px}
+.sanro-chip-row.cols-2{grid-template-columns:repeat(2,1fr)}
+.sanro-chip-row.cols-4{grid-template-columns:repeat(4,1fr)}
+.sanro-chip{padding:12px 6px;font-size:14px;border:2px solid #fcd34d;border-radius:8px;background:#fffbeb;color:#78350f;cursor:pointer;text-align:center;font-weight:600}
+.sanro-chip.selected{background:#f59e0b;color:#fff;border-color:#d97706}
+.sanro-chip:active{transform:scale(0.97)}
+
+.sanro-info-row{display:flex;justify-content:space-between;align-items:baseline;padding:8px 0;border-bottom:1px dashed #eee}
+.sanro-info-row:last-child{border-bottom:none}
+.sanro-info-row .label{font-size:13px;color:#666}
+.sanro-info-row .value{font-size:16px;font-weight:bold;color:#78350f}
+.sanro-info-row .value.green{color:#16a34a}
+
+.sanro-list-item{padding:10px 12px;margin-bottom:6px;background:#fffbeb;border-left:4px solid #fcd34d;border-radius:4px;display:flex;justify-content:space-between;align-items:baseline}
+.sanro-list-item .date{font-size:11px;color:#888}
+.sanro-list-item .value{font-size:15px;font-weight:600;color:#78350f}
+
+.sanro-toast{position:fixed;top:80px;left:50%;transform:translateX(-50%);padding:12px 20px;background:rgba(31,41,55,0.9);color:#fff;border-radius:8px;font-size:14px;z-index:200;max-width:90%;text-align:center}
+.sanro-toast.hidden{display:none}
+
+.hidden{display:none !important}

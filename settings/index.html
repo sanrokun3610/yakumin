@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>設定 - サンロくんのほけんしつ</title>
+<script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<link rel="stylesheet" href="/common/common.css">
+</head>
+<body>
+<div class="sanro-header">
+  <div class="sanro-header-title">⚙️ 設定</div>
+  <div class="sanro-username"></div>
+</div>
+<div id="sanro-status" class="sanro-status"></div>
+
+<div id="content" class="hidden">
+  <div class="sanro-section">
+    <div class="sanro-section-title">🚶 活動量</div>
+    <div id="activity-current" class="sanro-info-row">
+      <span class="label">現在</span>
+      <span class="value" id="activity-current-value">—</span>
+    </div>
+    <div class="sanro-info-row">
+      <span class="label">目標kcal</span>
+      <span class="value green" id="target-kcal-value">—</span>
+    </div>
+    <div style="height:8px"></div>
+    <div class="sanro-chip-row">
+      <button class="sanro-chip" data-level="low">少なめ</button>
+      <button class="sanro-chip" data-level="mid">ふつう</button>
+      <button class="sanro-chip" data-level="high">多め</button>
+    </div>
+    <div style="font-size:11px;color:#888;margin-top:4px">
+      少なめ: 座っている時間が多い<br>
+      ふつう: 家事や買い物で歩く<br>
+      多め: 立ち仕事や運動が多い
+    </div>
+  </div>
+
+  <div class="sanro-section">
+    <div class="sanro-section-title">🏃 身長・体重</div>
+    <div class="sanro-info-row"><span class="label">身長</span><span class="value" id="info-height">— cm</span></div>
+    <div class="sanro-info-row"><span class="label">体重</span><span class="value" id="info-weight">— kg</span></div>
+    <div style="height:8px"></div>
+    <button class="sanro-btn secondary" id="btn-edit-body">身長・体重を変える</button>
+  </div>
+
+  <div class="sanro-section">
+    <div class="sanro-section-title">🎯 健康目的</div>
+    <div class="sanro-info-row"><span class="label">現在</span><span class="value" id="info-goal">—</span></div>
+    <div style="height:8px"></div>
+    <div class="sanro-chip-row cols-2">
+      <button class="sanro-chip" data-goal="diet">ダイエット</button>
+      <button class="sanro-chip" data-goal="bulkup">体力アップ</button>
+      <button class="sanro-chip" data-goal="health">健康維持</button>
+      <button class="sanro-chip" data-goal="diabetes">糖尿病管理</button>
+    </div>
+  </div>
+
+  <div class="sanro-section">
+    <div class="sanro-section-title">📝 基本情報</div>
+    <div class="sanro-info-row"><span class="label">呼び名</span><span class="value" id="info-nickname">—</span></div>
+    <div class="sanro-info-row"><span class="label">年齢</span><span class="value" id="info-age">— 歳</span></div>
+    <div class="sanro-info-row"><span class="label">性別</span><span class="value" id="info-gender">—</span></div>
+  </div>
+
+  <div style="padding:16px">
+    <button class="sanro-btn outline" id="btn-close">完了してLINEに戻る</button>
+  </div>
+</div>
+
+<script src="/common/common.js"></script>
+<script>
+SanroBoot.init({
+  liffId: '2009608282-1Fi3wC1S',
+  deployUrl: 'https://script.google.com/macros/s/AKfycbwqJPueCoeMtpY8WcCAHQjYXIROi8VAaqsbZmuf2iUQ65MG6teaJOC2CwZiGrUNlsd6/exec',
+  onReady: function(APP) {
+    document.getElementById('content').classList.remove('hidden');
+    loadUserInfo();
+  }
+});
+var GOAL_LABELS = { 'diet': 'ダイエット', 'bulkup': '体力アップ', 'health': '健康維持', 'diabetes': '糖尿病管理' };
+var ACTIVITY_LABELS = { 'low': '少なめ', 'mid': 'ふつう', 'high': '多め' };
+
+function loadUserInfo() {
+  SanroBoot.apiGet('user_info').then(function(data) {
+    if (!data || !data.ok) {
+      SanroBoot.toast('情報取得失敗', 'error');
+      return;
+    }
+    var u = data.user || {};
+    document.getElementById('activity-current-value').textContent = ACTIVITY_LABELS[u.activityLevel] || '未設定';
+    document.getElementById('target-kcal-value').textContent = u.targetKcal ? '1日 約 ' + u.targetKcal + 'kcal' : '—';
+    document.getElementById('info-height').textContent = (u.height || '—') + ' cm';
+    document.getElementById('info-weight').textContent = (u.weight || '—') + ' kg';
+    document.getElementById('info-goal').textContent = GOAL_LABELS[u.goalCode] || '—';
+    document.getElementById('info-nickname').textContent = u.nickname || u.name || '—';
+    document.getElementById('info-age').textContent = (u.age || '—') + ' 歳';
+    document.getElementById('info-gender').textContent = u.gender || '—';
+    // 選択中チップを強調
+    Array.prototype.forEach.call(document.querySelectorAll('[data-level]'), function(btn) {
+      btn.classList.toggle('selected', btn.getAttribute('data-level') === u.activityLevel);
+    });
+    Array.prototype.forEach.call(document.querySelectorAll('[data-goal]'), function(btn) {
+      btn.classList.toggle('selected', btn.getAttribute('data-goal') === u.goalCode);
+    });
+  }).catch(function(err) {
+    SanroBoot.toast('通信失敗: ' + err.message, 'error');
+  });
+}
+
+Array.prototype.forEach.call(document.querySelectorAll('[data-level]'), function(btn) {
+  btn.addEventListener('click', function() {
+    var level = this.getAttribute('data-level');
+    SanroBoot.apiPost('settings_save', { field: 'activity', value: level }).then(function(data) {
+      if (data && data.ok) {
+        SanroBoot.toast('✅ 活動量を「' + ACTIVITY_LABELS[level] + '」に変更しました', 'success');
+        loadUserInfo();
+      } else {
+        SanroBoot.toast('変更失敗: ' + (data && data.error ? data.error : 'unknown'), 'error');
+      }
+    });
+  });
+});
+
+Array.prototype.forEach.call(document.querySelectorAll('[data-goal]'), function(btn) {
+  btn.addEventListener('click', function() {
+    var goal = this.getAttribute('data-goal');
+    SanroBoot.apiPost('settings_save', { field: 'goal', value: goal }).then(function(data) {
+      if (data && data.ok) {
+        SanroBoot.toast('✅ 目的を「' + GOAL_LABELS[goal] + '」に変更しました', 'success');
+        loadUserInfo();
+      } else {
+        SanroBoot.toast('変更失敗: ' + (data && data.error ? data.error : 'unknown'), 'error');
+      }
+    });
+  });
+});
+
+document.getElementById('btn-edit-body').addEventListener('click', function() {
+  var h = prompt('身長を cm で入力（例: 160）', document.getElementById('info-height').textContent.replace(/[^\d.]/g, '') || '');
+  if (!h) return;
+  var w = prompt('体重を kg で入力（例: 55）', document.getElementById('info-weight').textContent.replace(/[^\d.]/g, '') || '');
+  if (!w) return;
+  SanroBoot.apiPost('settings_save', { field: 'body', height: h, weight: w }).then(function(data) {
+    if (data && data.ok) {
+      SanroBoot.toast('✅ 身長・体重を変更しました', 'success');
+      loadUserInfo();
+    } else {
+      SanroBoot.toast('変更失敗: ' + (data && data.error ? data.error : 'unknown'), 'error');
+    }
+  });
+});
+
+document.getElementById('btn-close').addEventListener('click', function() { SanroBoot.close(); });
+</script>
+</body>
+</html>

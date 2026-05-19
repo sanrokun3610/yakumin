@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>記録をみる - サンロくんのほけんしつ</title>
+<script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<link rel="stylesheet" href="/common/common.css">
+</head>
+<body>
+<div class="sanro-header">
+  <div class="sanro-header-title">📋 記録をみる</div>
+  <div class="sanro-username"></div>
+</div>
+<div id="sanro-status" class="sanro-status"></div>
+
+<div id="content" class="hidden">
+  <div class="sanro-section">
+    <div class="sanro-section-title">🍱 今日の食事</div>
+    <div id="today-meals">読込中…</div>
+  </div>
+
+  <div class="sanro-section">
+    <div class="sanro-section-title">📅 カレンダーで見る</div>
+    <button class="sanro-btn primary" id="btn-calendar">今月のカレンダー</button>
+  </div>
+
+  <div class="sanro-section">
+    <div class="sanro-section-title">📊 グラフ</div>
+    <button class="sanro-btn outline" id="btn-weight-graph">⚖️ 体重グラフ</button>
+    <button class="sanro-btn outline" id="btn-bp-graph">🩺 血圧グラフ</button>
+  </div>
+
+  <div style="padding:16px">
+    <button class="sanro-btn outline" id="btn-close">完了してLINEに戻る</button>
+  </div>
+</div>
+
+<script src="/common/common.js"></script>
+<script>
+SanroBoot.init({
+  liffId: '2009608282-1Fi3wC1S',
+  deployUrl: 'https://script.google.com/macros/s/AKfycbwqJPueCoeMtpY8WcCAHQjYXIROi8VAaqsbZmuf2iUQ65MG6teaJOC2CwZiGrUNlsd6/exec',
+  onReady: function(APP) {
+    document.getElementById('content').classList.remove('hidden');
+    loadTodayMeals();
+  }
+});
+
+function loadTodayMeals() {
+  SanroBoot.apiGet('records_today').then(function(data) {
+    var box = document.getElementById('today-meals');
+    if (!data || !data.ok || !data.items || data.items.length === 0) {
+      box.innerHTML = '<div style="padding:12px;color:#888;font-size:12px;text-align:center">今日の記録はまだありません</div>';
+      return;
+    }
+    box.innerHTML = '';
+    var totalKcal = 0;
+    data.items.forEach(function(it) {
+      totalKcal += it.kcal || 0;
+      var row = document.createElement('div');
+      row.className = 'sanro-list-item';
+      row.innerHTML = '<span><span class="date">' + SanroBoot.esc(it.time || '') + '</span>　' + SanroBoot.esc(it.name || '') + '</span><span class="value">' + (it.kcal || 0) + ' kcal</span>';
+      box.appendChild(row);
+    });
+    var total = document.createElement('div');
+    total.style.cssText = 'padding:10px;background:#fef3c7;border-radius:8px;margin-top:8px;display:flex;justify-content:space-between;font-weight:bold;color:#78350f';
+    total.innerHTML = '<span>合計</span><span>' + totalKcal + ' kcal</span>';
+    box.appendChild(total);
+  }).catch(function() {
+    document.getElementById('today-meals').innerHTML = '<div style="color:#dc2626">読込失敗</div>';
+  });
+}
+
+function openWithSig(page) {
+  var APP = SanroBoot.getApp();
+  window.location.href = APP.deployUrl + '?page=' + page + '&userId=' + encodeURIComponent(APP.userId) + '&sig=' + encodeURIComponent(APP.sig);
+}
+document.getElementById('btn-calendar').addEventListener('click', function() { openWithSig('calendar'); });
+document.getElementById('btn-weight-graph').addEventListener('click', function() { openWithSig('weight_graph'); });
+document.getElementById('btn-bp-graph').addEventListener('click', function() { openWithSig('blood_pressure_graph'); });
+document.getElementById('btn-close').addEventListener('click', function() { SanroBoot.close(); });
+</script>
+</body>
+</html>
