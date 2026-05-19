@@ -7,6 +7,7 @@
 <script>
 // === LIFF経由アクセスの早期振り分け（サンロくんのほけんしつ用） ===
 // 対応形式: #xxx (推奨)、?p=xxx、?liff.state=/xxx/
+// ★ループ防止: sessionStorage で「一度redirectした先」には再度飛ばさない
 (function(){
   try {
     var allow = ['meal_input', 'settings', 'weight', 'records', 'blood_pressure'];
@@ -33,7 +34,22 @@
         }
       }
     }
+
     if (dst) {
+      // ★ループ防止: 直近に同じ場所に redirect した場合はスキップ
+      var REDIR_KEY = 'sanro_redirected_at';
+      var now = Date.now();
+      var prevRaw = null;
+      try { prevRaw = sessionStorage.getItem(REDIR_KEY); } catch(e){}
+      var prev = null;
+      try { prev = prevRaw ? JSON.parse(prevRaw) : null; } catch(e){}
+      // 同じ場所に直近 5秒以内に redirect していたら無視（ループ防止）
+      if (prev && prev.dst === dst && (now - prev.t) < 5000) {
+        // ループ検知 → 何もしない（名刺ページ or 現状維持）
+        window.__SANRO_LOOP_DETECTED__ = 'loop_prevented: ' + dst;
+        return;
+      }
+      try { sessionStorage.setItem(REDIR_KEY, JSON.stringify({ dst: dst, t: now })); } catch(e){}
       window.location.replace(dst);
       return;
     }

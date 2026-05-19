@@ -77,7 +77,8 @@ window.SanroBoot = (function() {
       debugStep('⚠ タイムアウト (12秒経過): LIFF が応答していません');
     }, 12000);
 
-    liff.init({ liffId: APP.liffId }).then(function() {
+    // withLoginOnExternalBrowser: false → 外部ブラウザでログイン redirect しない (ループ防止)
+    liff.init({ liffId: APP.liffId, withLoginOnExternalBrowser: false }).then(function() {
       debugStep('3. liff.init OK');
       debugStep('4. isInClient: ' + liff.isInClient() + ', isLoggedIn: ' + liff.isLoggedIn());
       // ★ login() ループ防止: 一切呼ばず、直接 getProfile を試みる
