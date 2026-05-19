@@ -80,12 +80,9 @@ window.SanroBoot = (function() {
     liff.init({ liffId: APP.liffId }).then(function() {
       debugStep('3. liff.init OK');
       debugStep('4. isInClient: ' + liff.isInClient() + ', isLoggedIn: ' + liff.isLoggedIn());
-      if (!liff.isInClient() && !liff.isLoggedIn()) {
-        debugStep('5a. LINE外なので login() 呼ぶ');
-        liff.login();
-        return null;
-      }
-      debugStep('5b. getProfile() 開始');
+      // ★ login() ループ防止: 一切呼ばず、直接 getProfile を試みる
+      // LINE内なら問題なし、LINE外なら getProfile が失敗→エラー表示
+      debugStep('5. getProfile() 開始');
       return liff.getProfile();
     }).then(function(profile) {
       if (!profile) {
