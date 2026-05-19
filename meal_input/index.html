@@ -32,6 +32,8 @@ body{padding-bottom:120px}
 .result-item.food{border-left:4px solid #6b7280}
 .empty{padding:24px 16px;text-align:center;color:#888;font-size:13px}
 .searching{padding:24px 16px;text-align:center;color:#92400e;font-size:14px;font-weight:600;background:#fffbeb;border:1px dashed #fcd34d;border-radius:8px;margin:8px 0}
+.searching-bar{padding:5px 16px;background:#fef3c7;border-bottom:1px solid #fcd34d;color:#92400e;font-size:11px;font-weight:600;text-align:center;animation:pulse 1.2s infinite ease-in-out}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
 .modal{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:100;display:flex;align-items:center;justify-content:center;padding:16px}
 .modal.hidden{display:none}
 .modal-card{background:#fff;border-radius:16px;padding:20px;max-width:360px;width:100%;max-height:80vh;overflow-y:auto}
@@ -208,9 +210,10 @@ $("q").addEventListener("input", function() {
   if (!state.ready) return;
   clearTimeout(state.debounceTimer);
   var v = this.value.trim();
-  if (v.length === 0) { renderResults([]); return; }
+  if (v.length === 0) { hideSearching(); renderResults([]); return; }
   showSearching();
-  state.debounceTimer = setTimeout(function() { fetchCandidates(v); }, 250);
+  // 150ms に短縮（くまさん「遅い」フィードバック）
+  state.debounceTimer = setTimeout(function() { fetchCandidates(v); }, 150);
 });
 
 // カテゴリ
@@ -230,16 +233,27 @@ function fetchCandidates(q) {
   var url = APP.deployUrl + "?page=meal_input_api&" + APP.qsBase + "&q=" + encodeURIComponent(q);
   fetch(url).then(function(r){return r.json();}).then(function(data) {
     if (reqId !== state.reqCounter) return;
+    hideSearching();
     if (!data || data.error) { renderResults([]); return; }
     renderResults(data.candidates || []);
   }).catch(function() {
-    if (reqId === state.reqCounter) renderResults([]);
+    if (reqId === state.reqCounter) { hideSearching(); renderResults([]); }
   });
 }
 
+// 修正: 既存候補を消さず、検索欄の下に細いバーを追加
 function showSearching() {
-  var box = $("results");
-  box.innerHTML = "<div class=\"searching\">🔍 検索中…</div>";
+  if (document.getElementById("searching-bar")) return;
+  var bar = document.createElement("div");
+  bar.id = "searching-bar";
+  bar.className = "searching-bar";
+  bar.textContent = "🔍 検索中…";
+  var sb = document.querySelector(".search-box");
+  if (sb) sb.appendChild(bar);
+}
+function hideSearching() {
+  var bar = document.getElementById("searching-bar");
+  if (bar) bar.remove();
 }
 
 function renderResults(cands) {
@@ -276,11 +290,9 @@ function onCandidatePick(c) {
   state.processing = true;
   state.selected = c;
   state.sizes = null;
-  // タップ感ある視覚フィードバック
-  showToast("📌 " + (c.label || "選択中..."), "info");
-  setTimeout(function() { hideToast(); }, 600);
-  // 短時間ロック解除（モーダル開いてからは pointer-events で safe）
-  setTimeout(function() { state.processing = false; }, 800);
+  // 視覚フィードバックは CSS .selecting で即時反応（トーストは出さない、体感速度優先）
+  // 5秒経ってもモーダル等が開かない場合は強制解除（fetch失敗時の保険）
+  setTimeout(function() { state.processing = false; }, 5000);
 
   if (c.source === "restaurant_exact" || c.source === "restaurant_partial" || c.source === "restaurant_chain_partial") {
     fetchSizesAndShow(c);
