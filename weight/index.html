@@ -18,7 +18,7 @@
   <div class="sanro-section">
     <div class="sanro-section-title">📝 今日の体重</div>
     <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:12px">
-      <input type="text" id="weight-input" class="sanro-input" placeholder="例: 55.5" inputmode="decimal" autocomplete="off">
+      <input type="text" id="weight-input" class="sanro-input" placeholder="例: 55.5" inputmode="decimal" autocomplete="off" autofocus enterkeyhint="done">
       <span style="font-size:18px;font-weight:bold;color:#78350f">kg</span>
     </div>
     <button id="btn-save" class="sanro-btn primary">記録する</button>
@@ -44,8 +44,13 @@ SanroBoot.init({
   onReady: function(APP) {
     document.getElementById('content').classList.remove('hidden');
     loadRecent();
-    // 入力欄を即座にフォーカス可能にするだけ（自動 focus はモバイル制限）
-    setTimeout(function() { try { document.getElementById('weight-input').focus(); } catch(e) {} }, 200);
+    // モバイル制限を回避するため複数回試行 + click も呼ぶ
+    var inp = document.getElementById('weight-input');
+    function tryFocus() { try { inp.focus(); inp.click(); } catch(e) {} }
+    tryFocus();
+    setTimeout(tryFocus, 100);
+    setTimeout(tryFocus, 300);
+    setTimeout(tryFocus, 700);
   }
 });
 

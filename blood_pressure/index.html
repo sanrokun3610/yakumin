@@ -20,16 +20,16 @@
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
       <div>
         <div style="font-size:12px;color:#666;margin-bottom:4px">上 (mmHg)</div>
-        <input type="text" id="sbp" class="sanro-input" placeholder="例: 128" inputmode="numeric">
+        <input type="text" id="sbp" class="sanro-input" placeholder="例: 128" inputmode="numeric" autofocus enterkeyhint="next">
       </div>
       <div>
         <div style="font-size:12px;color:#666;margin-bottom:4px">下 (mmHg)</div>
-        <input type="text" id="dbp" class="sanro-input" placeholder="例: 82" inputmode="numeric">
+        <input type="text" id="dbp" class="sanro-input" placeholder="例: 82" inputmode="numeric" enterkeyhint="next">
       </div>
     </div>
     <div>
       <div style="font-size:12px;color:#666;margin-bottom:4px">脈拍 (任意)</div>
-      <input type="text" id="pulse" class="sanro-input" placeholder="例: 72" inputmode="numeric">
+      <input type="text" id="pulse" class="sanro-input" placeholder="例: 72" inputmode="numeric" enterkeyhint="done">
     </div>
     <div style="height:8px"></div>
     <div style="font-size:12px;color:#666;margin-bottom:4px">いつ測ったか</div>
@@ -61,7 +61,12 @@ SanroBoot.init({
   onReady: function(APP) {
     document.getElementById('content').classList.remove('hidden');
     loadRecent();
-    setTimeout(function(){ try { document.getElementById('sbp').focus(); } catch(e){} }, 200);
+    var inp = document.getElementById('sbp');
+    function tryFocus() { try { inp.focus(); inp.click(); } catch(e) {} }
+    tryFocus();
+    setTimeout(tryFocus, 100);
+    setTimeout(tryFocus, 300);
+    setTimeout(tryFocus, 700);
     // 現在時刻で朝夜を自動選択
     var hour = new Date().getHours();
     var defaultTiming = (hour < 12) ? '朝' : '夜';

@@ -50,15 +50,6 @@ window.SanroBoot = (function() {
     });
   }
 
-  function debugStep(msg) {
-    var st = $('sanro-status');
-    if (!st) return;
-    var line = document.createElement('div');
-    line.style.cssText = 'padding:6px 12px;margin:4px 0;background:#fffbeb;border-left:3px solid #f59e0b;font-size:11px;color:#78350f;text-align:left;word-break:break-all;font-family:monospace';
-    line.textContent = msg;
-    st.appendChild(line);
-  }
-
   function init(config) {
     APP.liffId = config.liffId || '';
     APP.deployUrl = config.deployUrl || '';
@@ -69,42 +60,21 @@ window.SanroBoot = (function() {
       return;
     }
     showLoading($('sanro-status'), '認証中…');
-    debugStep('1. URL: ' + window.location.href.substring(0, 80));
-    debugStep('2. liff exists: ' + !!window.liff + ', liffId: ' + APP.liffId);
 
-    // タイムアウト: 12秒で「タイムアウト」表示
-    var timeoutTimer = setTimeout(function() {
-      debugStep('⚠ タイムアウト (12秒経過): LIFF が応答していません');
-    }, 12000);
-
-    // withLoginOnExternalBrowser: false → 外部ブラウザでログイン redirect しない (ループ防止)
     liff.init({ liffId: APP.liffId, withLoginOnExternalBrowser: false }).then(function() {
-      debugStep('3. liff.init OK');
-      debugStep('4. isInClient: ' + liff.isInClient() + ', isLoggedIn: ' + liff.isLoggedIn());
-      // ★ login() ループ防止: 一切呼ばず、直接 getProfile を試みる
-      // LINE内なら問題なし、LINE外なら getProfile が失敗→エラー表示
-      debugStep('5. getProfile() 開始');
       return liff.getProfile();
     }).then(function(profile) {
-      if (!profile) {
-        debugStep('6. profile = null (login redirect 中の可能性)');
-        return;
-      }
-      debugStep('6. getProfile OK: userId=' + (profile.userId || '').substring(0, 10) + '...');
+      if (!profile) return;
       var accessToken = null;
-      try { accessToken = liff.getAccessToken(); } catch (e) { debugStep('7. getAccessToken エラー: ' + e); }
-      debugStep('7. accessToken: ' + (accessToken ? 'あり(' + accessToken.length + ')' : 'なし'));
-      debugStep('8. sign API へ POST');
+      try { accessToken = liff.getAccessToken(); } catch (e) {}
       return fetchJson(APP.deployUrl + '?page=meal_input_sign', {
         method: 'POST',
         body: JSON.stringify({ userId: profile.userId, accessToken: accessToken, displayName: profile.displayName || '' }),
       }).then(function(data) {
-        debugStep('9. sign 応答: ' + JSON.stringify(data).substring(0, 100));
         if (!data || !data.ok) {
           showError($('sanro-status'), '認証失敗: ' + (data && data.error ? data.error : 'unknown'));
           return;
         }
-        clearTimeout(timeoutTimer);
         APP.userId = data.userId;
         APP.sig = data.sig;
         APP.displayName = data.displayName || '';
@@ -115,9 +85,7 @@ window.SanroBoot = (function() {
         try { onReady(APP); } catch (e) { showError($('sanro-status'), '初期化エラー: ' + e.message); }
       });
     }).catch(function(err) {
-      clearTimeout(timeoutTimer);
       var msg = err && err.message ? err.message : (typeof err === 'string' ? err : JSON.stringify(err));
-      debugStep('⚠ catch: ' + msg);
       showError($('sanro-status'), 'LIFF初期化失敗: ' + msg);
     });
   }
