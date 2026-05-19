@@ -1,5 +1,5 @@
 // ==================================================================
-// サンロくんのほけんしつ 共通 LIFF 認証 + UI (v3.14.0 / Phase 7)
+// サンロくんのほけんしつ 共通 LIFF 認証 + UI (v3.14.6 / Phase 7)
 // 各 Web App ページから読み込んで使う。
 // 使用方法: window.__SANRO__ = { liffId, deployUrl, onReady } を定義 → SanroBoot.init() 呼び出し
 // ==================================================================
@@ -45,7 +45,11 @@ window.SanroBoot = (function() {
     return fetch(url, opts).then(function(r) {
       return r.text().then(function(txt) {
         try { return JSON.parse(txt); }
-        catch (e) { throw new Error('parse_fail: ' + txt.substring(0, 100)); }
+        catch (e) {
+          // 生レスポンス(URLやHTML)は画面に出さず、console だけに残す
+          try { console.error('parse_fail raw:', txt.substring(0, 500)); } catch (e2) {}
+          throw new Error('サーバー応答エラー (再度開き直してください)');
+        }
       });
     });
   }
@@ -85,8 +89,11 @@ window.SanroBoot = (function() {
         try { onReady(APP); } catch (e) { showError($('sanro-status'), '初期化エラー: ' + e.message); }
       });
     }).catch(function(err) {
-      var msg = err && err.message ? err.message : (typeof err === 'string' ? err : JSON.stringify(err));
-      showError($('sanro-status'), 'LIFF初期化失敗: ' + msg);
+      var msg = err && err.message ? String(err.message) : (typeof err === 'string' ? err : '');
+      // URLやHTMLっぽい文字列は除去して短く
+      msg = msg.replace(/https?:\/\/[^\s"<>]+/g, '').replace(/<[^>]+>/g, '').substring(0, 80);
+      if (!msg) msg = '通信エラー';
+      showError($('sanro-status'), '認証エラー: ' + msg + '（リッチメニューから開き直してください）');
     });
   }
 
