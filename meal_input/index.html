@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="referrer" content="no-referrer">
+<title>食事入力 - サンロくんのほけんしつ</title>
+<script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{font-family:-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif;background:#f5f5f4;color:#1f2937;line-height:1.5}
+body{padding-bottom:120px}
+.header{background:linear-gradient(135deg,#fef9c3,#fde68a);padding:16px;border-bottom:1px solid #fcd34d;position:sticky;top:0;z-index:10}
+.header-title{font-size:18px;font-weight:bold;color:#78350f}
+.header-sub{font-size:12px;color:#92400e;margin-top:2px}
+.search-box{padding:12px 16px 8px;background:#fff;border-bottom:1px solid #eee;position:sticky;top:64px;z-index:9}
+.search-box input{width:100%;padding:12px 14px;font-size:16px;border:2px solid #fcd34d;border-radius:10px;background:#fffbeb;outline:none}
+.search-box input:focus{border-color:#f59e0b;background:#fff}
+.hint{font-size:11px;color:#888;margin-top:4px;padding-left:4px}
+.categories{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:12px 16px;background:#fafaf9;border-bottom:1px solid #eee}
+.cat{padding:10px 6px;font-size:13px;border:1px solid #e5e5e5;border-radius:8px;background:#fff;color:#444;cursor:pointer}
+.cat:active{background:#fef3c7}
+.results{padding:8px 16px}
+.result-item{padding:14px 12px;margin-bottom:8px;background:#fff;border:1px solid #e5e5e5;border-radius:10px;cursor:pointer;display:flex;justify-content:space-between;align-items:center}
+.result-item:active{background:#fffbeb}
+.result-item .label{font-size:14px;flex:1}
+.result-item .kcal{font-size:13px;color:#92400e;font-weight:600;margin-left:8px;white-space:nowrap}
+.result-item.history{border-left:4px solid #10b981}
+.result-item.restaurant{border-left:4px solid #f59e0b}
+.result-item.food{border-left:4px solid #6b7280}
+.empty{padding:24px 16px;text-align:center;color:#888;font-size:13px}
+.searching{padding:24px 16px;text-align:center;color:#92400e;font-size:14px;font-weight:600;background:#fffbeb;border:1px dashed #fcd34d;border-radius:8px;margin:8px 0}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:100;display:flex;align-items:center;justify-content:center;padding:16px}
+.modal.hidden{display:none}
+.modal-card{background:#fff;border-radius:16px;padding:20px;max-width:360px;width:100%;max-height:80vh;overflow-y:auto}
+.modal-title{font-size:16px;font-weight:bold;margin-bottom:16px;color:#1f2937;line-height:1.4}
+.amount-buttons{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+.amount-buttons button{padding:12px;font-size:14px;border:1px solid #fcd34d;border-radius:8px;background:#fffbeb;color:#78350f;cursor:pointer}
+.amount-buttons button:active,.amount-buttons button.selected{background:#fde68a}
+#amount-manual{width:100%;padding:12px;font-size:16px;border:2px solid #fcd34d;border-radius:8px;margin-bottom:8px}
+.manual-confirm{width:100%;padding:12px;font-size:15px;border:none;border-radius:8px;background:#16a34a;color:#fff;font-weight:bold;cursor:pointer;margin-bottom:8px}
+.modal-close{width:100%;padding:10px;font-size:13px;border:1px solid #d1d5db;border-radius:8px;background:#fff;color:#555;cursor:pointer}
+.hidden{display:none !important}
+.toast{position:fixed;top:80px;left:50%;transform:translateX(-50%);padding:12px 20px;background:rgba(31,41,55,0.9);color:#fff;border-radius:8px;font-size:14px;z-index:200}
+.recorded{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:2px solid #fcd34d;padding:14px 16px;box-shadow:0 -4px 12px rgba(0,0,0,0.08);z-index:50}
+.recorded-title{font-size:14px;font-weight:bold;color:#166534;margin-bottom:6px}
+.recorded-list{font-size:12px;color:#555;margin-bottom:8px;max-height:80px;overflow-y:auto}
+.recorded-list .row{display:flex;justify-content:space-between;padding:2px 0}
+.recorded-list .total{border-top:1px dashed #ccc;padding-top:4px;margin-top:4px;font-weight:bold;color:#78350f}
+.recorded-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.recorded-actions button{padding:12px;font-size:14px;border:1px solid #fcd34d;border-radius:8px;background:#fffbeb;color:#78350f;cursor:pointer;font-weight:600}
+.recorded-actions button.primary{background:#16a34a;color:#fff;border-color:#15803d}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="header-title">🐻 食事を記録</div>
+</div>
+
+<div class="search-box">
+  <input type="text" id="q" placeholder="例: すき家 / マグロ / おにぎり" autocomplete="off" inputmode="text">
+  <div class="hint">1文字入力するたびに候補が出ます</div>
+</div>
+
+<div id="categories" class="categories">
+  <button class="cat" data-q="ごはん">🍚 ごはん</button>
+  <button class="cat" data-q="うどん">🍜 麺類</button>
+  <button class="cat" data-q="すき家">🍱 外食</button>
+  <button class="cat" data-q="食パン">🍞 パン</button>
+  <button class="cat" data-q="まぐろ">🥩 肉魚</button>
+  <button class="cat" data-q="サラダ">🥗 野菜</button>
+</div>
+
+<div id="results" class="results"></div>
+
+<div id="amount-modal" class="modal hidden">
+  <div class="modal-card">
+    <div class="modal-title" id="amount-title">量を選んでください</div>
+    <div id="amount-buttons" class="amount-buttons"></div>
+    <input type="text" id="amount-manual" placeholder="0.5〜10 で入力（例: 1.5）" inputmode="decimal" class="hidden">
+    <button id="amount-manual-confirm" class="manual-confirm hidden">この量で記録</button>
+    <button id="amount-close" class="modal-close">やめる</button>
+  </div>
+</div>
+
+<div id="toast" class="toast hidden"></div>
+
+<div id="recorded" class="recorded hidden">
+  <div class="recorded-title">記録しました 🐻</div>
+  <div id="recorded-list" class="recorded-list"></div>
+  <div class="recorded-actions">
+    <button id="add-more">もう1品追加</button>
+    <button id="finish" class="primary">完了してLINEに戻る</button>
+  </div>
+</div>
+
+<script>
+// ==================================================================
+// サンロくん食事入力 SPA (yakusokuai.jp/meal_input/)
+// v3.11.0-rc8 / 2026-05-13
+// - HTML/CSS/JS は GitHub Pages 静的ホスト → GAS 警告バーが出ない
+// - userId/sig は LIFF SDK 経由でサーバーから取得
+// - API (候補/サイズ/記録) は GAS Web App を fetch
+// ==================================================================
+window.__APP__ = {
+  liffId: '2009608282-1Fi3wC1S',
+  deployUrl: 'https://script.google.com/macros/s/AKfycbwqJPueCoeMtpY8WcCAHQjYXIROi8VAaqsbZmuf2iUQ65MG6teaJOC2CwZiGrUNlsd6/exec',
+  userId: '',
+  sig: '',
+  qsBase: '',
+  mealType: 'lunch',
+};
+
+(function(){
+var $ = function(id) { return document.getElementById(id); };
+var APP = window.__APP__;
+var state = { selected: null, sizes: null, recordedItems: [], debounceTimer: null, reqCounter: 0, ready: false };
+
+// 時刻から食事タイプ自動判定
+(function() {
+  var hour = new Date().getHours();
+  if (hour >= 5 && hour < 10) { APP.mealType = 'breakfast'; setHeader('🐻 朝食を記録'); }
+  else if (hour >= 10 && hour < 14) { APP.mealType = 'lunch'; setHeader('🐻 昼食を記録'); }
+  else if (hour >= 17 && hour < 21) { APP.mealType = 'dinner'; setHeader('🐻 夕食を記録'); }
+  else { APP.mealType = 'snack'; setHeader('🐻 間食を記録'); }
+})();
+function setHeader(text) {
+  var el = document.querySelector('.header-title');
+  if (el) el.textContent = text;
+}
+
+// LIFF SDK で認証 → サーバーで sig 発行 → ready
+function bootstrap() {
+  if (!window.liff || !APP.liffId) {
+    showFatalError("LIFFが利用できません。LINEのメニューから「食事入力」を押し直してください。");
+    return;
+  }
+  showBootstrapLoading();
+  liff.init({ liffId: APP.liffId }).then(function() {
+    if (!liff.isInClient() && !liff.isLoggedIn()) {
+      liff.login();
+      return null;
+    }
+    return liff.getProfile();
+  }).then(function(profile) {
+    if (!profile || !profile.userId) {
+      showFatalError("プロフィール取得に失敗しました。LINEのメニューから開き直してください。");
+      return;
+    }
+    var accessToken = null;
+    try { accessToken = liff.getAccessToken(); } catch (e) {}
+    return fetch(APP.deployUrl + "?page=meal_input_sign", {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=UTF-8" },
+      body: JSON.stringify({ userId: profile.userId, accessToken: accessToken, displayName: profile.displayName || "" }),
+      redirect: "follow",
+    }).then(function(r){return r.json();}).then(function(data) {
+      if (!data || !data.ok) {
+        showFatalError("認証に失敗しました: " + (data && data.error ? data.error : "unknown"));
+        return;
+      }
+      APP.userId = data.userId;
+      APP.sig = data.sig;
+      APP.qsBase = "userId=" + encodeURIComponent(APP.userId) + "&sig=" + encodeURIComponent(APP.sig);
+      if (data.displayName) {
+        var hdr = document.querySelector(".header");
+        if (hdr && !document.querySelector(".header-sub")) {
+          var s = document.createElement("div");
+          s.className = "header-sub";
+          s.textContent = data.displayName + "さん";
+          hdr.appendChild(s);
+        }
+      }
+      state.ready = true;
+      onReady();
+    });
+  }).catch(function(err) {
+    var msg = err && err.message ? err.message : (typeof err === "string" ? err : JSON.stringify(err));
+    showFatalError("LIFF初期化に失敗しました: " + msg);
+  });
+}
+
+function showBootstrapLoading() {
+  var box = $("results");
+  if (box) box.innerHTML = "<div class=\"searching\">🔐 認証中…</div>";
+}
+function showFatalError(msg) {
+  var box = $("results");
+  if (box) box.innerHTML = "<div class=\"empty\" style=\"color:#dc2626\">⚠ " + msg + "</div>";
+}
+function onReady() {
+  var box = $("results");
+  if (box) box.innerHTML = "";
+  try { $("q").focus(); } catch(e) {}
+}
+
+// 検索 (debounce + searching表示)
+$("q").addEventListener("input", function() {
+  if (!state.ready) return;
+  clearTimeout(state.debounceTimer);
+  var v = this.value.trim();
+  if (v.length === 0) { renderResults([]); return; }
+  showSearching();
+  state.debounceTimer = setTimeout(function() { fetchCandidates(v); }, 250);
+});
+
+// カテゴリ
+Array.prototype.forEach.call(document.querySelectorAll(".cat"), function(btn) {
+  btn.addEventListener("click", function() {
+    if (!state.ready) return;
+    var q = this.getAttribute("data-q");
+    $("q").value = q;
+    showSearching();
+    fetchCandidates(q);
+  });
+});
+
+// 候補取得 API
+function fetchCandidates(q) {
+  var reqId = ++state.reqCounter;
+  var url = APP.deployUrl + "?page=meal_input_api&" + APP.qsBase + "&q=" + encodeURIComponent(q);
+  fetch(url).then(function(r){return r.json();}).then(function(data) {
+    if (reqId !== state.reqCounter) return;
+    if (!data || data.error) { renderResults([]); return; }
+    renderResults(data.candidates || []);
+  }).catch(function() {
+    if (reqId === state.reqCounter) renderResults([]);
+  });
+}
+
+function showSearching() {
+  var box = $("results");
+  box.innerHTML = "<div class=\"searching\">🔍 検索中…</div>";
+}
+
+function renderResults(cands) {
+  var box = $("results");
+  if (!cands || cands.length === 0) {
+    box.innerHTML = "<div class=\"empty\">候補が見つかりませんでした。<br>別の言葉で入力してください。</div>";
+    return;
+  }
+  box.innerHTML = "";
+  cands.forEach(function(c, idx) {
+    var div = document.createElement("div");
+    var cls = "result-item";
+    if (c.source === "history") cls += " history";
+    else if (c.source && c.source.indexOf("restaurant") === 0) cls += " restaurant";
+    else cls += " food";
+    div.className = cls;
+    div.innerHTML = "<div class=\"label\">" + esc(c.label || "") + "</div>" +
+      "<div class=\"kcal\">" + (c.kcal != null ? c.kcal + "kcal" : "") + "</div>";
+    div.addEventListener("click", function() { onCandidatePick(c); });
+    box.appendChild(div);
+  });
+}
+
+function onCandidatePick(c) {
+  state.selected = c;
+  state.sizes = null;
+  if (c.source === "restaurant_exact" || c.source === "restaurant_partial" || c.source === "restaurant_chain_partial") {
+    fetchSizesAndShow(c);
+  } else if (c.source === "history") {
+    saveRecord(c, null, null, null);
+  } else {
+    showAmountModal(c, null);
+  }
+}
+
+function fetchSizesAndShow(c) {
+  var url = APP.deployUrl + "?page=meal_input_sizes&" + APP.qsBase +
+    "&chain=" + encodeURIComponent(c.chain) + "&menu=" + encodeURIComponent(c.menu);
+  fetch(url).then(function(r){return r.json();}).then(function(data) {
+    var sizes = (data && data.sizes) || [];
+    if (sizes.length === 0) { saveRecord(c, null, null, null); return; }
+    if (sizes.length === 1) { saveRecord(c, sizes[0].size, sizes[0].kcal, sizes[0]); return; }
+    state.sizes = sizes;
+    showSizeModal(c, sizes);
+  }).catch(function() { saveRecord(c, null, null, null); });
+}
+
+function showAmountModal(c, _) {
+  $("amount-title").textContent = (c.label || "") + " の量を選んでください";
+  var unit = c.unit || "人前";
+  var choices;
+  if (unit === "g" || unit === "ml") choices = [100, 150, 200, 300];
+  else if (unit === "個" || unit === "枚" || unit === "貫") choices = [1, 2, 3, 4];
+  else choices = [0.5, 1, 1.5, 2, 3];
+  var btnBox = $("amount-buttons");
+  btnBox.innerHTML = "";
+  choices.forEach(function(a) {
+    var btn = document.createElement("button");
+    btn.textContent = a + unit;
+    btn.addEventListener("click", function() {
+      var baseAmount = c.defaultAmount || 1;
+      var multiplier = a / baseAmount;
+      var kcal = Math.round((c.kcal || 0) * multiplier);
+      saveRecord(c, null, kcal, null, { amount: a, unit: unit });
+    });
+    btnBox.appendChild(btn);
+  });
+  $("amount-manual").classList.remove("hidden");
+  $("amount-manual").value = "";
+  $("amount-manual").placeholder = "0.5〜10 で入力（例: 1.5）";
+  $("amount-manual-confirm").classList.remove("hidden");
+  $("amount-manual-confirm").onclick = function() {
+    var raw = $("amount-manual").value.trim()
+      .replace(/[０-９]/g, function(ch){return String.fromCharCode(ch.charCodeAt(0)-0xFEE0);})
+      .replace(/．/g, ".")
+      .replace(/[人前杯個皿枚gml\s]/g, "");
+    var n = Number(raw);
+    if (isNaN(n) || n < 0.5 || n > 10) { alert("0.5〜10 の範囲で入力してください"); return; }
+    var rounded = Math.round(n * 2) / 2;
+    var baseAmount = c.defaultAmount || 1;
+    var multiplier = rounded / baseAmount;
+    var kcal = Math.round((c.kcal || 0) * multiplier);
+    saveRecord(c, null, kcal, null, { amount: rounded, unit: unit });
+  };
+  $("amount-modal").classList.remove("hidden");
+}
+
+function showSizeModal(c, sizes) {
+  $("amount-title").textContent = (c.chain || "") + " " + (c.menu || "") + " のサイズを選んでください";
+  var btnBox = $("amount-buttons");
+  btnBox.innerHTML = "";
+  sizes.forEach(function(s) {
+    var btn = document.createElement("button");
+    btn.textContent = (s.size || "通常") + " 約" + s.kcal + "kcal";
+    btn.addEventListener("click", function() { saveRecord(c, s.size, s.kcal, s); });
+    btnBox.appendChild(btn);
+  });
+  $("amount-manual").classList.add("hidden");
+  $("amount-manual-confirm").classList.add("hidden");
+  $("amount-modal").classList.remove("hidden");
+}
+
+$("amount-close").addEventListener("click", function() {
+  $("amount-modal").classList.add("hidden");
+});
+
+function saveRecord(c, size, kcal, sizeRow, amountInfo) {
+  $("amount-modal").classList.add("hidden");
+  showToast("記録中...");
+  var body = {
+    userId: APP.userId, sig: APP.sig, mealType: APP.mealType,
+    candidate: c, size: size, kcal: kcal, sizeRow: sizeRow, amountInfo: amountInfo,
+  };
+  fetch(APP.deployUrl + "?page=meal_input_save", {
+    method: "POST",
+    headers: { "Content-Type": "text/plain;charset=UTF-8" },
+    body: JSON.stringify(body),
+    redirect: "follow",
+  }).then(function(r){return r.json();}).then(function(data) {
+    if (data && data.ok) {
+      hideToast();
+      addToRecorded(data);
+      $("q").value = "";
+      renderResults([]);
+    } else {
+      showToast("記録できませんでした: " + (data && data.error ? data.error : "unknown"));
+    }
+  }).catch(function(err) { showToast("通信に失敗しました: " + err); });
+}
+
+function addToRecorded(saved) {
+  state.recordedItems.push({ label: saved.label, kcal: saved.kcal, recordId: saved.recordId });
+  renderRecorded();
+}
+function renderRecorded() {
+  if (state.recordedItems.length === 0) { $("recorded").classList.add("hidden"); return; }
+  var listBox = $("recorded-list");
+  listBox.innerHTML = "";
+  var total = 0;
+  state.recordedItems.forEach(function(it) {
+    total += it.kcal || 0;
+    var row = document.createElement("div");
+    row.className = "row";
+    row.innerHTML = "<span>" + esc(it.label) + "</span><span>" + it.kcal + "kcal</span>";
+    listBox.appendChild(row);
+  });
+  if (state.recordedItems.length > 1) {
+    var totalRow = document.createElement("div");
+    totalRow.className = "row total";
+    totalRow.innerHTML = "<span>合計</span><span>約 " + total + "kcal</span>";
+    listBox.appendChild(totalRow);
+  }
+  $("recorded").classList.remove("hidden");
+}
+
+$("add-more").addEventListener("click", function() {
+  $("q").focus();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+});
+$("finish").addEventListener("click", function() {
+  if (window.liff && APP.liffId) {
+    try { liff.closeWindow(); return; } catch(e) {}
+  }
+  try { window.close(); } catch(e) {}
+  setTimeout(function(){ try { history.back(); } catch(e){} }, 200);
+});
+
+function showToast(msg) { var t = $("toast"); t.textContent = msg; t.classList.remove("hidden"); }
+function hideToast() { setTimeout(function() { $("toast").classList.add("hidden"); }, 800); }
+function esc(s) { var d = document.createElement("div"); d.textContent = String(s == null ? "" : s); return d.innerHTML; }
+
+bootstrap();
+})();
+</script>
+</body>
+</html>
