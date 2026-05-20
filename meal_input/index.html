@@ -22,6 +22,13 @@ body{padding-bottom:140px}
 .mt-chip.selected{background:#fbbf24;color:#fff;border-color:#f59e0b}
 .mt-chip:active{transform:scale(0.96)}
 
+/* 検索モード切替 chip row (v3.15.2 Phase 7.1.B) */
+.mode-switch{display:flex;gap:6px;padding:8px 16px;background:#fff7ed;border-bottom:1px solid #fde68a}
+.mode-chip{flex:1;min-height:42px;padding:8px 4px;font-size:14px;font-weight:600;border:1.5px solid #d4d4d4;border-radius:8px;background:#fff;color:#525252;cursor:pointer}
+.mode-chip.selected{background:#f97316;color:#fff;border-color:#ea580c}
+.mode-chip:active{transform:scale(0.96)}
+.mode-label{font-size:11px;color:#9a3412;padding:0 16px;margin-top:6px;margin-bottom:-2px;font-weight:600}
+
 /* タップエリア（初期表示） */
 .tap-area{cursor:pointer;text-align:center;padding:24px 16px;background:linear-gradient(135deg,#fbbf24,#f59e0b);border-radius:14px;margin-bottom:12px;color:#fff;box-shadow:0 4px 12px rgba(245,158,11,0.3);user-select:none;-webkit-user-select:none;min-height:88px}
 .tap-area:active{transform:scale(0.97);box-shadow:0 2px 6px rgba(245,158,11,0.4)}
@@ -97,6 +104,15 @@ body{padding-bottom:140px}
   <button class="mt-chip" data-mt="midnight">夜食</button>
 </div>
 
+<!-- v3.15.2 Phase 7.1.B: 検索モード切替 4チップ -->
+<div class="mode-label">食べ物の種類</div>
+<div class="mode-switch" id="mode-switch">
+  <button class="mode-chip selected" data-mode="all">すべて</button>
+  <button class="mode-chip" data-mode="home">自炊</button>
+  <button class="mode-chip" data-mode="restaurant">外食</button>
+  <button class="mode-chip" data-mode="convenience">コンビニ</button>
+</div>
+
 <div class="search-box">
   <div id="tap-area" class="tap-area">
     <div class="tap-arrow">⬇</div>
@@ -156,6 +172,7 @@ window.__APP__ = {
   sig: '',
   qsBase: '',
   mealType: 'lunch',
+  searchMode: 'all',  // v3.15.2 Phase 7.1.B: all/home/restaurant/convenience
 };
 
 (function(){
@@ -203,6 +220,27 @@ Array.prototype.forEach.call(document.querySelectorAll('.mt-chip'), function(btn
     APP.mealType = mt;
     setHeader('🐻 ' + MEAL_LABELS[mt] + 'を記録');
     setSelectedMealType(mt);
+  });
+});
+
+// 検索モード chip クリック (v3.15.2 Phase 7.1.B)
+Array.prototype.forEach.call(document.querySelectorAll('.mode-chip'), function(btn) {
+  btn.addEventListener('click', function() {
+    var mode = this.getAttribute('data-mode');
+    APP.searchMode = mode;
+    Array.prototype.forEach.call(document.querySelectorAll('.mode-chip'), function(b) {
+      b.classList.toggle('selected', b === btn);
+    });
+    // 検索欄に2文字以上あれば、新モードで再検索
+    var v = $("q").value.trim();
+    if (state.ready && v.length >= 2) {
+      clearTimeout(state.debounceTimer);
+      showSearching();
+      fetchCandidates(v);
+    } else {
+      // 未入力なら結果クリア
+      renderResults([]);
+    }
   });
 });
 
@@ -335,10 +373,12 @@ Array.prototype.forEach.call(document.querySelectorAll(".cat"), function(btn) {
   });
 });
 
-// 候補取得 API
+// 候補取得 API (v3.15.2 Phase 7.1.B: mode パラメータ追加)
 function fetchCandidates(q) {
   var reqId = ++state.reqCounter;
-  var url = APP.deployUrl + "?page=meal_input_api&" + APP.qsBase + "&q=" + encodeURIComponent(q);
+  var url = APP.deployUrl + "?page=meal_input_api&" + APP.qsBase +
+            "&q=" + encodeURIComponent(q) +
+            "&mode=" + encodeURIComponent(APP.searchMode || 'all');
   fetch(url).then(function(r){return r.json();}).then(function(data) {
     if (reqId !== state.reqCounter) return;
     hideSearching();
@@ -364,6 +404,7 @@ function hideSearching() {
 }
 
 // v3.15.0 Phase 7.1.A: 未入力時は「候補なし」を出さない
+// v3.15.2 Phase 7.1.B: mode別の候補なし文言
 function renderResults(cands) {
   var box = $("results");
   if (!cands || cands.length === 0) {
@@ -372,7 +413,22 @@ function renderResults(cands) {
       box.innerHTML = "";
       return;
     }
-    box.innerHTML = "<div class=\"empty\">候補が見つかりませんでした。<br>別の言葉で入力してください。</div>";
+    var mode = APP.searchMode || 'all';
+    var emptyMsg;
+    if (mode === 'home') {
+      emptyMsg = '自炊メニューに候補がありません。<br>別の言葉で入力してください。' +
+                 '<br><br><small style="color:#999">例: 納豆ごはん / 味噌汁 / いつもの朝食</small>';
+    } else if (mode === 'restaurant') {
+      emptyMsg = '外食候補が見つかりませんでした。<br>店名や料理名を変えて入力してください。' +
+                 '<br><br><small style="color:#999">例: すき家 牛丼 / マック ポテト / ガスト ハンバーグ</small>';
+    } else if (mode === 'convenience') {
+      emptyMsg = 'コンビニ候補が見つかりませんでした。<br>別の言葉で入力してください。' +
+                 '<br><br><small style="color:#999">例: おにぎり / パスタ / サラダ / 弁当</small>';
+    } else {
+      emptyMsg = '候補が見つかりませんでした。<br>別の言葉で入力してください。' +
+                 '<br><br><small style="color:#999">例: おにぎり / カレー / すき家 / 牛丼</small>';
+    }
+    box.innerHTML = "<div class=\"empty\">" + emptyMsg + "</div>";
     return;
   }
   box.innerHTML = "";
