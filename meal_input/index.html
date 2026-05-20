@@ -12,10 +12,15 @@
 html,body{font-family:-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif;background:#f5f5f4;color:#1f2937;font-size:16px;line-height:1.6}
 body{padding-bottom:140px}
 
-/* v3.17.0 Phase 7.1.C revised: ヘッダーにチップ群をコンパクト統合 */
-.header{background:linear-gradient(135deg,#fef9c3,#fde68a);padding:10px 12px 8px;border-bottom:1px solid #fcd34d;position:sticky;top:0;z-index:10}
-.header-title{font-size:17px;font-weight:bold;color:#78350f;margin-bottom:6px}
+/* v3.17.1 くまさん4点FB: ヘッダー非固定化 (上下スワイプで隠れる) / 検索欄のみ固定 */
+.header{background:linear-gradient(135deg,#fef9c3,#fde68a);padding:10px 12px 8px;border-bottom:1px solid #fcd34d;transition:max-height 0.2s ease,padding 0.2s ease,opacity 0.2s ease}
+.header-title{font-size:17px;font-weight:bold;color:#78350f;margin-bottom:6px;display:flex;align-items:center;gap:8px}
 .header-sub{font-size:12px;color:#92400e;margin-top:1px}
+/* 戻るボタン (左上) */
+.back-btn{background:rgba(255,255,255,0.6);border:1px solid #fcd34d;color:#78350f;font-size:14px;font-weight:600;padding:4px 10px;border-radius:6px;cursor:pointer;min-height:32px}
+.back-btn:active{transform:scale(0.96);background:#fff}
+/* キーボード表示時: ヘッダー収納 (高さゼロ) */
+body.kb-open .header{max-height:0;padding-top:0;padding-bottom:0;opacity:0;overflow:hidden;border-bottom:0}
 
 /* コンパクトチップ行 */
 .chip-row{display:flex;gap:5px;flex-wrap:wrap;margin-top:4px}
@@ -40,11 +45,15 @@ body{padding-bottom:140px}
 /* v3.17.0 Phase 7.1.C revised: お気に入りUI P1非表示化 (CSS は残置だが #fav-section は HTML から削除) */
 
 /* v3.17.0 Phase 7.1.C revised: よく使うもの (履歴自動集計) */
-.frequent-section{padding:8px 12px 4px;background:#fff}
-.frequent-section-label{font-size:13px;color:#374151;font-weight:600;margin-bottom:6px}
+/* v3.17.1 くまさん4点FB: 通常時は非表示、キーボード表示時のみ表示 */
+.frequent-section{padding:8px 12px 4px;background:#fff;display:none}
+body.kb-open .frequent-section{display:block}
+.frequent-section-label{font-size:13px;color:#374151;font-weight:600;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center}
+.frequent-section-hint{font-size:10px;color:#9ca3af;font-weight:normal}
 .frequent-buttons{display:grid;grid-template-columns:repeat(2,1fr);gap:6px}
-.frequent-chip{min-height:48px;padding:8px 10px;font-size:13px;font-weight:600;border:1.5px solid #d4d4d4;border-radius:8px;background:#fff;color:#374151;cursor:pointer;text-align:left;display:flex;flex-direction:column;justify-content:center;overflow:hidden}
+.frequent-chip{min-height:48px;padding:8px 10px;font-size:13px;font-weight:600;border:1.5px solid #d4d4d4;border-radius:8px;background:#fff;color:#374151;cursor:pointer;text-align:left;display:flex;flex-direction:column;justify-content:center;overflow:hidden;-webkit-touch-callout:none;user-select:none}
 .frequent-chip:active{background:#f3f4f6;transform:scale(0.97)}
+.frequent-chip.long-pressing{background:#fef2f2;border-color:#fecaca}
 .frequent-chip .name{font-size:14px;font-weight:700;color:#1f2937;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .frequent-chip .meta{font-size:11px;color:#92400e;margin-top:2px}
 .frequent-empty{font-size:12px;color:#9ca3af;text-align:center;padding:6px;font-style:italic}
@@ -80,8 +89,8 @@ body{padding-bottom:140px}
 
 /* v3.15.5: タップ起動エリア廃止 (くまさん指示) */
 
-/* 検索欄 */
-.search-box{padding:14px 16px 10px;background:#fff;border-bottom:1px solid #eee;position:sticky;top:110px;z-index:9}
+/* 検索欄 (v3.17.1 くまさん4点FB: 検索欄のみ画面上部に固定) */
+.search-box{padding:14px 16px 10px;background:#fff;border-bottom:1px solid #eee;position:sticky;top:0;z-index:9}
 .search-box input.hidden-init{display:none}
 .search-box input{width:100%;padding:14px 16px;font-size:17px;border:3px solid #f59e0b;border-radius:12px;background:#fffbeb;outline:none;box-shadow:0 2px 6px rgba(245,158,11,0.15);transition:all .15s;font-weight:500;min-height:50px}
 .search-box input::placeholder{color:#b45309;opacity:.7}
@@ -110,6 +119,10 @@ body{padding-bottom:140px}
 .modal{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:100;display:flex;align-items:center;justify-content:center;padding:16px}
 .modal.hidden{display:none}
 .modal-card{background:#fff;border-radius:16px;padding:20px;max-width:380px;width:100%;max-height:80vh;overflow-y:auto}
+/* v3.17.1 くまさん4点FB: モーダル左上戻るボタン */
+.modal-header{display:flex;align-items:center;margin-bottom:12px;gap:8px}
+.modal-back-btn{background:#f3f4f6;border:1px solid #d1d5db;color:#374151;font-size:14px;font-weight:600;padding:6px 12px;border-radius:6px;cursor:pointer;min-height:36px}
+.modal-back-btn:active{transform:scale(0.96);background:#e5e7eb}
 .modal-title{font-size:17px;font-weight:bold;margin-bottom:16px;color:#1f2937;line-height:1.4}
 .amount-buttons{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
 .amount-buttons button{padding:14px 8px;min-height:48px;font-size:16px;font-weight:600;border:1px solid #fcd34d;border-radius:8px;background:#fffbeb;color:#78350f;cursor:pointer}
@@ -133,9 +146,12 @@ body{padding-bottom:140px}
 </style>
 </head>
 <body>
-<!-- v3.17.0 Phase 7.1.C revised: ヘッダーにチップ群をコンパクト統合 -->
-<div class="header">
-  <div class="header-title">🐻 食事を記録</div>
+<!-- v3.17.1 くまさん4点FB: ヘッダー左上に「← LINEに戻る」ボタン -->
+<div class="header" id="main-header">
+  <div class="header-title">
+    <button class="back-btn" id="header-back-btn">← 戻る</button>
+    <span id="header-title-text">🐻 食事を記録</span>
+  </div>
   <div class="chip-row" id="meal-type-bar">
     <button class="mt-chip" data-mt="breakfast">朝</button>
     <button class="mt-chip" data-mt="lunch">昼</button>
@@ -158,9 +174,12 @@ body{padding-bottom:140px}
   <div class="hint">2文字以上で候補が出ます（検索キーで閉じる）</div>
 </div>
 
-<!-- v3.17.0 Phase 7.1.C revised: よく使うもの (履歴自動集計) — お気に入りUIは非表示化 -->
+<!-- v3.17.1 くまさん4点FB: よく使うもの (キーボード表示時のみ表示) -->
 <div class="frequent-section" id="frequent-section">
-  <div class="frequent-section-label">⭐ よく使うもの</div>
+  <div class="frequent-section-label">
+    <span>⭐ よく使うもの</span>
+    <span class="frequent-section-hint">長押しで削除</span>
+  </div>
   <div class="frequent-buttons" id="frequent-buttons">
     <div class="frequent-empty">記録が増えると、ここによく使うものが自動で表示されます</div>
   </div>
@@ -180,6 +199,9 @@ body{padding-bottom:140px}
 <!-- v3.15.4 Phase 7.1.B 追加: 削除確認モーダル -->
 <div id="delete-modal" class="modal hidden">
   <div class="modal-card">
+    <div class="modal-header">
+      <button class="modal-back-btn" data-modal-back="delete-modal">← 戻る</button>
+    </div>
     <div class="modal-title">この記録を削除しますか？</div>
     <div id="delete-target-info" style="padding:10px;background:#fef2f2;border-radius:8px;margin-bottom:12px;font-size:15px"></div>
     <button id="delete-confirm" class="manual-confirm" style="background:#dc2626">削除する</button>
@@ -189,9 +211,26 @@ body{padding-bottom:140px}
 
 <!-- v3.17.0 Phase 7.1.C revised: お気に入り管理モーダル廃止 (コードは GAS 側で残置) -->
 
+<!-- v3.17.1 くまさん4点FB: よく使うもの 長押し削除確認モーダル -->
+<div id="frequent-delete-modal" class="modal hidden">
+  <div class="modal-card">
+    <div class="modal-header">
+      <button class="modal-back-btn" data-modal-back="frequent-delete-modal">← 戻る</button>
+    </div>
+    <div class="modal-title">よく使うものから削除しますか？</div>
+    <div id="frequent-delete-info" style="padding:10px;background:#fef2f2;border-radius:8px;margin-bottom:8px;font-size:15px"></div>
+    <div style="font-size:12px;color:#6b7280;margin-bottom:12px">該当する過去の記録もすべて履歴から削除されます（論理削除）</div>
+    <button id="frequent-delete-confirm" class="manual-confirm" style="background:#dc2626">削除する</button>
+    <button id="frequent-delete-cancel" class="modal-close">やめる</button>
+  </div>
+</div>
+
 <!-- v3.17.0 Phase 7.1.C revised: よく使うもの 確認モーダル -->
 <div id="frequent-confirm-modal" class="modal hidden">
   <div class="modal-card">
+    <div class="modal-header">
+      <button class="modal-back-btn" data-modal-back="frequent-confirm-modal">← 戻る</button>
+    </div>
     <div class="modal-title">この内容で記録しますか？</div>
     <div class="freq-confirm-info">
       <div class="freq-confirm-name" id="freq-confirm-name"></div>
@@ -207,6 +246,9 @@ body{padding-bottom:140px}
 <!-- v3.15.4 Phase 7.1.B 追加: 修正モーダル -->
 <div id="edit-modal" class="modal hidden">
   <div class="modal-card">
+    <div class="modal-header">
+      <button class="modal-back-btn" data-modal-back="edit-modal">← 戻る</button>
+    </div>
     <div class="modal-title" id="edit-title">記録を修正</div>
     <div id="edit-target-info" style="padding:10px;background:#EFF6FF;border-radius:8px;margin-bottom:12px;font-size:15px;color:#1E40AF"></div>
     <div style="font-size:13px;color:#666;margin-bottom:6px;font-weight:600">食事区分を変える</div>
@@ -226,6 +268,9 @@ body{padding-bottom:140px}
 
 <div id="amount-modal" class="modal hidden">
   <div class="modal-card">
+    <div class="modal-header">
+      <button class="modal-back-btn" data-modal-back="amount-modal">← 戻る</button>
+    </div>
     <div class="modal-title" id="amount-title">量を選んでください</div>
     <div id="amount-buttons" class="amount-buttons"></div>
     <input type="text" id="amount-manual" placeholder="0.5〜10 で入力（例: 1.5）" inputmode="decimal" class="hidden">
@@ -236,18 +281,25 @@ body{padding-bottom:140px}
 
 <div id="toast" class="toast hidden"></div>
 
+<!-- v3.17.1 くまさん4点FB: 「完了してLINEに戻る」削除 → ヘッダー左上「← 戻る」に統一 -->
 <div id="recorded" class="recorded hidden">
   <div class="recorded-title">記録しました 🐻</div>
   <div id="recorded-list" class="recorded-list"></div>
-  <div class="recorded-actions">
+  <div class="recorded-actions" style="grid-template-columns:1fr">
     <button id="add-more">もう1品追加</button>
-    <button id="finish" class="primary">完了してLINEに戻る</button>
   </div>
 </div>
 
 <script>
 // ==================================================================
 // サンロくん食事入力 SPA (yakusokuai.jp/meal_input/)
+// v3.17.1 / くまさん4点FB: キーボード連動UI / 2026-05-20
+// - 通常時: ヘッダー(食事区分/モードチップ)表示、よく使うもの非表示
+// - 入力欄focus時: body.kb-open → ヘッダー収納 + よく使うもの表示
+//   検索欄が画面最上部に貼り付き (sticky top:0)
+// - よく使うもの長押し(500ms) → 削除確認モーダル → softDelete 該当全行
+// - ヘッダー左上「← 戻る」ボタンで LIFF closeWindow に統一
+// - 各モーダル左上にも「← 戻る」ボタン、右下「完了してLINEに戻る」は廃止
 // v3.17.0 / Phase 7.1.C revised: 履歴自動表示 + ヘッダーコンパクト化 / 2026-05-20
 // - 手動お気に入りUI 廃止 (#fav-section / #fav-mgr-modal 削除)
 // - User_Favorite_Food_Searches コードは GAS 側に残置 (P2 で固定機能として再利用)
@@ -602,9 +654,52 @@ function onReady() {
   if (box) box.innerHTML = "";
   loadTodayMeals();
   showTodayMeals();
-  // v3.17.0 Phase 7.1.C revised: お気に入りロード廃止 → よく使うものロード
   loadFrequent();
+
+  // v3.17.1 くまさん4点FB: input focus 時にキーボード表示として扱う
+  // body.kb-open でヘッダー収納 + よく使うもの表示
+  var q = $("q");
+  if (q) {
+    q.addEventListener('focus', function() {
+      document.body.classList.add('kb-open');
+    });
+    q.addEventListener('blur', function() {
+      // 候補クリックで blur しても誤って閉じない様に微小遅延
+      setTimeout(function() {
+        // 検索欄に文字が残っていても、フォーカスが完全に外れていれば閉じる
+        if (document.activeElement !== q) {
+          document.body.classList.remove('kb-open');
+        }
+      }, 200);
+    });
+  }
 }
+
+// v3.17.1 くまさん4点FB: ヘッダー左上「← 戻る」ボタン → LIFF closeWindow
+$("header-back-btn").addEventListener('click', function() {
+  if (window.liff && APP.liffId) {
+    try { liff.closeWindow(); return; } catch (e) {}
+  }
+  try { window.close(); } catch (e) {}
+  setTimeout(function(){ try { history.back(); } catch (e){} }, 200);
+});
+
+// v3.17.1 くまさん4点FB: 全モーダルの左上「← 戻る」ボタンで該当モーダルを閉じる
+Array.prototype.forEach.call(document.querySelectorAll('.modal-back-btn'), function(btn) {
+  btn.addEventListener('click', function() {
+    var mid = this.getAttribute('data-modal-back');
+    if (mid) {
+      var m = document.getElementById(mid);
+      if (m) m.classList.add('hidden');
+    }
+    // 各モーダル固有の状態クリーンアップ
+    if (mid === 'frequent-confirm-modal') pendingFrequent = null;
+    if (mid === 'frequent-delete-modal') pendingFrequentDelete = null;
+    if (mid === 'delete-modal') pendingDeleteRecordId = null;
+    if (mid === 'edit-modal') { pendingEditRecordId = null; pendingEditMealType = null; }
+    if (mid === 'amount-modal') state.processing = false;
+  });
+});
 
 // ==================================================================
 // v3.17.0 Phase 7.1.C revised: よく使うもの (履歴自動集計)
@@ -647,9 +742,44 @@ function renderFrequent() {
     if (it.count >= 2) meta += ' ・ ' + it.count + '回';
     btn.innerHTML = '<div class="name">' + esc(it.displayName) + '</div>' +
                     '<div class="meta">' + esc(meta) + '</div>';
-    btn.addEventListener('click', function() {
+
+    // v3.17.1 くまさん4点FB: タップ=確認モーダル、長押し(500ms)=削除確認モーダル
+    var pressTimer = null;
+    var longPressed = false;
+    function startPress(e) {
+      longPressed = false;
+      btn.classList.add('long-pressing');
+      pressTimer = setTimeout(function() {
+        longPressed = true;
+        btn.classList.remove('long-pressing');
+        // 視覚フィードバック (バイブが可能なら)
+        if (navigator.vibrate) try { navigator.vibrate(40); } catch (e) {}
+        openFrequentDeleteConfirm(it);
+      }, 500);
+    }
+    function cancelPress() {
+      btn.classList.remove('long-pressing');
+      if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; }
+    }
+    btn.addEventListener('touchstart', startPress, { passive: true });
+    btn.addEventListener('touchend', cancelPress);
+    btn.addEventListener('touchmove', cancelPress);
+    btn.addEventListener('touchcancel', cancelPress);
+    btn.addEventListener('mousedown', startPress);
+    btn.addEventListener('mouseup', cancelPress);
+    btn.addEventListener('mouseleave', cancelPress);
+
+    btn.addEventListener('click', function(e) {
+      if (longPressed) {
+        // 長押し直後のclickを無効化
+        e.preventDefault();
+        e.stopPropagation();
+        longPressed = false;
+        return;
+      }
       openFrequentConfirm(it);
     });
+    btn.addEventListener('contextmenu', function(e) { e.preventDefault(); });
     box.appendChild(btn);
   });
 }
@@ -709,6 +839,41 @@ $("freq-btn-search").addEventListener('click', function() {
     showSearching();
     fetchCandidates(v);
   }
+});
+
+// v3.17.1 くまさん4点FB: よく使うもの 長押し削除
+var pendingFrequentDelete = null;
+function openFrequentDeleteConfirm(item) {
+  if (!item) return;
+  pendingFrequentDelete = item;
+  $("frequent-delete-info").innerHTML = esc(item.displayName) +
+    '<br><span style="color:#92400e;font-weight:600">' + (item.kcal || 0) + ' kcal ・ ' + (item.count || 1) + '回使用</span>';
+  $("frequent-delete-modal").classList.remove("hidden");
+}
+$("frequent-delete-cancel").addEventListener('click', function() {
+  pendingFrequentDelete = null;
+  $("frequent-delete-modal").classList.add("hidden");
+});
+$("frequent-delete-confirm").addEventListener('click', function() {
+  if (!pendingFrequentDelete) { $("frequent-delete-modal").classList.add("hidden"); return; }
+  var key = pendingFrequentDelete.key;
+  pendingFrequentDelete = null;
+  $("frequent-delete-modal").classList.add("hidden");
+  showToast("🗑 削除中...", "info");
+  fetch(APP.deployUrl + "?page=meal_frequent_delete", {
+    method: "POST",
+    headers: { "Content-Type": "text/plain;charset=UTF-8" },
+    body: JSON.stringify({ userId: APP.userId, sig: APP.sig, key: key }),
+    redirect: "follow",
+  }).then(function(r){return r.json();}).then(function(data) {
+    if (data && data.ok) {
+      showToast("✅ 削除しました（" + (data.deletedCount || 0) + "件）", "success");
+      loadFrequent();
+      loadTodayMeals();
+    } else {
+      showToast("⚠ 削除失敗: " + (data && data.error ? data.error : 'unknown'), "error");
+    }
+  }).catch(function() { showToast("⚠ 通信失敗", "error"); });
 });
 
 function recordFromFrequent(item, multiplier) {
@@ -1020,13 +1185,7 @@ $("add-more").addEventListener("click", function() {
   $("q").focus();
   window.scrollTo({ top: 0, behavior: "smooth" });
 });
-$("finish").addEventListener("click", function() {
-  if (window.liff && APP.liffId) {
-    try { liff.closeWindow(); return; } catch(e) {}
-  }
-  try { window.close(); } catch(e) {}
-  setTimeout(function(){ try { history.back(); } catch(e){} }, 200);
-});
+// v3.17.1 くまさん4点FB: finish ボタン削除 → ヘッダー左上 ← 戻る に統一
 
 function showToast(msg, type) {
   var t = $("toast");
