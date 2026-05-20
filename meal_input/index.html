@@ -13,14 +13,17 @@ html,body{font-family:-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif;ba
 body{padding-bottom:140px}
 
 /* v3.17.1 くまさん4点FB: ヘッダー非固定化 (上下スワイプで隠れる) / 検索欄のみ固定 */
-.header{background:linear-gradient(135deg,#fef9c3,#fde68a);padding:10px 12px 8px;border-bottom:1px solid #fcd34d;transition:max-height 0.2s ease,padding 0.2s ease,opacity 0.2s ease}
+.header{background:linear-gradient(135deg,#fef9c3,#fde68a);padding:10px 12px 8px;border-bottom:1px solid #fcd34d}
 .header-title{font-size:17px;font-weight:bold;color:#78350f;margin-bottom:6px;display:flex;align-items:center;gap:8px}
 .header-sub{font-size:12px;color:#92400e;margin-top:1px}
 /* 戻るボタン (左上) */
 .back-btn{background:rgba(255,255,255,0.6);border:1px solid #fcd34d;color:#78350f;font-size:14px;font-weight:600;padding:4px 10px;border-radius:6px;cursor:pointer;min-height:32px}
 .back-btn:active{transform:scale(0.96);background:#fff}
-/* キーボード表示時: ヘッダー収納 (高さゼロ) */
-body.kb-open .header{max-height:0;padding-top:0;padding-bottom:0;opacity:0;overflow:hidden;border-bottom:0}
+/* v3.17.2 修正: キーボード表示時はヘッダー完全に display:none (iOS WKWebView で確実に効くように) */
+body.kb-open .header{display:none}
+/* キーボード表示中の戻る用フローティングボタン (検索欄左上) */
+.float-back-btn{position:fixed;top:8px;left:8px;z-index:11;background:rgba(255,255,255,0.95);border:1px solid #d4d4d4;color:#374151;font-size:13px;font-weight:600;padding:4px 10px;border-radius:6px;cursor:pointer;min-height:32px;display:none;box-shadow:0 2px 6px rgba(0,0,0,0.1)}
+body.kb-open .float-back-btn{display:block}
 
 /* コンパクトチップ行 */
 .chip-row{display:flex;gap:5px;flex-wrap:wrap;margin-top:4px}
@@ -146,6 +149,9 @@ body.kb-open .frequent-section{display:block}
 </style>
 </head>
 <body>
+<!-- v3.17.2 修正: キーボード表示中も戻れるよう、検索欄上にフローティング戻るボタン -->
+<button class="float-back-btn" id="float-back-btn">← 戻る</button>
+
 <!-- v3.17.1 くまさん4点FB: ヘッダー左上に「← LINEに戻る」ボタン -->
 <div class="header" id="main-header">
   <div class="header-title">
@@ -293,6 +299,12 @@ body.kb-open .frequent-section{display:block}
 <script>
 // ==================================================================
 // サンロくん食事入力 SPA (yakusokuai.jp/meal_input/)
+// v3.17.2 / くまさんFB2修正: kb-open制御を確実化 / 2026-05-20
+// - body.kb-open .header { display:none } (max-height トランジション廃止)
+// - focus/touchstart/click で kb-open 付与 (iOS focus 不安定対策)
+// - blur 後 300ms 遅延 + 文字があれば kb-open 維持
+// - キーボード表示中はフローティング ← 戻るボタン (検索欄左上)
+// - 戻るボタン押下で 検索クリア + kb-open 解除 + 当日一覧表示
 // v3.17.1 / くまさん4点FB: キーボード連動UI / 2026-05-20
 // - 通常時: ヘッダー(食事区分/モードチップ)表示、よく使うもの非表示
 // - 入力欄focus時: body.kb-open → ヘッダー収納 + よく使うもの表示
@@ -656,21 +668,39 @@ function onReady() {
   showTodayMeals();
   loadFrequent();
 
-  // v3.17.1 くまさん4点FB: input focus 時にキーボード表示として扱う
-  // body.kb-open でヘッダー収納 + よく使うもの表示
+  // v3.17.2 修正: kb-open 制御を改善
+  // - focus / touchstart / click のいずれかで kb-open 付与 (iOS focus 不安定対策)
+  // - 文字があれば blur しても kb-open 維持 (候補表示のため)
+  // - 完全に閉じたい時は フローティング ← 戻るボタン
   var q = $("q");
+  function enterKbMode() {
+    document.body.classList.add('kb-open');
+  }
+  function exitKbMode() {
+    document.body.classList.remove('kb-open');
+  }
   if (q) {
-    q.addEventListener('focus', function() {
-      document.body.classList.add('kb-open');
-    });
+    q.addEventListener('focus', enterKbMode);
+    q.addEventListener('touchstart', enterKbMode, { passive: true });
+    q.addEventListener('click', enterKbMode);
     q.addEventListener('blur', function() {
-      // 候補クリックで blur しても誤って閉じない様に微小遅延
+      // 文字が残っていれば kb-open 維持 (候補・よく使うものを引き続き表示)
       setTimeout(function() {
-        // 検索欄に文字が残っていても、フォーカスが完全に外れていれば閉じる
-        if (document.activeElement !== q) {
-          document.body.classList.remove('kb-open');
-        }
-      }, 200);
+        if (document.activeElement === q) return;          // 再フォーカス済
+        if (q.value && q.value.trim().length > 0) return; // 文字があれば維持
+        exitKbMode();
+      }, 300);
+    });
+  }
+  // フローティング ← 戻るボタン (キーボード表示中の終了用)
+  var fbb = $("float-back-btn");
+  if (fbb) {
+    fbb.addEventListener('click', function() {
+      if (q) { q.value = ''; q.blur(); }
+      exitKbMode();
+      renderResults([]);
+      hideSearching();
+      showTodayMeals();
     });
   }
 }
