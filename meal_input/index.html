@@ -31,6 +31,27 @@ body{padding-bottom:140px}
 
 /* v3.15.5: 検索ガイド廃止 (くまさん指示) - placeholder で代替 */
 
+/* v3.16.0 Phase 7.1.C: お気に入り検索ボタン (中立色, 公式ロゴ/カラー使わない) */
+.fav-section{padding:10px 16px 4px;background:#fff}
+.fav-section-label{font-size:13px;color:#6b7280;font-weight:600;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center}
+.fav-manage-btn{font-size:12px;color:#1D4ED8;background:none;border:none;cursor:pointer;padding:4px 8px;font-weight:600}
+.fav-manage-btn:active{background:#EFF6FF;border-radius:4px}
+.fav-buttons{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.fav-chip{min-height:44px;padding:10px 6px;font-size:14px;font-weight:600;border:1.5px solid #d4d4d4;border-radius:8px;background:#fff;color:#374151;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fav-chip:active{background:#f3f4f6;transform:scale(0.97)}
+.fav-empty{font-size:12px;color:#9ca3af;text-align:center;padding:8px;font-style:italic}
+
+/* お気に入り管理モーダル */
+.fav-mgr-list{max-height:200px;overflow-y:auto;border:1px solid #e5e5e5;border-radius:8px;margin-bottom:12px}
+.fav-mgr-row{display:flex;align-items:center;padding:8px;border-bottom:1px solid #f3f4f6;gap:6px}
+.fav-mgr-row:last-child{border-bottom:none}
+.fav-mgr-row .label{flex:1;font-size:15px;color:#1f2937}
+.fav-mgr-del{min-width:40px;min-height:36px;padding:4px 8px;font-size:12px;color:#b91c1c;background:#fef2f2;border:1px solid #fecaca;border-radius:6px;cursor:pointer}
+.fav-form-row{margin-bottom:10px}
+.fav-form-label{font-size:13px;color:#666;font-weight:600;margin-bottom:4px}
+.fav-form-input{width:100%;padding:10px;font-size:15px;border:1.5px solid #d4d4d4;border-radius:6px}
+.fav-note{font-size:11px;color:#9ca3af;margin-top:8px}
+
 /* v3.15.4 Phase 7.1.B 追加: 当日食事一覧 */
 .today-meals{margin:12px 16px;padding:12px;background:#fff;border:1px solid #e5e5e5;border-radius:10px}
 .today-meals-title{font-size:16px;font-weight:bold;color:#78350f;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
@@ -133,6 +154,17 @@ body{padding-bottom:140px}
   <div class="hint">2文字以上で候補が出ます（検索キーで閉じる）</div>
 </div>
 
+<!-- v3.16.0 Phase 7.1.C: お気に入り検索ボタン -->
+<div class="fav-section" id="fav-section">
+  <div class="fav-section-label">
+    <span>★ お気に入り</span>
+    <button class="fav-manage-btn" id="fav-manage-open">管理</button>
+  </div>
+  <div class="fav-buttons" id="fav-buttons">
+    <div class="fav-empty">お気に入りはまだありません。「管理」から追加できます</div>
+  </div>
+</div>
+
 <div id="results" class="results"></div>
 
 <!-- v3.15.4 Phase 7.1.B 追加: 未検索時の当日食事一覧 -->
@@ -151,6 +183,28 @@ body{padding-bottom:140px}
     <div id="delete-target-info" style="padding:10px;background:#fef2f2;border-radius:8px;margin-bottom:12px;font-size:15px"></div>
     <button id="delete-confirm" class="manual-confirm" style="background:#dc2626">削除する</button>
     <button id="delete-cancel" class="modal-close">やめる</button>
+  </div>
+</div>
+
+<!-- v3.16.0 Phase 7.1.C: お気に入り管理モーダル -->
+<div id="fav-mgr-modal" class="modal hidden">
+  <div class="modal-card">
+    <div class="modal-title">★ お気に入り管理 <span id="fav-mgr-count" style="font-size:13px;color:#6b7280;font-weight:normal"></span></div>
+    <div id="fav-mgr-list" class="fav-mgr-list"></div>
+    <div style="border-top:1px solid #e5e5e5;padding-top:12px;margin-top:8px">
+      <div style="font-size:14px;font-weight:600;color:#374151;margin-bottom:8px">新しいお気に入りを追加</div>
+      <div class="fav-form-row">
+        <div class="fav-form-label">表示名（最大20文字）</div>
+        <input type="text" id="fav-input-label" class="fav-form-input" placeholder="例：すき家" maxlength="20">
+      </div>
+      <div class="fav-form-row">
+        <div class="fav-form-label">検索語（最大30文字）</div>
+        <input type="text" id="fav-input-search" class="fav-form-input" placeholder="例：すき家" maxlength="30">
+      </div>
+      <div class="fav-note">※ 表示名と検索語を同じにする場合は、表示名だけ入れてください</div>
+    </div>
+    <button id="fav-add-confirm" class="manual-confirm">追加する</button>
+    <button id="fav-mgr-close" class="modal-close">閉じる</button>
   </div>
 </div>
 
@@ -198,12 +252,13 @@ body{padding-bottom:140px}
 <script>
 // ==================================================================
 // サンロくん食事入力 SPA (yakusokuai.jp/meal_input/)
-// v3.15.5 / Phase 7.1.B 追加修正2 (くまさん4点FB) / 2026-05-20
-// - 「タップして食事を入力」エリア 廃止 (#tap-area)
-// - 「食べたものを入力してください」検索ガイド 廃止 (#search-guide)
-// - 検索中表示 (.searching / .searching-bar) を青系 #1D4ED8 に統一
-// - トースト位置を下部 (bottom:120px) に移動
-// - placeholder のみモード別切替を維持
+// v3.16.0 / Phase 7.1.C: お気に入り検索ボタン / 2026-05-20
+// - お気に入り検索ボタン 最大6個 (User_Favorite_Food_Searches シート)
+//   - 押すと検索欄に searchText + 半角スペース を挿入
+//   - 2文字以上なら即検索
+//   - 管理モーダルで追加・削除 (検索語プリセット型)
+//   - selectedBrand状態なし、多段階UIなし、公式ロゴ/カラー使わない
+// - 既存機能維持: 検索モード切替 / 当日一覧 / 修正削除 / 正規化エンジン
 // ==================================================================
 window.__APP__ = {
   liffId: '2009608282-1Fi3wC1S',
@@ -548,6 +603,166 @@ function onReady() {
   // 当日食事一覧のみ取得
   loadTodayMeals();
   showTodayMeals();
+  // v3.16.0 Phase 7.1.C: お気に入り読込
+  loadFavorites();
+}
+
+// ==================================================================
+// v3.16.0 Phase 7.1.C: お気に入り検索ボタン
+// ==================================================================
+state.favorites = [];
+
+function loadFavorites() {
+  if (!state.ready || !APP.qsBase) return;
+  fetch(APP.deployUrl + "?page=favorites_list&" + APP.qsBase).then(function(r){return r.json();}).then(function(data) {
+    if (!data || !data.ok) {
+      state.favorites = [];
+      renderFavorites();
+      return;
+    }
+    state.favorites = data.items || [];
+    renderFavorites();
+  }).catch(function() {
+    state.favorites = [];
+    renderFavorites();
+  });
+}
+
+function renderFavorites() {
+  var box = $("fav-buttons");
+  if (!box) return;
+  if (!state.favorites || state.favorites.length === 0) {
+    box.innerHTML = '<div class="fav-empty">お気に入りはまだありません。「管理」から追加できます</div>';
+    return;
+  }
+  box.innerHTML = '';
+  state.favorites.slice(0, 6).forEach(function(fav) {
+    var btn = document.createElement('button');
+    btn.className = 'fav-chip';
+    btn.textContent = fav.label;
+    btn.title = fav.searchText;  // ホバー時にフル文字列
+    btn.addEventListener('click', function() {
+      // 検索欄に searchText + 半角スペース を挿入
+      var q = $("q");
+      q.value = fav.searchText + ' ';
+      q.focus();
+      // 2文字以上なら即検索（trim後）
+      var v = q.value.trim();
+      if (v.length >= 2) {
+        clearTimeout(state.debounceTimer);
+        hideTodayMeals();
+        showSearching();
+        fetchCandidates(v);
+      }
+    });
+    box.appendChild(btn);
+  });
+}
+
+// 管理モーダルを開く
+$("fav-manage-open").addEventListener('click', function() {
+  renderFavManagerList();
+  $("fav-input-label").value = '';
+  $("fav-input-search").value = '';
+  $("fav-mgr-modal").classList.remove("hidden");
+});
+$("fav-mgr-close").addEventListener('click', function() {
+  $("fav-mgr-modal").classList.add("hidden");
+});
+
+function renderFavManagerList() {
+  var listBox = $("fav-mgr-list");
+  var countEl = $("fav-mgr-count");
+  if (!listBox) return;
+  var count = (state.favorites || []).length;
+  if (countEl) countEl.textContent = '(' + count + ' / 6)';
+  if (count === 0) {
+    listBox.innerHTML = '<div class="fav-empty" style="padding:16px">登録されたお気に入りはまだありません</div>';
+    return;
+  }
+  listBox.innerHTML = '';
+  state.favorites.forEach(function(fav) {
+    var row = document.createElement('div');
+    row.className = 'fav-mgr-row';
+    row.innerHTML = '<div class="label">' + esc(fav.label) +
+                    '<div style="font-size:11px;color:#9ca3af">検索:' + esc(fav.searchText) + '</div></div>' +
+                    '<button class="fav-mgr-del" data-fid="' + esc(fav.favoriteId) + '">削除</button>';
+    listBox.appendChild(row);
+  });
+  Array.prototype.forEach.call(listBox.querySelectorAll('.fav-mgr-del'), function(b) {
+    b.addEventListener('click', function() {
+      var fid = this.getAttribute('data-fid');
+      deleteFavorite(fid);
+    });
+  });
+}
+
+// 追加
+$("fav-add-confirm").addEventListener('click', function() {
+  var label = $("fav-input-label").value.trim();
+  var searchText = $("fav-input-search").value.trim();
+  if (!label) { alert("表示名を入力してください"); return; }
+  if (label.length > 20) { alert("表示名は20文字以内で入力してください"); return; }
+  // 検索語が空なら表示名と同じに
+  if (!searchText) searchText = label;
+  if (searchText.length > 30) { alert("検索語は30文字以内で入力してください"); return; }
+  // 6個制限の事前チェック
+  if ((state.favorites || []).length >= 6) {
+    alert("お気に入りは最大6個までです。不要なものを削除してください。");
+    return;
+  }
+  showToast("➕ 追加中...", "info");
+  fetch(APP.deployUrl + "?page=favorites_add", {
+    method: "POST",
+    headers: { "Content-Type": "text/plain;charset=UTF-8" },
+    body: JSON.stringify({ userId: APP.userId, sig: APP.sig, label: label, searchText: searchText }),
+    redirect: "follow",
+  }).then(function(r){return r.json();}).then(function(data) {
+    if (data && data.ok) {
+      showToast("✅ お気に入りに追加しました", "success");
+      $("fav-input-label").value = '';
+      $("fav-input-search").value = '';
+      loadFavoritesAndRefresh();
+    } else {
+      var msg = (data && data.error) || 'unknown';
+      if (msg === 'too_many') msg = '最大6個までです';
+      else if (msg === 'label_too_long') msg = '表示名が長すぎます (20文字以内)';
+      else if (msg === 'search_text_too_long') msg = '検索語が長すぎます (30文字以内)';
+      else if (msg === 'empty_label') msg = '表示名を入力してください';
+      else if (msg === 'empty_search_text') msg = '検索語を入力してください';
+      showToast("⚠ 追加失敗: " + msg, "error");
+    }
+  }).catch(function() { showToast("⚠ 通信失敗", "error"); });
+});
+
+// 削除
+function deleteFavorite(favoriteId) {
+  if (!favoriteId) return;
+  if (!confirm("このお気に入りを削除しますか？")) return;
+  showToast("🗑 削除中...", "info");
+  fetch(APP.deployUrl + "?page=favorites_delete", {
+    method: "POST",
+    headers: { "Content-Type": "text/plain;charset=UTF-8" },
+    body: JSON.stringify({ userId: APP.userId, sig: APP.sig, favoriteId: favoriteId }),
+    redirect: "follow",
+  }).then(function(r){return r.json();}).then(function(data) {
+    if (data && data.ok) {
+      showToast("✅ 削除しました", "success");
+      loadFavoritesAndRefresh();
+    } else {
+      showToast("⚠ 削除失敗: " + (data && data.error ? data.error : 'unknown'), "error");
+    }
+  }).catch(function() { showToast("⚠ 通信失敗", "error"); });
+}
+
+function loadFavoritesAndRefresh() {
+  loadFavorites();
+  // 管理モーダルが開いていれば管理リストも再描画
+  setTimeout(function() {
+    if (!$("fav-mgr-modal").classList.contains("hidden")) {
+      renderFavManagerList();
+    }
+  }, 300);
 }
 
 // v3.15.0 Phase 7.1.A: 検索閾値 2文字以上 + debounce 350ms
