@@ -29,11 +29,7 @@ body{padding-bottom:140px}
 .mode-chip:active{transform:scale(0.96)}
 .mode-label{font-size:11px;color:#9a3412;padding:0 16px;margin-top:6px;margin-bottom:-2px;font-weight:600}
 
-/* v3.15.4 Phase 7.1.B 追加: 検索ガイド (青系) */
-.search-guide{margin:10px 16px;color:#1D4ED8;background:#EFF6FF;border:1px solid #BFDBFE;border-radius:10px;padding:10px 12px;font-size:14px;line-height:1.6}
-.search-guide-title{font-size:15px;font-weight:700;color:#2563EB;margin-bottom:4px}
-.search-guide-line{font-size:13px;color:#1D4ED8;margin-top:2px}
-.search-guide-line .label{display:inline-block;min-width:50px;font-weight:600;color:#1E40AF}
+/* v3.15.5: 検索ガイド廃止 (くまさん指示) - placeholder で代替 */
 
 /* v3.15.4 Phase 7.1.B 追加: 当日食事一覧 */
 .today-meals{margin:12px 16px;padding:12px;background:#fff;border:1px solid #e5e5e5;border-radius:10px}
@@ -54,13 +50,7 @@ body{padding-bottom:140px}
 .today-meal-btn:active{transform:scale(0.95)}
 .today-empty{padding:16px;text-align:center;color:#888;font-size:14px}
 
-/* タップエリア（初期表示） */
-.tap-area{cursor:pointer;text-align:center;padding:24px 16px;background:linear-gradient(135deg,#fbbf24,#f59e0b);border-radius:14px;margin-bottom:12px;color:#fff;box-shadow:0 4px 12px rgba(245,158,11,0.3);user-select:none;-webkit-user-select:none;min-height:88px}
-.tap-area:active{transform:scale(0.97);box-shadow:0 2px 6px rgba(245,158,11,0.4)}
-.tap-arrow{font-size:32px;line-height:1;animation:bounce 1.2s infinite}
-.tap-text{font-size:18px;font-weight:bold;margin-top:8px}
-.tap-hint{font-size:13px;opacity:0.95;margin-top:4px}
-@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(6px)}}
+/* v3.15.5: タップ起動エリア廃止 (くまさん指示) */
 
 /* 検索欄 */
 .search-box{padding:14px 16px 10px;background:#fff;border-bottom:1px solid #eee;position:sticky;top:110px;z-index:9}
@@ -83,8 +73,9 @@ body{padding-bottom:140px}
 .result-item.restaurant{border-left:4px solid #f59e0b}
 .result-item.food{border-left:4px solid #6b7280}
 .empty{padding:24px 16px;text-align:center;color:#666;font-size:15px;line-height:1.6}
-.searching{padding:24px 16px;text-align:center;color:#92400e;font-size:15px;font-weight:600;background:#fffbeb;border:1px dashed #fcd34d;border-radius:8px;margin:8px 0}
-.searching-bar{padding:6px 16px;background:#fef3c7;border-bottom:1px solid #fcd34d;color:#92400e;font-size:13px;font-weight:600;text-align:center;animation:pulse 1.2s infinite ease-in-out}
+/* v3.15.5: 検索中表示を青系に統一 (くまさん指示) */
+.searching{padding:24px 16px;text-align:center;color:#1D4ED8;font-size:15px;font-weight:600;background:#EFF6FF;border:1px dashed #BFDBFE;border-radius:8px;margin:8px 0}
+.searching-bar{padding:6px 16px;background:#EFF6FF;border-bottom:1px solid #BFDBFE;color:#1D4ED8;font-size:13px;font-weight:600;text-align:center;animation:pulse 1.2s infinite ease-in-out}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
 
 /* モーダル */
@@ -99,7 +90,8 @@ body{padding-bottom:140px}
 .manual-confirm{width:100%;padding:14px;min-height:48px;font-size:16px;font-weight:bold;border:none;border-radius:8px;background:#16a34a;color:#fff;cursor:pointer;margin-bottom:8px}
 .modal-close{width:100%;padding:12px;min-height:44px;font-size:14px;border:1px solid #d1d5db;border-radius:8px;background:#fff;color:#555;cursor:pointer}
 .hidden{display:none !important}
-.toast{position:fixed;top:90px;left:50%;transform:translateX(-50%);padding:12px 20px;background:rgba(31,41,55,0.9);color:#fff;border-radius:8px;font-size:15px;z-index:200;max-width:90%;text-align:center}
+/* v3.15.5: トーストを下部に移動 (くまさん指示) - recorded バーより上に重ねる */
+.toast{position:fixed;bottom:120px;left:50%;transform:translateX(-50%);padding:14px 22px;background:rgba(31,41,55,0.92);color:#fff;border-radius:10px;font-size:15px;font-weight:600;z-index:200;max-width:90%;text-align:center;box-shadow:0 4px 16px rgba(0,0,0,0.25)}
 
 /* 記録済みバー */
 .recorded{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:2px solid #fcd34d;padding:14px 16px;box-shadow:0 -4px 12px rgba(0,0,0,0.08);z-index:50}
@@ -135,22 +127,10 @@ body{padding-bottom:140px}
   <button class="mode-chip" data-mode="convenience">コンビニ</button>
 </div>
 
+<!-- v3.15.5: タップ起動エリア廃止 / 検索ガイド廃止 (くまさん指示) -->
 <div class="search-box">
-  <div id="tap-area" class="tap-area">
-    <div class="tap-arrow">⬇</div>
-    <div class="tap-text">タップして食事を入力</div>
-    <div class="tap-hint">例: すき家 / マグロ / おにぎり</div>
-  </div>
   <input type="text" id="q" placeholder="例：納豆ごはん / すき家 牛丼 / セブン おにぎり" autocomplete="off" inputmode="text" enterkeyhint="search">
   <div class="hint">2文字以上で候補が出ます（検索キーで閉じる）</div>
-</div>
-
-<!-- v3.15.4 Phase 7.1.B 追加: 検索ガイド (モード別) -->
-<div id="search-guide" class="search-guide">
-  <div class="search-guide-title">食べたものを入力してください</div>
-  <div class="search-guide-line"><span class="label">自炊:</span>納豆ごはん、味噌汁</div>
-  <div class="search-guide-line"><span class="label">外食:</span>すき家 牛丼、マック ポテト</div>
-  <div class="search-guide-line"><span class="label">コンビニ:</span>セブン おにぎり、ローソン パスタ</div>
 </div>
 
 <div id="results" class="results"></div>
@@ -218,16 +198,12 @@ body{padding-bottom:140px}
 <script>
 // ==================================================================
 // サンロくん食事入力 SPA (yakusokuai.jp/meal_input/)
-// v3.15.4 / Phase 7.1.B 追加修正 / 2026-05-20
-// - 検索閾値: 2文字以上 + debounce 350ms
-// - Enter キーで blur (キーボード閉じる)
-// - 未入力時の「候補なし」非表示
-// - 食事区分 5 chip (朝/昼/夕/間食/夜食)
-// - 検索モード 4 chip (すべて/自炊/外食/コンビニ)
-// - 検索ガイド (モード別文言 + placeholder 切替, 青系UI)
-// - 未検索時に当日食事一覧表示 (mealType別 + 合計kcal)
-// - 当日一覧から削除・修正 (論理削除、所有者検証, audit_log)
-// - 文字サイズ 16px 基準、タップ領域 44px 最低
+// v3.15.5 / Phase 7.1.B 追加修正2 (くまさん4点FB) / 2026-05-20
+// - 「タップして食事を入力」エリア 廃止 (#tap-area)
+// - 「食べたものを入力してください」検索ガイド 廃止 (#search-guide)
+// - 検索中表示 (.searching / .searching-bar) を青系 #1D4ED8 に統一
+// - トースト位置を下部 (bottom:120px) に移動
+// - placeholder のみモード別切替を維持
 // ==================================================================
 window.__APP__ = {
   liffId: '2009608282-1Fi3wC1S',
@@ -287,54 +263,15 @@ Array.prototype.forEach.call(document.querySelectorAll('.mt-chip'), function(btn
   });
 });
 
-// v3.15.4 Phase 7.1.B 追加: モード別ガイド + placeholder
-var MODE_GUIDES = {
-  all: {
-    title: '食べたものを入力してください',
-    lines: [
-      { label: '自炊:',     example: '納豆ごはん、味噌汁' },
-      { label: '外食:',     example: 'すき家 牛丼、マック ポテト' },
-      { label: 'コンビニ:', example: 'セブン おにぎり、ローソン パスタ' },
-    ],
-    placeholder: '例：納豆ごはん / すき家 牛丼 / セブン おにぎり',
-  },
-  home: {
-    title: '自炊メニューを入力してください',
-    lines: [
-      { label: '例:', example: '納豆ごはん、味噌汁、ゆで卵、いつもの朝食' },
-    ],
-    placeholder: '例：納豆ごはん / 味噌汁 / ゆで卵',
-  },
-  restaurant: {
-    title: '店名や料理名を入力してください',
-    lines: [
-      { label: '例:', example: 'すき家 牛丼、マック ポテト、ガスト ハンバーグ' },
-    ],
-    placeholder: '例：すき家 牛丼 / マック ポテト',
-  },
-  convenience: {
-    title: 'コンビニ商品を入力してください',
-    lines: [
-      { label: '例:', example: 'セブン おにぎり、ローソン パスタ、ファミマ サラダ' },
-    ],
-    placeholder: '例：セブン おにぎり / ローソン パスタ',
-  },
+// v3.15.5: 検索ガイド廃止 (くまさん指示) / placeholder はモード別に変更
+var MODE_PLACEHOLDERS = {
+  all:         '例：納豆ごはん / すき家 牛丼 / セブン おにぎり',
+  home:        '例：納豆ごはん / 味噌汁 / ゆで卵',
+  restaurant:  '例：すき家 牛丼 / マック ポテト',
+  convenience: '例：セブン おにぎり / ローソン パスタ',
 };
 
-function renderSearchGuide(mode) {
-  var g = MODE_GUIDES[mode] || MODE_GUIDES.all;
-  var box = $("search-guide");
-  if (!box) return;
-  var html = '<div class="search-guide-title">' + esc(g.title) + '</div>';
-  g.lines.forEach(function(ln) {
-    html += '<div class="search-guide-line"><span class="label">' + esc(ln.label) + '</span>' + esc(ln.example) + '</div>';
-  });
-  box.innerHTML = html;
-  var q = $("q");
-  if (q) q.placeholder = g.placeholder;
-}
-
-// 検索モード chip クリック (v3.15.2 Phase 7.1.B → v3.15.4 で ガイド更新)
+// 検索モード chip クリック (v3.15.2 Phase 7.1.B → v3.15.5 で placeholder のみ更新)
 Array.prototype.forEach.call(document.querySelectorAll('.mode-chip'), function(btn) {
   btn.addEventListener('click', function() {
     var mode = this.getAttribute('data-mode');
@@ -342,7 +279,8 @@ Array.prototype.forEach.call(document.querySelectorAll('.mode-chip'), function(b
     Array.prototype.forEach.call(document.querySelectorAll('.mode-chip'), function(b) {
       b.classList.toggle('selected', b === btn);
     });
-    renderSearchGuide(mode);
+    var q = $("q");
+    if (q) q.placeholder = MODE_PLACEHOLDERS[mode] || MODE_PLACEHOLDERS.all;
     // 検索欄に2文字以上あれば、新モードで再検索
     var v = $("q").value.trim();
     if (state.ready && v.length >= 2) {
@@ -606,27 +544,8 @@ function showFatalError(msg) {
 function onReady() {
   var box = $("results");
   if (box) box.innerHTML = "";
-  // タップエリア → 入力欄フォーカス (ユーザー操作経由なのでモバイルでも focus 可能)
-  var tap = $("tap-area");
-  if (tap) {
-    tap.addEventListener("click", function() {
-      try {
-        $("q").focus();
-        $("q").click();
-        tap.style.display = "none";
-      } catch(e) {}
-    });
-  }
-  $("q").addEventListener("focus", function() {
-    if (tap) tap.style.display = "none";
-  });
-  $("q").addEventListener("blur", function() {
-    if (tap && !$("q").value.trim()) {
-      tap.style.display = "block";
-    }
-  });
-  // v3.15.4 Phase 7.1.B: 初回ガイド表示 + 当日食事一覧 fetch
-  renderSearchGuide(APP.searchMode || 'all');
+  // v3.15.5: タップエリア廃止 (検索欄に直接focus) / 検索ガイド廃止
+  // 当日食事一覧のみ取得
   loadTodayMeals();
   showTodayMeals();
 }
