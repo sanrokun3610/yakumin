@@ -29,6 +29,31 @@ body{padding-bottom:140px}
 .mode-chip:active{transform:scale(0.96)}
 .mode-label{font-size:11px;color:#9a3412;padding:0 16px;margin-top:6px;margin-bottom:-2px;font-weight:600}
 
+/* v3.15.4 Phase 7.1.B 追加: 検索ガイド (青系) */
+.search-guide{margin:10px 16px;color:#1D4ED8;background:#EFF6FF;border:1px solid #BFDBFE;border-radius:10px;padding:10px 12px;font-size:14px;line-height:1.6}
+.search-guide-title{font-size:15px;font-weight:700;color:#2563EB;margin-bottom:4px}
+.search-guide-line{font-size:13px;color:#1D4ED8;margin-top:2px}
+.search-guide-line .label{display:inline-block;min-width:50px;font-weight:600;color:#1E40AF}
+
+/* v3.15.4 Phase 7.1.B 追加: 当日食事一覧 */
+.today-meals{margin:12px 16px;padding:12px;background:#fff;border:1px solid #e5e5e5;border-radius:10px}
+.today-meals-title{font-size:16px;font-weight:bold;color:#78350f;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
+.today-meals-total{font-size:14px;color:#92400e;font-weight:600}
+.today-mt-group{margin-top:10px}
+.today-mt-label{font-size:14px;font-weight:bold;color:#525252;margin-bottom:4px;padding:2px 6px;background:#fef3c7;border-radius:4px;display:inline-block}
+.today-mt-empty{font-size:13px;color:#999;padding:4px 6px;font-style:italic}
+.today-meal-row{display:flex;align-items:center;padding:8px 4px;border-bottom:1px solid #f3f4f6;gap:8px}
+.today-meal-info{flex:1;min-width:0}
+.today-meal-name{font-size:16px;font-weight:600;color:#1f2937;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.today-meal-meta{font-size:13px;color:#666;margin-top:2px}
+.today-meal-kcal{font-size:15px;color:#92400e;font-weight:700;white-space:nowrap}
+.today-meal-actions{display:flex;gap:4px;margin-left:6px}
+.today-meal-btn{min-width:40px;min-height:36px;padding:6px 8px;font-size:12px;font-weight:600;border:1px solid #d4d4d4;border-radius:6px;background:#fff;cursor:pointer}
+.today-meal-btn.edit{color:#1D4ED8;border-color:#BFDBFE;background:#EFF6FF}
+.today-meal-btn.del{color:#b91c1c;border-color:#fecaca;background:#fef2f2}
+.today-meal-btn:active{transform:scale(0.95)}
+.today-empty{padding:16px;text-align:center;color:#888;font-size:14px}
+
 /* タップエリア（初期表示） */
 .tap-area{cursor:pointer;text-align:center;padding:24px 16px;background:linear-gradient(135deg,#fbbf24,#f59e0b);border-radius:14px;margin-bottom:12px;color:#fff;box-shadow:0 4px 12px rgba(245,158,11,0.3);user-select:none;-webkit-user-select:none;min-height:88px}
 .tap-area:active{transform:scale(0.97);box-shadow:0 2px 6px rgba(245,158,11,0.4)}
@@ -116,14 +141,58 @@ body{padding-bottom:140px}
     <div class="tap-text">タップして食事を入力</div>
     <div class="tap-hint">例: すき家 / マグロ / おにぎり</div>
   </div>
-  <input type="text" id="q" placeholder="ここに食事名を入力（例: すき家 / マグロ）" autocomplete="off" inputmode="text" enterkeyhint="search">
+  <input type="text" id="q" placeholder="例：納豆ごはん / すき家 牛丼 / セブン おにぎり" autocomplete="off" inputmode="text" enterkeyhint="search">
   <div class="hint">2文字以上で候補が出ます（検索キーで閉じる）</div>
 </div>
 
-<!-- v3.15.3 Phase 7.1.B 修正: 旧カテゴリボタン6つ廃止
-     お気に入り検索ボタン (Phase 7.1.C) / 自炊メニュー (Phase 7.1.D) で置換予定 -->
+<!-- v3.15.4 Phase 7.1.B 追加: 検索ガイド (モード別) -->
+<div id="search-guide" class="search-guide">
+  <div class="search-guide-title">食べたものを入力してください</div>
+  <div class="search-guide-line"><span class="label">自炊:</span>納豆ごはん、味噌汁</div>
+  <div class="search-guide-line"><span class="label">外食:</span>すき家 牛丼、マック ポテト</div>
+  <div class="search-guide-line"><span class="label">コンビニ:</span>セブン おにぎり、ローソン パスタ</div>
+</div>
 
 <div id="results" class="results"></div>
+
+<!-- v3.15.4 Phase 7.1.B 追加: 未検索時の当日食事一覧 -->
+<div id="today-meals-section" class="today-meals" style="display:none">
+  <div class="today-meals-title">
+    <span>📋 今日の食事</span>
+    <span class="today-meals-total" id="today-total">合計 0 kcal</span>
+  </div>
+  <div id="today-meals-body"></div>
+</div>
+
+<!-- v3.15.4 Phase 7.1.B 追加: 削除確認モーダル -->
+<div id="delete-modal" class="modal hidden">
+  <div class="modal-card">
+    <div class="modal-title">この記録を削除しますか？</div>
+    <div id="delete-target-info" style="padding:10px;background:#fef2f2;border-radius:8px;margin-bottom:12px;font-size:15px"></div>
+    <button id="delete-confirm" class="manual-confirm" style="background:#dc2626">削除する</button>
+    <button id="delete-cancel" class="modal-close">やめる</button>
+  </div>
+</div>
+
+<!-- v3.15.4 Phase 7.1.B 追加: 修正モーダル -->
+<div id="edit-modal" class="modal hidden">
+  <div class="modal-card">
+    <div class="modal-title" id="edit-title">記録を修正</div>
+    <div id="edit-target-info" style="padding:10px;background:#EFF6FF;border-radius:8px;margin-bottom:12px;font-size:15px;color:#1E40AF"></div>
+    <div style="font-size:13px;color:#666;margin-bottom:6px;font-weight:600">食事区分を変える</div>
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin-bottom:12px">
+      <button class="mt-chip" data-edit-mt="breakfast" style="min-height:40px;font-size:13px">朝</button>
+      <button class="mt-chip" data-edit-mt="lunch" style="min-height:40px;font-size:13px">昼</button>
+      <button class="mt-chip" data-edit-mt="dinner" style="min-height:40px;font-size:13px">夕</button>
+      <button class="mt-chip" data-edit-mt="snack" style="min-height:40px;font-size:13px">間食</button>
+      <button class="mt-chip" data-edit-mt="midnight" style="min-height:40px;font-size:13px">夜食</button>
+    </div>
+    <div style="font-size:13px;color:#666;margin-bottom:6px;font-weight:600">kcal を直接修正 (任意)</div>
+    <input type="text" id="edit-kcal" placeholder="例: 500" inputmode="numeric" style="width:100%;padding:12px;font-size:16px;border:2px solid #fcd34d;border-radius:8px;margin-bottom:12px">
+    <button id="edit-save" class="manual-confirm">修正を保存</button>
+    <button id="edit-cancel" class="modal-close">やめる</button>
+  </div>
+</div>
 
 <div id="amount-modal" class="modal hidden">
   <div class="modal-card">
@@ -149,11 +218,15 @@ body{padding-bottom:140px}
 <script>
 // ==================================================================
 // サンロくん食事入力 SPA (yakusokuai.jp/meal_input/)
-// v3.15.0 / Phase 7.1.A / 2026-05-20
+// v3.15.4 / Phase 7.1.B 追加修正 / 2026-05-20
 // - 検索閾値: 2文字以上 + debounce 350ms
 // - Enter キーで blur (キーボード閉じる)
 // - 未入力時の「候補なし」非表示
 // - 食事区分 5 chip (朝/昼/夕/間食/夜食)
+// - 検索モード 4 chip (すべて/自炊/外食/コンビニ)
+// - 検索ガイド (モード別文言 + placeholder 切替, 青系UI)
+// - 未検索時に当日食事一覧表示 (mealType別 + 合計kcal)
+// - 当日一覧から削除・修正 (論理削除、所有者検証, audit_log)
 // - 文字サイズ 16px 基準、タップ領域 44px 最低
 // ==================================================================
 window.__APP__ = {
@@ -214,7 +287,54 @@ Array.prototype.forEach.call(document.querySelectorAll('.mt-chip'), function(btn
   });
 });
 
-// 検索モード chip クリック (v3.15.2 Phase 7.1.B)
+// v3.15.4 Phase 7.1.B 追加: モード別ガイド + placeholder
+var MODE_GUIDES = {
+  all: {
+    title: '食べたものを入力してください',
+    lines: [
+      { label: '自炊:',     example: '納豆ごはん、味噌汁' },
+      { label: '外食:',     example: 'すき家 牛丼、マック ポテト' },
+      { label: 'コンビニ:', example: 'セブン おにぎり、ローソン パスタ' },
+    ],
+    placeholder: '例：納豆ごはん / すき家 牛丼 / セブン おにぎり',
+  },
+  home: {
+    title: '自炊メニューを入力してください',
+    lines: [
+      { label: '例:', example: '納豆ごはん、味噌汁、ゆで卵、いつもの朝食' },
+    ],
+    placeholder: '例：納豆ごはん / 味噌汁 / ゆで卵',
+  },
+  restaurant: {
+    title: '店名や料理名を入力してください',
+    lines: [
+      { label: '例:', example: 'すき家 牛丼、マック ポテト、ガスト ハンバーグ' },
+    ],
+    placeholder: '例：すき家 牛丼 / マック ポテト',
+  },
+  convenience: {
+    title: 'コンビニ商品を入力してください',
+    lines: [
+      { label: '例:', example: 'セブン おにぎり、ローソン パスタ、ファミマ サラダ' },
+    ],
+    placeholder: '例：セブン おにぎり / ローソン パスタ',
+  },
+};
+
+function renderSearchGuide(mode) {
+  var g = MODE_GUIDES[mode] || MODE_GUIDES.all;
+  var box = $("search-guide");
+  if (!box) return;
+  var html = '<div class="search-guide-title">' + esc(g.title) + '</div>';
+  g.lines.forEach(function(ln) {
+    html += '<div class="search-guide-line"><span class="label">' + esc(ln.label) + '</span>' + esc(ln.example) + '</div>';
+  });
+  box.innerHTML = html;
+  var q = $("q");
+  if (q) q.placeholder = g.placeholder;
+}
+
+// 検索モード chip クリック (v3.15.2 Phase 7.1.B → v3.15.4 で ガイド更新)
 Array.prototype.forEach.call(document.querySelectorAll('.mode-chip'), function(btn) {
   btn.addEventListener('click', function() {
     var mode = this.getAttribute('data-mode');
@@ -222,6 +342,7 @@ Array.prototype.forEach.call(document.querySelectorAll('.mode-chip'), function(b
     Array.prototype.forEach.call(document.querySelectorAll('.mode-chip'), function(b) {
       b.classList.toggle('selected', b === btn);
     });
+    renderSearchGuide(mode);
     // 検索欄に2文字以上あれば、新モードで再検索
     var v = $("q").value.trim();
     if (state.ready && v.length >= 2) {
@@ -233,6 +354,193 @@ Array.prototype.forEach.call(document.querySelectorAll('.mode-chip'), function(b
       renderResults([]);
     }
   });
+});
+
+// v3.15.4 Phase 7.1.B 追加: 当日食事一覧
+function loadTodayMeals() {
+  if (!state.ready || !APP.qsBase) return;
+  fetch(APP.deployUrl + "?page=meal_input_today&" + APP.qsBase).then(function(r){return r.json();}).then(function(data) {
+    if (!data || !data.ok) {
+      hideTodayMeals();
+      return;
+    }
+    state.todayMeals = data;
+    renderTodayMeals(data);
+  }).catch(function() { hideTodayMeals(); });
+}
+
+function showTodayMeals() {
+  var sec = $("today-meals-section");
+  if (sec) sec.style.display = '';
+}
+function hideTodayMeals() {
+  var sec = $("today-meals-section");
+  if (sec) sec.style.display = 'none';
+}
+
+var MEAL_LABELS_FULL = {
+  breakfast: { label: '朝', emoji: '🌅' },
+  lunch:     { label: '昼', emoji: '☀️' },
+  dinner:    { label: '夕', emoji: '🌙' },
+  snack:     { label: '間食', emoji: '🍪' },
+  midnight:  { label: '夜食', emoji: '🌃' },
+};
+
+function renderTodayMeals(data) {
+  var body = $("today-meals-body");
+  var totalEl = $("today-total");
+  if (!body || !totalEl) return;
+  if (!data || !data.meals || data.meals.length === 0) {
+    body.innerHTML = '<div class="today-empty">まだ今日の記録はありません。<br>↑ から食事を入力してください</div>';
+    totalEl.textContent = '合計 0 kcal';
+    return;
+  }
+  totalEl.textContent = '合計 ' + data.totalKcal + ' kcal';
+  var html = '';
+  var order = ['breakfast', 'lunch', 'dinner', 'snack', 'midnight'];
+  var anyShown = false;
+  order.forEach(function(mt) {
+    var arr = (data.byMealType && data.byMealType[mt]) || [];
+    if (arr.length === 0) return;  // 記録ない区分は表示しない
+    anyShown = true;
+    var ml = MEAL_LABELS_FULL[mt] || { label: mt, emoji: '' };
+    html += '<div class="today-mt-group">';
+    html += '<div class="today-mt-label">' + ml.emoji + ' ' + ml.label + '</div>';
+    arr.forEach(function(m) {
+      html += '<div class="today-meal-row" data-rid="' + esc(m.recordId) + '">';
+      html += '  <div class="today-meal-info">';
+      html += '    <div class="today-meal-name">' + esc(m.displayName) + '</div>';
+      html += '    <div class="today-meal-meta">' + esc(m.time) + (m.amountLabel ? ' ・ ' + esc(m.amountLabel) : '') + '</div>';
+      html += '  </div>';
+      html += '  <div class="today-meal-kcal">' + (m.kcal || 0) + ' kcal</div>';
+      if (m.canEdit || m.canDelete) {
+        html += '  <div class="today-meal-actions">';
+        if (m.canEdit)   html += '<button class="today-meal-btn edit" data-action="edit" data-rid="' + esc(m.recordId) + '">修正</button>';
+        if (m.canDelete) html += '<button class="today-meal-btn del" data-action="del" data-rid="' + esc(m.recordId) + '">削除</button>';
+        html += '  </div>';
+      }
+      html += '</div>';
+    });
+    html += '</div>';
+  });
+  if (!anyShown) {
+    body.innerHTML = '<div class="today-empty">まだ今日の記録はありません。<br>↑ から食事を入力してください</div>';
+  } else {
+    body.innerHTML = html;
+  }
+  // イベントハンドラ
+  Array.prototype.forEach.call(body.querySelectorAll('[data-action="del"]'), function(b) {
+    b.addEventListener('click', function() { openDeleteModal(this.getAttribute('data-rid')); });
+  });
+  Array.prototype.forEach.call(body.querySelectorAll('[data-action="edit"]'), function(b) {
+    b.addEventListener('click', function() { openEditModal(this.getAttribute('data-rid')); });
+  });
+}
+
+function findMealByRecordId(recordId) {
+  if (!state.todayMeals || !state.todayMeals.meals) return null;
+  for (var i = 0; i < state.todayMeals.meals.length; i++) {
+    if (state.todayMeals.meals[i].recordId === recordId) return state.todayMeals.meals[i];
+  }
+  return null;
+}
+
+// 削除モーダル
+var pendingDeleteRecordId = null;
+function openDeleteModal(recordId) {
+  var m = findMealByRecordId(recordId);
+  if (!m) return;
+  pendingDeleteRecordId = recordId;
+  $("delete-target-info").innerHTML = esc(m.displayName) + '<br><span style="color:#92400e;font-weight:600">' + (m.kcal || 0) + ' kcal</span>';
+  $("delete-modal").classList.remove("hidden");
+}
+$("delete-cancel").addEventListener('click', function() {
+  pendingDeleteRecordId = null;
+  $("delete-modal").classList.add("hidden");
+});
+$("delete-confirm").addEventListener('click', function() {
+  if (!pendingDeleteRecordId) { $("delete-modal").classList.add("hidden"); return; }
+  var rid = pendingDeleteRecordId;
+  pendingDeleteRecordId = null;
+  $("delete-modal").classList.add("hidden");
+  showToast("🗑 削除中...", "info");
+  fetch(APP.deployUrl + "?page=meal_input_delete", {
+    method: "POST",
+    headers: { "Content-Type": "text/plain;charset=UTF-8" },
+    body: JSON.stringify({ userId: APP.userId, sig: APP.sig, recordId: rid }),
+    redirect: "follow",
+  }).then(function(r){return r.json();}).then(function(data) {
+    if (data && data.ok) {
+      showToast("✅ 削除しました", "success");
+      loadTodayMeals();
+    } else {
+      showToast("⚠ 削除失敗: " + (data && data.error ? data.error : 'unknown'), "error");
+    }
+  }).catch(function() { showToast("⚠ 通信失敗", "error"); });
+});
+
+// 修正モーダル
+var pendingEditRecordId = null;
+var pendingEditMealType = null;
+function openEditModal(recordId) {
+  var m = findMealByRecordId(recordId);
+  if (!m) return;
+  pendingEditRecordId = recordId;
+  pendingEditMealType = m.mealType;
+  $("edit-target-info").innerHTML = esc(m.displayName) + '<br><span style="font-weight:600">現在: ' + (m.kcal || 0) + ' kcal / ' + esc(m.mealTypeLabel || m.mealType) + '</span>';
+  $("edit-kcal").value = '';
+  $("edit-kcal").placeholder = '例: ' + (m.kcal || 500) + '（空欄なら変更なし）';
+  // 現在の mealType を強調
+  Array.prototype.forEach.call(document.querySelectorAll('[data-edit-mt]'), function(b) {
+    b.classList.toggle('selected', b.getAttribute('data-edit-mt') === m.mealType);
+  });
+  $("edit-modal").classList.remove("hidden");
+}
+Array.prototype.forEach.call(document.querySelectorAll('[data-edit-mt]'), function(btn) {
+  btn.addEventListener('click', function() {
+    pendingEditMealType = this.getAttribute('data-edit-mt');
+    Array.prototype.forEach.call(document.querySelectorAll('[data-edit-mt]'), function(b) {
+      b.classList.toggle('selected', b === btn);
+    });
+  });
+});
+$("edit-cancel").addEventListener('click', function() {
+  pendingEditRecordId = null;
+  pendingEditMealType = null;
+  $("edit-modal").classList.add("hidden");
+});
+$("edit-save").addEventListener('click', function() {
+  if (!pendingEditRecordId) { $("edit-modal").classList.add("hidden"); return; }
+  var rid = pendingEditRecordId;
+  var mt = pendingEditMealType;
+  var kcalRaw = $("edit-kcal").value.trim()
+    .replace(/[０-９]/g, function(ch){return String.fromCharCode(ch.charCodeAt(0)-0xFEE0);})
+    .replace(/[^\d]/g, '');
+  var kcalNum = kcalRaw ? Number(kcalRaw) : null;
+  if (kcalNum != null && (isNaN(kcalNum) || kcalNum < 0 || kcalNum > 10000)) {
+    alert("kcal は 0〜10000 で入力してください");
+    return;
+  }
+  pendingEditRecordId = null;
+  pendingEditMealType = null;
+  $("edit-modal").classList.add("hidden");
+  showToast("✏ 修正中...", "info");
+  var body = { userId: APP.userId, sig: APP.sig, recordId: rid };
+  if (mt) body.mealType = mt;
+  if (kcalNum != null) body.kcal = kcalNum;
+  fetch(APP.deployUrl + "?page=meal_input_update", {
+    method: "POST",
+    headers: { "Content-Type": "text/plain;charset=UTF-8" },
+    body: JSON.stringify(body),
+    redirect: "follow",
+  }).then(function(r){return r.json();}).then(function(data) {
+    if (data && data.ok) {
+      showToast("✅ 修正しました", "success");
+      loadTodayMeals();
+    } else {
+      showToast("⚠ 修正失敗: " + (data && data.error ? data.error : 'unknown'), "error");
+    }
+  }).catch(function() { showToast("⚠ 通信失敗", "error"); });
 });
 
 // LIFF SDK で認証 → サーバーで sig 発行 → ready
@@ -317,9 +625,14 @@ function onReady() {
       tap.style.display = "block";
     }
   });
+  // v3.15.4 Phase 7.1.B: 初回ガイド表示 + 当日食事一覧 fetch
+  renderSearchGuide(APP.searchMode || 'all');
+  loadTodayMeals();
+  showTodayMeals();
 }
 
 // v3.15.0 Phase 7.1.A: 検索閾値 2文字以上 + debounce 350ms
+// v3.15.4 Phase 7.1.B: 未入力時は当日一覧表示、検索中は隠す
 $("q").addEventListener("input", function() {
   if (!state.ready) return;
   clearTimeout(state.debounceTimer);
@@ -327,14 +640,17 @@ $("q").addEventListener("input", function() {
   if (v.length === 0) {
     hideSearching();
     renderResults([]);  // 未入力時は何も表示しない
+    showTodayMeals();   // 未入力時に当日一覧を表示
     return;
   }
   if (v.length === 1) {
-    // 1文字: 検索APIを呼ばない (P1: 履歴・お気に入り・自炊だけ表示は Phase 7.1.B 以降)
+    // 1文字: 検索APIを呼ばない
     hideSearching();
-    renderResults([]);  // 1文字でも候補なし文言を出さない
+    renderResults([]);
+    showTodayMeals();   // 1文字も当日一覧維持
     return;
   }
+  hideTodayMeals();    // 2文字以上で検索開始 → 当日一覧は隠す
   showSearching();
   state.debounceTimer = setTimeout(function() { fetchCandidates(v); }, 350);
 });
@@ -556,6 +872,9 @@ function saveRecord(c, size, kcal, sizeRow, amountInfo) {
         addToRecorded(data);
         $("q").value = "";
         renderResults([]);
+        // v3.15.4: 記録後に当日一覧を再取得・再表示
+        loadTodayMeals();
+        showTodayMeals();
       } else {
         showToast("⚠ 記録失敗: " + (data && data.error ? data.error : "unknown"), "error");
       }
