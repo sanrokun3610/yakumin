@@ -7,59 +7,79 @@
 <title>食事入力 - サンロくんのほけんしつ</title>
 <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <style>
+/* v3.15.0 Phase 7.1.A: 文字サイズ 16px 基準、タップ領域 44px 最低、行間 1.6 */
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-html,body{font-family:-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif;background:#f5f5f4;color:#1f2937;line-height:1.5}
-body{padding-bottom:120px}
+html,body{font-family:-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif;background:#f5f5f4;color:#1f2937;font-size:16px;line-height:1.6}
+body{padding-bottom:140px}
+
 .header{background:linear-gradient(135deg,#fef9c3,#fde68a);padding:16px;border-bottom:1px solid #fcd34d;position:sticky;top:0;z-index:10}
 .header-title{font-size:18px;font-weight:bold;color:#78350f}
-.header-sub{font-size:12px;color:#92400e;margin-top:2px}
-.tap-area{cursor:pointer;text-align:center;padding:24px 16px;background:linear-gradient(135deg,#fbbf24,#f59e0b);border-radius:14px;margin-bottom:12px;color:#fff;box-shadow:0 4px 12px rgba(245,158,11,0.3);user-select:none;-webkit-user-select:none}
+.header-sub{font-size:13px;color:#92400e;margin-top:2px}
+
+/* 食事区分切替 chip row (v3.15.0 新規) */
+.meal-type-bar{display:flex;gap:6px;padding:10px 16px;background:#fafaf9;border-bottom:1px solid #e5e5e5;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.mt-chip{flex:1;min-width:56px;min-height:44px;padding:8px 4px;font-size:15px;font-weight:600;border:1.5px solid #d4d4d4;border-radius:8px;background:#fff;color:#525252;cursor:pointer}
+.mt-chip.selected{background:#fbbf24;color:#fff;border-color:#f59e0b}
+.mt-chip:active{transform:scale(0.96)}
+
+/* タップエリア（初期表示） */
+.tap-area{cursor:pointer;text-align:center;padding:24px 16px;background:linear-gradient(135deg,#fbbf24,#f59e0b);border-radius:14px;margin-bottom:12px;color:#fff;box-shadow:0 4px 12px rgba(245,158,11,0.3);user-select:none;-webkit-user-select:none;min-height:88px}
 .tap-area:active{transform:scale(0.97);box-shadow:0 2px 6px rgba(245,158,11,0.4)}
 .tap-arrow{font-size:32px;line-height:1;animation:bounce 1.2s infinite}
 .tap-text{font-size:18px;font-weight:bold;margin-top:8px}
-.tap-hint{font-size:12px;opacity:0.95;margin-top:4px}
+.tap-hint{font-size:13px;opacity:0.95;margin-top:4px}
 @keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(6px)}}
-.search-box{padding:14px 16px 10px;background:#fff;border-bottom:1px solid #eee;position:sticky;top:64px;z-index:9}
+
+/* 検索欄 */
+.search-box{padding:14px 16px 10px;background:#fff;border-bottom:1px solid #eee;position:sticky;top:110px;z-index:9}
 .search-box input.hidden-init{display:none}
-.search-box input{width:100%;padding:14px 16px;font-size:17px;border:3px solid #f59e0b;border-radius:12px;background:#fffbeb;outline:none;box-shadow:0 2px 6px rgba(245,158,11,0.15);transition:all .15s;font-weight:500}
+.search-box input{width:100%;padding:14px 16px;font-size:17px;border:3px solid #f59e0b;border-radius:12px;background:#fffbeb;outline:none;box-shadow:0 2px 6px rgba(245,158,11,0.15);transition:all .15s;font-weight:500;min-height:50px}
 .search-box input::placeholder{color:#b45309;opacity:.7}
 .search-box input:focus{border-color:#d97706;background:#fff;box-shadow:0 0 0 4px rgba(245,158,11,0.2)}
-.hint{font-size:12px;color:#92400e;margin-top:6px;padding-left:4px;font-weight:500}
+.hint{font-size:13px;color:#92400e;margin-top:6px;padding-left:4px;font-weight:500}
+
+/* カテゴリ（v3.15.0: フォント拡大 / Phase 7.1.B でモード切替に置換予定） */
 .categories{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:12px 16px;background:#fafaf9;border-bottom:1px solid #eee}
-.cat{padding:10px 6px;font-size:13px;border:1px solid #e5e5e5;border-radius:8px;background:#fff;color:#444;cursor:pointer}
+.cat{padding:12px 6px;min-height:48px;font-size:15px;font-weight:600;border:1px solid #e5e5e5;border-radius:8px;background:#fff;color:#444;cursor:pointer}
 .cat:active{background:#fef3c7}
+
+/* 候補リスト（v3.15.0: 大幅拡大） */
 .results{padding:8px 16px}
-.result-item{padding:14px 12px;margin-bottom:8px;background:#fff;border:1px solid #e5e5e5;border-radius:10px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;transition:all .12s;-webkit-tap-highlight-color:rgba(254,243,199,0.5)}
+.result-item{padding:16px 14px;margin-bottom:8px;background:#fff;border:1px solid #e5e5e5;border-radius:10px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;transition:all .12s;-webkit-tap-highlight-color:rgba(254,243,199,0.5);min-height:56px}
 .result-item:active{background:#fef3c7;transform:scale(0.98)}
 .result-item.selecting{background:#fde68a !important;opacity:0.7;pointer-events:none;border-color:#f59e0b}
-.result-item .label{font-size:14px;flex:1}
-.result-item .kcal{font-size:13px;color:#92400e;font-weight:600;margin-left:8px;white-space:nowrap}
+.result-item .label{font-size:17px;font-weight:700;flex:1;color:#1f2937}
+.result-item .kcal{font-size:16px;color:#92400e;font-weight:700;margin-left:8px;white-space:nowrap}
 .result-item.history{border-left:4px solid #10b981}
 .result-item.restaurant{border-left:4px solid #f59e0b}
 .result-item.food{border-left:4px solid #6b7280}
-.empty{padding:24px 16px;text-align:center;color:#888;font-size:13px}
-.searching{padding:24px 16px;text-align:center;color:#92400e;font-size:14px;font-weight:600;background:#fffbeb;border:1px dashed #fcd34d;border-radius:8px;margin:8px 0}
-.searching-bar{padding:5px 16px;background:#fef3c7;border-bottom:1px solid #fcd34d;color:#92400e;font-size:11px;font-weight:600;text-align:center;animation:pulse 1.2s infinite ease-in-out}
+.empty{padding:24px 16px;text-align:center;color:#666;font-size:15px;line-height:1.6}
+.searching{padding:24px 16px;text-align:center;color:#92400e;font-size:15px;font-weight:600;background:#fffbeb;border:1px dashed #fcd34d;border-radius:8px;margin:8px 0}
+.searching-bar{padding:6px 16px;background:#fef3c7;border-bottom:1px solid #fcd34d;color:#92400e;font-size:13px;font-weight:600;text-align:center;animation:pulse 1.2s infinite ease-in-out}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
+
+/* モーダル */
 .modal{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:100;display:flex;align-items:center;justify-content:center;padding:16px}
 .modal.hidden{display:none}
-.modal-card{background:#fff;border-radius:16px;padding:20px;max-width:360px;width:100%;max-height:80vh;overflow-y:auto}
-.modal-title{font-size:16px;font-weight:bold;margin-bottom:16px;color:#1f2937;line-height:1.4}
+.modal-card{background:#fff;border-radius:16px;padding:20px;max-width:380px;width:100%;max-height:80vh;overflow-y:auto}
+.modal-title{font-size:17px;font-weight:bold;margin-bottom:16px;color:#1f2937;line-height:1.4}
 .amount-buttons{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
-.amount-buttons button{padding:12px;font-size:14px;border:1px solid #fcd34d;border-radius:8px;background:#fffbeb;color:#78350f;cursor:pointer}
+.amount-buttons button{padding:14px 8px;min-height:48px;font-size:16px;font-weight:600;border:1px solid #fcd34d;border-radius:8px;background:#fffbeb;color:#78350f;cursor:pointer}
 .amount-buttons button:active,.amount-buttons button.selected{background:#fde68a}
-#amount-manual{width:100%;padding:12px;font-size:16px;border:2px solid #fcd34d;border-radius:8px;margin-bottom:8px}
-.manual-confirm{width:100%;padding:12px;font-size:15px;border:none;border-radius:8px;background:#16a34a;color:#fff;font-weight:bold;cursor:pointer;margin-bottom:8px}
-.modal-close{width:100%;padding:10px;font-size:13px;border:1px solid #d1d5db;border-radius:8px;background:#fff;color:#555;cursor:pointer}
+#amount-manual{width:100%;padding:14px;min-height:50px;font-size:18px;border:2px solid #fcd34d;border-radius:8px;margin-bottom:8px}
+.manual-confirm{width:100%;padding:14px;min-height:48px;font-size:16px;font-weight:bold;border:none;border-radius:8px;background:#16a34a;color:#fff;cursor:pointer;margin-bottom:8px}
+.modal-close{width:100%;padding:12px;min-height:44px;font-size:14px;border:1px solid #d1d5db;border-radius:8px;background:#fff;color:#555;cursor:pointer}
 .hidden{display:none !important}
-.toast{position:fixed;top:80px;left:50%;transform:translateX(-50%);padding:12px 20px;background:rgba(31,41,55,0.9);color:#fff;border-radius:8px;font-size:14px;z-index:200}
+.toast{position:fixed;top:90px;left:50%;transform:translateX(-50%);padding:12px 20px;background:rgba(31,41,55,0.9);color:#fff;border-radius:8px;font-size:15px;z-index:200;max-width:90%;text-align:center}
+
+/* 記録済みバー */
 .recorded{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:2px solid #fcd34d;padding:14px 16px;box-shadow:0 -4px 12px rgba(0,0,0,0.08);z-index:50}
-.recorded-title{font-size:14px;font-weight:bold;color:#166534;margin-bottom:6px}
-.recorded-list{font-size:12px;color:#555;margin-bottom:8px;max-height:80px;overflow-y:auto}
-.recorded-list .row{display:flex;justify-content:space-between;padding:2px 0}
-.recorded-list .total{border-top:1px dashed #ccc;padding-top:4px;margin-top:4px;font-weight:bold;color:#78350f}
+.recorded-title{font-size:16px;font-weight:bold;color:#166534;margin-bottom:6px}
+.recorded-list{font-size:14px;color:#444;margin-bottom:8px;max-height:96px;overflow-y:auto}
+.recorded-list .row{display:flex;justify-content:space-between;padding:3px 0}
+.recorded-list .total{border-top:1px dashed #ccc;padding-top:4px;margin-top:4px;font-weight:bold;color:#78350f;font-size:15px}
 .recorded-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.recorded-actions button{padding:12px;font-size:14px;border:1px solid #fcd34d;border-radius:8px;background:#fffbeb;color:#78350f;cursor:pointer;font-weight:600}
+.recorded-actions button{padding:14px;min-height:48px;font-size:16px;font-weight:600;border:1px solid #fcd34d;border-radius:8px;background:#fffbeb;color:#78350f;cursor:pointer}
 .recorded-actions button.primary{background:#16a34a;color:#fff;border-color:#15803d}
 </style>
 </head>
@@ -68,14 +88,23 @@ body{padding-bottom:120px}
   <div class="header-title">🐻 食事を記録</div>
 </div>
 
+<!-- v3.15.0 Phase 7.1.A: 食事区分切替 5チップ -->
+<div class="meal-type-bar" id="meal-type-bar">
+  <button class="mt-chip" data-mt="breakfast">朝</button>
+  <button class="mt-chip" data-mt="lunch">昼</button>
+  <button class="mt-chip" data-mt="dinner">夕</button>
+  <button class="mt-chip" data-mt="snack">間食</button>
+  <button class="mt-chip" data-mt="midnight">夜食</button>
+</div>
+
 <div class="search-box">
   <div id="tap-area" class="tap-area">
     <div class="tap-arrow">⬇</div>
     <div class="tap-text">タップして食事を入力</div>
     <div class="tap-hint">例: すき家 / マグロ / おにぎり</div>
   </div>
-  <input type="text" id="q" placeholder="ここに食事名を入力（例: すき家 / マグロ）" autocomplete="off" inputmode="text" autofocus enterkeyhint="search">
-  <div class="hint">1文字ごとに候補が出ます</div>
+  <input type="text" id="q" placeholder="ここに食事名を入力（例: すき家 / マグロ）" autocomplete="off" inputmode="text" enterkeyhint="search">
+  <div class="hint">2文字以上で候補が出ます（検索キーで閉じる）</div>
 </div>
 
 <div id="categories" class="categories">
@@ -113,10 +142,12 @@ body{padding-bottom:120px}
 <script>
 // ==================================================================
 // サンロくん食事入力 SPA (yakusokuai.jp/meal_input/)
-// v3.11.0-rc8 / 2026-05-13
-// - HTML/CSS/JS は GitHub Pages 静的ホスト → GAS 警告バーが出ない
-// - userId/sig は LIFF SDK 経由でサーバーから取得
-// - API (候補/サイズ/記録) は GAS Web App を fetch
+// v3.15.0 / Phase 7.1.A / 2026-05-20
+// - 検索閾値: 2文字以上 + debounce 350ms
+// - Enter キーで blur (キーボード閉じる)
+// - 未入力時の「候補なし」非表示
+// - 食事区分 5 chip (朝/昼/夕/間食/夜食)
+// - 文字サイズ 16px 基準、タップ領域 44px 最低
 // ==================================================================
 window.__APP__ = {
   liffId: '2009608282-1Fi3wC1S',
@@ -132,18 +163,48 @@ var $ = function(id) { return document.getElementById(id); };
 var APP = window.__APP__;
 var state = { selected: null, sizes: null, recordedItems: [], debounceTimer: null, reqCounter: 0, ready: false };
 
-// 時刻から食事タイプ自動判定
-(function() {
+// 食事区分マスタ
+var MEAL_LABELS = {
+  breakfast: '朝食',
+  lunch: '昼食',
+  dinner: '夕食',
+  snack: '間食',
+  midnight: '夜食',
+};
+
+// 時刻から食事タイプ自動判定 (v3.15.0: midnight 追加)
+function autoMealTypeFromTime() {
   var hour = new Date().getHours();
-  if (hour >= 5 && hour < 10) { APP.mealType = 'breakfast'; setHeader('🐻 朝食を記録'); }
-  else if (hour >= 10 && hour < 14) { APP.mealType = 'lunch'; setHeader('🐻 昼食を記録'); }
-  else if (hour >= 17 && hour < 21) { APP.mealType = 'dinner'; setHeader('🐻 夕食を記録'); }
-  else { APP.mealType = 'snack'; setHeader('🐻 間食を記録'); }
-})();
+  if (hour >= 5 && hour < 10) return 'breakfast';
+  if (hour >= 10 && hour < 14) return 'lunch';
+  if (hour >= 17 && hour < 21) return 'dinner';
+  if (hour >= 22 || hour < 4) return 'midnight';
+  return 'snack';
+}
+APP.mealType = autoMealTypeFromTime();
+setHeader('🐻 ' + MEAL_LABELS[APP.mealType] + 'を記録');
+setSelectedMealType(APP.mealType);
+
 function setHeader(text) {
   var el = document.querySelector('.header-title');
   if (el) el.textContent = text;
 }
+
+function setSelectedMealType(mt) {
+  Array.prototype.forEach.call(document.querySelectorAll('.mt-chip'), function(b) {
+    b.classList.toggle('selected', b.getAttribute('data-mt') === mt);
+  });
+}
+
+// 食事区分 chip クリック (v3.15.0 新規)
+Array.prototype.forEach.call(document.querySelectorAll('.mt-chip'), function(btn) {
+  btn.addEventListener('click', function() {
+    var mt = this.getAttribute('data-mt');
+    APP.mealType = mt;
+    setHeader('🐻 ' + MEAL_LABELS[mt] + 'を記録');
+    setSelectedMealType(mt);
+  });
+});
 
 // LIFF SDK で認証 → サーバーで sig 発行 → ready
 function bootstrap() {
@@ -152,7 +213,7 @@ function bootstrap() {
     return;
   }
   showBootstrapLoading();
-  liff.init({ liffId: APP.liffId }).then(function() {
+  liff.init({ liffId: APP.liffId, withLoginOnExternalBrowser: false }).then(function() {
     if (!liff.isInClient() && !liff.isLoggedIn()) {
       liff.login();
       return null;
@@ -172,7 +233,7 @@ function bootstrap() {
       redirect: "follow",
     }).then(function(r){return r.json();}).then(function(data) {
       if (!data || !data.ok) {
-        showFatalError("認証に失敗しました: " + (data && data.error ? data.error : "unknown"));
+        showFatalError("認証に失敗しました。LINEのメニューから開き直してください。");
         return;
       }
       APP.userId = data.userId;
@@ -191,8 +252,9 @@ function bootstrap() {
       onReady();
     });
   }).catch(function(err) {
-    var msg = err && err.message ? err.message : (typeof err === "string" ? err : JSON.stringify(err));
-    showFatalError("LIFF初期化に失敗しました: " + msg);
+    var msg = err && err.message ? String(err.message) : "";
+    msg = msg.replace(/https?:\/\/[^\s"<>]+/g, '').substring(0, 80);
+    showFatalError("LIFF初期化に失敗しました" + (msg ? ": " + msg : ""));
   });
 }
 
@@ -207,7 +269,7 @@ function showFatalError(msg) {
 function onReady() {
   var box = $("results");
   if (box) box.innerHTML = "";
-  // タップエリア → 入力欄フォーカス（ユーザー操作経由なのでモバイルでも確実に focus できる）
+  // タップエリア → 入力欄フォーカス (ユーザー操作経由なのでモバイルでも focus 可能)
   var tap = $("tap-area");
   if (tap) {
     tap.addEventListener("click", function() {
@@ -218,11 +280,9 @@ function onReady() {
       } catch(e) {}
     });
   }
-  // input が焦点になったらタップ案内を隠す
   $("q").addEventListener("focus", function() {
     if (tap) tap.style.display = "none";
   });
-  // input から外れたら（値があるなら隠したまま、空ならまた案内出す）
   $("q").addEventListener("blur", function() {
     if (tap && !$("q").value.trim()) {
       tap.style.display = "block";
@@ -230,18 +290,41 @@ function onReady() {
   });
 }
 
-// 検索 (debounce + searching表示)
+// v3.15.0 Phase 7.1.A: 検索閾値 2文字以上 + debounce 350ms
 $("q").addEventListener("input", function() {
   if (!state.ready) return;
   clearTimeout(state.debounceTimer);
   var v = this.value.trim();
-  if (v.length === 0) { hideSearching(); renderResults([]); return; }
+  if (v.length === 0) {
+    hideSearching();
+    renderResults([]);  // 未入力時は何も表示しない
+    return;
+  }
+  if (v.length === 1) {
+    // 1文字: 検索APIを呼ばない (P1: 履歴・お気に入り・自炊だけ表示は Phase 7.1.B 以降)
+    hideSearching();
+    renderResults([]);  // 1文字でも候補なし文言を出さない
+    return;
+  }
   showSearching();
-  // 150ms に短縮（くまさん「遅い」フィードバック）
-  state.debounceTimer = setTimeout(function() { fetchCandidates(v); }, 150);
+  state.debounceTimer = setTimeout(function() { fetchCandidates(v); }, 350);
 });
 
-// カテゴリ
+// v3.15.0 Phase 7.1.A: Enter キーで検索実行 + blur (キーボード閉じる)
+$("q").addEventListener("keydown", function(e) {
+  if (e.key === "Enter" || e.keyCode === 13) {
+    e.preventDefault();
+    clearTimeout(state.debounceTimer);
+    var v = this.value.trim();
+    if (v.length >= 2) {
+      showSearching();
+      fetchCandidates(v);
+    }
+    this.blur();  // キーボードを閉じる
+  }
+});
+
+// カテゴリボタン (Phase 7.1.B でモード切替に置換予定)
 Array.prototype.forEach.call(document.querySelectorAll(".cat"), function(btn) {
   btn.addEventListener("click", function() {
     if (!state.ready) return;
@@ -266,7 +349,6 @@ function fetchCandidates(q) {
   });
 }
 
-// 修正: 既存候補を消さず、検索欄の下に細いバーを追加
 function showSearching() {
   if (document.getElementById("searching-bar")) return;
   var bar = document.createElement("div");
@@ -281,9 +363,15 @@ function hideSearching() {
   if (bar) bar.remove();
 }
 
+// v3.15.0 Phase 7.1.A: 未入力時は「候補なし」を出さない
 function renderResults(cands) {
   var box = $("results");
   if (!cands || cands.length === 0) {
+    // 入力欄が空 or 1文字 ならメッセージ出さない
+    if ($("q").value.trim().length < 2) {
+      box.innerHTML = "";
+      return;
+    }
     box.innerHTML = "<div class=\"empty\">候補が見つかりませんでした。<br>別の言葉で入力してください。</div>";
     return;
   }
@@ -299,7 +387,6 @@ function renderResults(cands) {
       "<div class=\"kcal\">" + (c.kcal != null ? c.kcal + "kcal" : "") + "</div>";
     div.addEventListener("click", function() {
       if (div.classList.contains("selecting")) return;
-      // 全候補から selecting を外し、自分にだけ付与
       Array.prototype.forEach.call(document.querySelectorAll(".result-item"), function(el) {
         el.classList.remove("selecting");
       });
@@ -311,12 +398,10 @@ function renderResults(cands) {
 }
 
 function onCandidatePick(c) {
-  if (state.processing) return;  // 連打防止
+  if (state.processing) return;
   state.processing = true;
   state.selected = c;
   state.sizes = null;
-  // 視覚フィードバックは CSS .selecting で即時反応（トーストは出さない、体感速度優先）
-  // 5秒経ってもモーダル等が開かない場合は強制解除（fetch失敗時の保険）
   setTimeout(function() { state.processing = false; }, 5000);
 
   if (c.source === "restaurant_exact" || c.source === "restaurant_partial" || c.source === "restaurant_chain_partial") {
@@ -425,7 +510,7 @@ function saveRecord(c, size, kcal, sizeRow, amountInfo) {
     return r.text().then(function(txt) {
       var data = null;
       try { data = JSON.parse(txt); } catch (e) {
-        showToast("⚠ レスポンス解析失敗: " + txt.substring(0, 150), "error");
+        showToast("⚠ レスポンス解析失敗", "error");
         return;
       }
       if (data && data.ok) {
@@ -434,11 +519,11 @@ function saveRecord(c, size, kcal, sizeRow, amountInfo) {
         $("q").value = "";
         renderResults([]);
       } else {
-        showToast("⚠ 記録失敗: " + (data && data.error ? data.error : "unknown") + " (HTTP " + r.status + ")", "error");
+        showToast("⚠ 記録失敗: " + (data && data.error ? data.error : "unknown"), "error");
       }
     });
   }).catch(function(err) {
-    showToast("⚠ 通信失敗: " + (err && err.message ? err.message : err), "error");
+    showToast("⚠ 通信失敗", "error");
   });
 }
 
@@ -486,13 +571,10 @@ function showToast(msg, type) {
   t.style.background = type === "success" ? "rgba(22,163,74,0.95)" :
                        type === "error"   ? "rgba(220,38,38,0.95)" :
                                             "rgba(31,41,55,0.9)";
-  // タップで閉じる
   t.onclick = function() { t.classList.add("hidden"); };
-  // 自動非表示時間: success=2.5秒、error=8秒、info=継続
   if (type === "success") setTimeout(function() { t.classList.add("hidden"); }, 2500);
   else if (type === "error") setTimeout(function() { t.classList.add("hidden"); }, 8000);
 }
-function hideToast() { setTimeout(function() { $("toast").classList.add("hidden"); }, 800); }
 function esc(s) { var d = document.createElement("div"); d.textContent = String(s == null ? "" : s); return d.innerHTML; }
 
 bootstrap();
