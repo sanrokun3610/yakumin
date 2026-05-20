@@ -12,45 +12,52 @@
 html,body{font-family:-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif;background:#f5f5f4;color:#1f2937;font-size:16px;line-height:1.6}
 body{padding-bottom:140px}
 
-.header{background:linear-gradient(135deg,#fef9c3,#fde68a);padding:16px;border-bottom:1px solid #fcd34d;position:sticky;top:0;z-index:10}
-.header-title{font-size:18px;font-weight:bold;color:#78350f}
-.header-sub{font-size:13px;color:#92400e;margin-top:2px}
+/* v3.17.0 Phase 7.1.C revised: ヘッダーにチップ群をコンパクト統合 */
+.header{background:linear-gradient(135deg,#fef9c3,#fde68a);padding:10px 12px 8px;border-bottom:1px solid #fcd34d;position:sticky;top:0;z-index:10}
+.header-title{font-size:17px;font-weight:bold;color:#78350f;margin-bottom:6px}
+.header-sub{font-size:12px;color:#92400e;margin-top:1px}
 
-/* 食事区分切替 chip row (v3.15.0 新規) */
-.meal-type-bar{display:flex;gap:6px;padding:10px 16px;background:#fafaf9;border-bottom:1px solid #e5e5e5;overflow-x:auto;-webkit-overflow-scrolling:touch}
-.mt-chip{flex:1;min-width:56px;min-height:44px;padding:8px 4px;font-size:15px;font-weight:600;border:1.5px solid #d4d4d4;border-radius:8px;background:#fff;color:#525252;cursor:pointer}
-.mt-chip.selected{background:#fbbf24;color:#fff;border-color:#f59e0b}
+/* コンパクトチップ行 */
+.chip-row{display:flex;gap:5px;flex-wrap:wrap;margin-top:4px}
+.chip-label{font-size:11px;color:#92400e;font-weight:600;margin-right:4px;align-self:center}
+
+/* 食事区分チップ (v3.17.0 コンパクト化) */
+.mt-chip{min-height:34px;padding:5px 10px;font-size:13px;font-weight:600;border:1px solid #d4d4d4;border-radius:999px;background:#fff;color:#525252;cursor:pointer}
+.mt-chip.selected{background:#f59e0b;color:#fff;border-color:#d97706}
 .mt-chip:active{transform:scale(0.96)}
 
-/* 検索モード切替 chip row (v3.15.2 Phase 7.1.B) */
-.mode-switch{display:flex;gap:6px;padding:8px 16px;background:#fff7ed;border-bottom:1px solid #fde68a}
-.mode-chip{flex:1;min-height:42px;padding:8px 4px;font-size:14px;font-weight:600;border:1.5px solid #d4d4d4;border-radius:8px;background:#fff;color:#525252;cursor:pointer}
-.mode-chip.selected{background:#f97316;color:#fff;border-color:#ea580c}
+/* 検索モードチップ (v3.17.0 コンパクト化) */
+.mode-chip{min-height:34px;padding:5px 10px;font-size:13px;font-weight:600;border:1px solid #d4d4d4;border-radius:999px;background:#fff;color:#525252;cursor:pointer}
+.mode-chip.selected{background:#2563eb;color:#fff;border-color:#1d4ed8}
 .mode-chip:active{transform:scale(0.96)}
-.mode-label{font-size:11px;color:#9a3412;padding:0 16px;margin-top:6px;margin-bottom:-2px;font-weight:600}
 
-/* v3.15.5: 検索ガイド廃止 (くまさん指示) - placeholder で代替 */
+@media (max-width: 390px) {
+  .mt-chip, .mode-chip { min-height: 32px; padding: 5px 8px; font-size: 12px; }
+  .header-title { font-size: 16px; }
+}
 
-/* v3.16.0 Phase 7.1.C: お気に入り検索ボタン (中立色, 公式ロゴ/カラー使わない) */
-.fav-section{padding:10px 16px 4px;background:#fff}
-.fav-section-label{font-size:13px;color:#6b7280;font-weight:600;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center}
-.fav-manage-btn{font-size:12px;color:#1D4ED8;background:none;border:none;cursor:pointer;padding:4px 8px;font-weight:600}
-.fav-manage-btn:active{background:#EFF6FF;border-radius:4px}
-.fav-buttons{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
-.fav-chip{min-height:44px;padding:10px 6px;font-size:14px;font-weight:600;border:1.5px solid #d4d4d4;border-radius:8px;background:#fff;color:#374151;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.fav-chip:active{background:#f3f4f6;transform:scale(0.97)}
-.fav-empty{font-size:12px;color:#9ca3af;text-align:center;padding:8px;font-style:italic}
+/* v3.15.5: 検索ガイド廃止 - placeholder で代替 */
+/* v3.17.0 Phase 7.1.C revised: お気に入りUI P1非表示化 (CSS は残置だが #fav-section は HTML から削除) */
 
-/* お気に入り管理モーダル */
-.fav-mgr-list{max-height:200px;overflow-y:auto;border:1px solid #e5e5e5;border-radius:8px;margin-bottom:12px}
-.fav-mgr-row{display:flex;align-items:center;padding:8px;border-bottom:1px solid #f3f4f6;gap:6px}
-.fav-mgr-row:last-child{border-bottom:none}
-.fav-mgr-row .label{flex:1;font-size:15px;color:#1f2937}
-.fav-mgr-del{min-width:40px;min-height:36px;padding:4px 8px;font-size:12px;color:#b91c1c;background:#fef2f2;border:1px solid #fecaca;border-radius:6px;cursor:pointer}
-.fav-form-row{margin-bottom:10px}
-.fav-form-label{font-size:13px;color:#666;font-weight:600;margin-bottom:4px}
-.fav-form-input{width:100%;padding:10px;font-size:15px;border:1.5px solid #d4d4d4;border-radius:6px}
-.fav-note{font-size:11px;color:#9ca3af;margin-top:8px}
+/* v3.17.0 Phase 7.1.C revised: よく使うもの (履歴自動集計) */
+.frequent-section{padding:8px 12px 4px;background:#fff}
+.frequent-section-label{font-size:13px;color:#374151;font-weight:600;margin-bottom:6px}
+.frequent-buttons{display:grid;grid-template-columns:repeat(2,1fr);gap:6px}
+.frequent-chip{min-height:48px;padding:8px 10px;font-size:13px;font-weight:600;border:1.5px solid #d4d4d4;border-radius:8px;background:#fff;color:#374151;cursor:pointer;text-align:left;display:flex;flex-direction:column;justify-content:center;overflow:hidden}
+.frequent-chip:active{background:#f3f4f6;transform:scale(0.97)}
+.frequent-chip .name{font-size:14px;font-weight:700;color:#1f2937;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.frequent-chip .meta{font-size:11px;color:#92400e;margin-top:2px}
+.frequent-empty{font-size:12px;color:#9ca3af;text-align:center;padding:6px;font-style:italic}
+
+/* よく使うもの確認モーダル */
+.freq-confirm-info{padding:12px;background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;margin-bottom:12px}
+.freq-confirm-name{font-size:17px;font-weight:bold;color:#1e3a8a}
+.freq-confirm-meta{font-size:14px;color:#1e40af;margin-top:4px}
+.freq-confirm-btn{width:100%;padding:14px;min-height:48px;font-size:16px;font-weight:bold;border:none;border-radius:8px;cursor:pointer;margin-bottom:6px}
+.freq-btn-record{background:#16a34a;color:#fff}
+.freq-btn-amount{background:#3b82f6;color:#fff}
+.freq-btn-search{background:#fef3c7;color:#78350f;border:1px solid #fcd34d}
+.freq-btn-cancel{background:#fff;color:#555;border:1px solid #d1d5db}
 
 /* v3.15.4 Phase 7.1.B 追加: 当日食事一覧 */
 .today-meals{margin:12px 16px;padding:12px;background:#fff;border:1px solid #e5e5e5;border-radius:10px}
@@ -126,26 +133,23 @@ body{padding-bottom:140px}
 </style>
 </head>
 <body>
+<!-- v3.17.0 Phase 7.1.C revised: ヘッダーにチップ群をコンパクト統合 -->
 <div class="header">
   <div class="header-title">🐻 食事を記録</div>
-</div>
-
-<!-- v3.15.0 Phase 7.1.A: 食事区分切替 5チップ -->
-<div class="meal-type-bar" id="meal-type-bar">
-  <button class="mt-chip" data-mt="breakfast">朝</button>
-  <button class="mt-chip" data-mt="lunch">昼</button>
-  <button class="mt-chip" data-mt="dinner">夕</button>
-  <button class="mt-chip" data-mt="snack">間食</button>
-  <button class="mt-chip" data-mt="midnight">夜食</button>
-</div>
-
-<!-- v3.15.2 Phase 7.1.B: 検索モード切替 4チップ -->
-<div class="mode-label">食べ物の種類</div>
-<div class="mode-switch" id="mode-switch">
-  <button class="mode-chip selected" data-mode="all">すべて</button>
-  <button class="mode-chip" data-mode="home">自炊</button>
-  <button class="mode-chip" data-mode="restaurant">外食</button>
-  <button class="mode-chip" data-mode="convenience">コンビニ</button>
+  <div class="chip-row" id="meal-type-bar">
+    <button class="mt-chip" data-mt="breakfast">朝</button>
+    <button class="mt-chip" data-mt="lunch">昼</button>
+    <button class="mt-chip" data-mt="dinner">夕</button>
+    <button class="mt-chip" data-mt="snack">間食</button>
+    <button class="mt-chip" data-mt="midnight">夜食</button>
+  </div>
+  <div class="chip-row" id="mode-switch">
+    <span class="chip-label">対象</span>
+    <button class="mode-chip selected" data-mode="all">すべて</button>
+    <button class="mode-chip" data-mode="home">自炊</button>
+    <button class="mode-chip" data-mode="restaurant">外食</button>
+    <button class="mode-chip" data-mode="convenience">コンビニ</button>
+  </div>
 </div>
 
 <!-- v3.15.5: タップ起動エリア廃止 / 検索ガイド廃止 (くまさん指示) -->
@@ -154,14 +158,11 @@ body{padding-bottom:140px}
   <div class="hint">2文字以上で候補が出ます（検索キーで閉じる）</div>
 </div>
 
-<!-- v3.16.0 Phase 7.1.C: お気に入り検索ボタン -->
-<div class="fav-section" id="fav-section">
-  <div class="fav-section-label">
-    <span>★ お気に入り</span>
-    <button class="fav-manage-btn" id="fav-manage-open">管理</button>
-  </div>
-  <div class="fav-buttons" id="fav-buttons">
-    <div class="fav-empty">お気に入りはまだありません。「管理」から追加できます</div>
+<!-- v3.17.0 Phase 7.1.C revised: よく使うもの (履歴自動集計) — お気に入りUIは非表示化 -->
+<div class="frequent-section" id="frequent-section">
+  <div class="frequent-section-label">⭐ よく使うもの</div>
+  <div class="frequent-buttons" id="frequent-buttons">
+    <div class="frequent-empty">記録が増えると、ここによく使うものが自動で表示されます</div>
   </div>
 </div>
 
@@ -186,25 +187,20 @@ body{padding-bottom:140px}
   </div>
 </div>
 
-<!-- v3.16.0 Phase 7.1.C: お気に入り管理モーダル -->
-<div id="fav-mgr-modal" class="modal hidden">
+<!-- v3.17.0 Phase 7.1.C revised: お気に入り管理モーダル廃止 (コードは GAS 側で残置) -->
+
+<!-- v3.17.0 Phase 7.1.C revised: よく使うもの 確認モーダル -->
+<div id="frequent-confirm-modal" class="modal hidden">
   <div class="modal-card">
-    <div class="modal-title">★ お気に入り管理 <span id="fav-mgr-count" style="font-size:13px;color:#6b7280;font-weight:normal"></span></div>
-    <div id="fav-mgr-list" class="fav-mgr-list"></div>
-    <div style="border-top:1px solid #e5e5e5;padding-top:12px;margin-top:8px">
-      <div style="font-size:14px;font-weight:600;color:#374151;margin-bottom:8px">新しいお気に入りを追加</div>
-      <div class="fav-form-row">
-        <div class="fav-form-label">表示名（最大20文字）</div>
-        <input type="text" id="fav-input-label" class="fav-form-input" placeholder="例：すき家" maxlength="20">
-      </div>
-      <div class="fav-form-row">
-        <div class="fav-form-label">検索語（最大30文字）</div>
-        <input type="text" id="fav-input-search" class="fav-form-input" placeholder="例：すき家" maxlength="30">
-      </div>
-      <div class="fav-note">※ 表示名と検索語を同じにする場合は、表示名だけ入れてください</div>
+    <div class="modal-title">この内容で記録しますか？</div>
+    <div class="freq-confirm-info">
+      <div class="freq-confirm-name" id="freq-confirm-name"></div>
+      <div class="freq-confirm-meta" id="freq-confirm-meta"></div>
     </div>
-    <button id="fav-add-confirm" class="manual-confirm">追加する</button>
-    <button id="fav-mgr-close" class="modal-close">閉じる</button>
+    <button id="freq-btn-record" class="freq-confirm-btn freq-btn-record">記録する</button>
+    <button id="freq-btn-amount" class="freq-confirm-btn freq-btn-amount">量を変える</button>
+    <button id="freq-btn-search" class="freq-confirm-btn freq-btn-search">検索欄に入れる</button>
+    <button id="freq-btn-cancel" class="freq-confirm-btn freq-btn-cancel">やめる</button>
   </div>
 </div>
 
@@ -252,13 +248,16 @@ body{padding-bottom:140px}
 <script>
 // ==================================================================
 // サンロくん食事入力 SPA (yakusokuai.jp/meal_input/)
-// v3.16.0 / Phase 7.1.C: お気に入り検索ボタン / 2026-05-20
-// - お気に入り検索ボタン 最大6個 (User_Favorite_Food_Searches シート)
-//   - 押すと検索欄に searchText + 半角スペース を挿入
-//   - 2文字以上なら即検索
-//   - 管理モーダルで追加・削除 (検索語プリセット型)
-//   - selectedBrand状態なし、多段階UIなし、公式ロゴ/カラー使わない
-// - 既存機能維持: 検索モード切替 / 当日一覧 / 修正削除 / 正規化エンジン
+// v3.17.0 / Phase 7.1.C revised: 履歴自動表示 + ヘッダーコンパクト化 / 2026-05-20
+// - 手動お気に入りUI 廃止 (#fav-section / #fav-mgr-modal 削除)
+// - User_Favorite_Food_Searches コードは GAS 側に残置 (P2 で固定機能として再利用)
+// - 「よく使うもの」を履歴上位6件で自動表示 (#frequent-section)
+//   - 押下で確認モーダル → [記録する/量を変える/検索欄に入れる/やめる]
+//   - 同じ料理でもサイズ違いは別候補
+// - 食事区分5チップ + 検索モード4チップ をヘッダー .header 内にコンパクト配置
+//   - mt-chip / mode-chip を pill 形状 (border-radius:999px) min-height:34px
+//   - 縦幅 削減で当日食事一覧の表示スペース確保
+// - 既存機能維持: 当日一覧 / 修正削除 / 正規化エンジン / 検索モード
 // ==================================================================
 window.__APP__ = {
   liffId: '2009608282-1Fi3wC1S',
@@ -308,13 +307,15 @@ function setSelectedMealType(mt) {
   });
 }
 
-// 食事区分 chip クリック (v3.15.0 新規)
+// 食事区分 chip クリック (v3.15.0 / v3.17.0 で frequent 再ロード追加)
 Array.prototype.forEach.call(document.querySelectorAll('.mt-chip'), function(btn) {
   btn.addEventListener('click', function() {
     var mt = this.getAttribute('data-mt');
     APP.mealType = mt;
     setHeader('🐻 ' + MEAL_LABELS[mt] + 'を記録');
     setSelectedMealType(mt);
+    // v3.17.0: 区分切替時によく使うものを再ロード (同じ区分を優先表示)
+    if (state.ready) loadFrequent();
   });
 });
 
@@ -599,170 +600,142 @@ function showFatalError(msg) {
 function onReady() {
   var box = $("results");
   if (box) box.innerHTML = "";
-  // v3.15.5: タップエリア廃止 (検索欄に直接focus) / 検索ガイド廃止
-  // 当日食事一覧のみ取得
   loadTodayMeals();
   showTodayMeals();
-  // v3.16.0 Phase 7.1.C: お気に入り読込
-  loadFavorites();
+  // v3.17.0 Phase 7.1.C revised: お気に入りロード廃止 → よく使うものロード
+  loadFrequent();
 }
 
 // ==================================================================
-// v3.16.0 Phase 7.1.C: お気に入り検索ボタン
+// v3.17.0 Phase 7.1.C revised: よく使うもの (履歴自動集計)
+// お気に入り (v3.16.0) の手動登録UI/JS は廃止
+// User_Favorite_Food_Searches のコードは GAS 側に残置 (P2 で固定機能として再利用予定)
 // ==================================================================
-state.favorites = [];
+state.frequent = [];
 
-function loadFavorites() {
+function loadFrequent() {
   if (!state.ready || !APP.qsBase) return;
-  fetch(APP.deployUrl + "?page=favorites_list&" + APP.qsBase).then(function(r){return r.json();}).then(function(data) {
-    if (!data || !data.ok) {
-      state.favorites = [];
-      renderFavorites();
-      return;
-    }
-    state.favorites = data.items || [];
-    renderFavorites();
-  }).catch(function() {
-    state.favorites = [];
-    renderFavorites();
-  });
+  var mt = APP.mealType || '';
+  fetch(APP.deployUrl + "?page=meal_frequent_api&" + APP.qsBase + "&mealType=" + encodeURIComponent(mt) + "&days=60")
+    .then(function(r){return r.json();}).then(function(data) {
+      if (!data || !data.ok) {
+        state.frequent = [];
+        renderFrequent();
+        return;
+      }
+      state.frequent = data.items || [];
+      renderFrequent();
+    }).catch(function() {
+      state.frequent = [];
+      renderFrequent();
+    });
 }
 
-function renderFavorites() {
-  var box = $("fav-buttons");
+function renderFrequent() {
+  var box = $("frequent-buttons");
   if (!box) return;
-  if (!state.favorites || state.favorites.length === 0) {
-    box.innerHTML = '<div class="fav-empty">お気に入りはまだありません。「管理」から追加できます</div>';
+  if (!state.frequent || state.frequent.length === 0) {
+    box.innerHTML = '<div class="frequent-empty">記録が増えると、ここによく使うものが自動で表示されます</div>';
     return;
   }
   box.innerHTML = '';
-  state.favorites.slice(0, 6).forEach(function(fav) {
+  state.frequent.slice(0, 6).forEach(function(it) {
     var btn = document.createElement('button');
-    btn.className = 'fav-chip';
-    btn.textContent = fav.label;
-    btn.title = fav.searchText;  // ホバー時にフル文字列
+    btn.className = 'frequent-chip';
+    btn.title = it.displayName;
+    var meta = (it.kcal || 0) + ' kcal';
+    if (it.count >= 2) meta += ' ・ ' + it.count + '回';
+    btn.innerHTML = '<div class="name">' + esc(it.displayName) + '</div>' +
+                    '<div class="meta">' + esc(meta) + '</div>';
     btn.addEventListener('click', function() {
-      // 検索欄に searchText + 半角スペース を挿入
-      var q = $("q");
-      q.value = fav.searchText + ' ';
-      q.focus();
-      // 2文字以上なら即検索（trim後）
-      var v = q.value.trim();
-      if (v.length >= 2) {
-        clearTimeout(state.debounceTimer);
-        hideTodayMeals();
-        showSearching();
-        fetchCandidates(v);
-      }
+      openFrequentConfirm(it);
     });
     box.appendChild(btn);
   });
 }
 
-// 管理モーダルを開く
-$("fav-manage-open").addEventListener('click', function() {
-  renderFavManagerList();
-  $("fav-input-label").value = '';
-  $("fav-input-search").value = '';
-  $("fav-mgr-modal").classList.remove("hidden");
-});
-$("fav-mgr-close").addEventListener('click', function() {
-  $("fav-mgr-modal").classList.add("hidden");
-});
-
-function renderFavManagerList() {
-  var listBox = $("fav-mgr-list");
-  var countEl = $("fav-mgr-count");
-  if (!listBox) return;
-  var count = (state.favorites || []).length;
-  if (countEl) countEl.textContent = '(' + count + ' / 6)';
-  if (count === 0) {
-    listBox.innerHTML = '<div class="fav-empty" style="padding:16px">登録されたお気に入りはまだありません</div>';
-    return;
-  }
-  listBox.innerHTML = '';
-  state.favorites.forEach(function(fav) {
-    var row = document.createElement('div');
-    row.className = 'fav-mgr-row';
-    row.innerHTML = '<div class="label">' + esc(fav.label) +
-                    '<div style="font-size:11px;color:#9ca3af">検索:' + esc(fav.searchText) + '</div></div>' +
-                    '<button class="fav-mgr-del" data-fid="' + esc(fav.favoriteId) + '">削除</button>';
-    listBox.appendChild(row);
-  });
-  Array.prototype.forEach.call(listBox.querySelectorAll('.fav-mgr-del'), function(b) {
-    b.addEventListener('click', function() {
-      var fid = this.getAttribute('data-fid');
-      deleteFavorite(fid);
-    });
-  });
+// 「よく使うもの」確認モーダル
+var pendingFrequent = null;
+function openFrequentConfirm(item) {
+  if (!item) return;
+  pendingFrequent = item;
+  $("freq-confirm-name").textContent = item.displayName;
+  $("freq-confirm-meta").textContent = (item.kcal || 0) + ' kcal' +
+    (item.brandName ? ' ・ ' + item.brandName : '') +
+    (item.sizeName ? ' ・ ' + item.sizeName : '');
+  $("frequent-confirm-modal").classList.remove("hidden");
 }
-
-// 追加
-$("fav-add-confirm").addEventListener('click', function() {
-  var label = $("fav-input-label").value.trim();
-  var searchText = $("fav-input-search").value.trim();
-  if (!label) { alert("表示名を入力してください"); return; }
-  if (label.length > 20) { alert("表示名は20文字以内で入力してください"); return; }
-  // 検索語が空なら表示名と同じに
-  if (!searchText) searchText = label;
-  if (searchText.length > 30) { alert("検索語は30文字以内で入力してください"); return; }
-  // 6個制限の事前チェック
-  if ((state.favorites || []).length >= 6) {
-    alert("お気に入りは最大6個までです。不要なものを削除してください。");
+$("freq-btn-cancel").addEventListener('click', function() {
+  pendingFrequent = null;
+  $("frequent-confirm-modal").classList.add("hidden");
+});
+$("freq-btn-record").addEventListener('click', function() {
+  if (!pendingFrequent) return;
+  var it = pendingFrequent;
+  pendingFrequent = null;
+  $("frequent-confirm-modal").classList.add("hidden");
+  recordFromFrequent(it, 1);
+});
+$("freq-btn-amount").addEventListener('click', function() {
+  if (!pendingFrequent) return;
+  // 既存の amount モーダルを開いて記録
+  var it = pendingFrequent;
+  pendingFrequent = null;
+  $("frequent-confirm-modal").classList.add("hidden");
+  // 簡易: prompt で倍率入力 (P1 簡易、P2 で量モーダル統合検討)
+  var raw = prompt('量の倍率を入力 (0.5/1/1.5/2 など)\n基準: ' + it.displayName + ' = ' + it.kcal + 'kcal', '1');
+  if (raw == null) return;  // キャンセル
+  var n = Number(String(raw).trim().replace(/[０-９]/g, function(ch){return String.fromCharCode(ch.charCodeAt(0)-0xFEE0);}));
+  if (isNaN(n) || n < 0.1 || n > 10) {
+    alert("0.1 〜 10 の範囲で入力してください");
     return;
   }
-  showToast("➕ 追加中...", "info");
-  fetch(APP.deployUrl + "?page=favorites_add", {
+  recordFromFrequent(it, n);
+});
+$("freq-btn-search").addEventListener('click', function() {
+  if (!pendingFrequent) return;
+  var it = pendingFrequent;
+  pendingFrequent = null;
+  $("frequent-confirm-modal").classList.add("hidden");
+  // 検索欄に入れる
+  var q = $("q");
+  var searchTerm = it.brandName ? (it.brandName + ' ' + (it.menuName || it.displayName)) : (it.menuName || it.displayName);
+  q.value = searchTerm + ' ';
+  q.focus();
+  var v = q.value.trim();
+  if (v.length >= 2) {
+    clearTimeout(state.debounceTimer);
+    hideTodayMeals();
+    showSearching();
+    fetchCandidates(v);
+  }
+});
+
+function recordFromFrequent(item, multiplier) {
+  showToast("📡 記録中...", "info");
+  fetch(APP.deployUrl + "?page=meal_record_from_frequent", {
     method: "POST",
     headers: { "Content-Type": "text/plain;charset=UTF-8" },
-    body: JSON.stringify({ userId: APP.userId, sig: APP.sig, label: label, searchText: searchText }),
+    body: JSON.stringify({
+      userId: APP.userId, sig: APP.sig,
+      key: item.key,
+      mealType: APP.mealType || 'lunch',
+      amount: multiplier || 1,
+    }),
     redirect: "follow",
   }).then(function(r){return r.json();}).then(function(data) {
     if (data && data.ok) {
-      showToast("✅ お気に入りに追加しました", "success");
-      $("fav-input-label").value = '';
-      $("fav-input-search").value = '';
-      loadFavoritesAndRefresh();
+      showToast("✅ 記録しました " + (data.label || '') + ' ' + (data.kcal || '?') + 'kcal', "success");
+      // 当日一覧 + よく使うもの を再取得
+      loadTodayMeals();
+      showTodayMeals();
+      loadFrequent();
+      // recorded バーにも追加
+      addToRecorded({ label: data.label, kcal: data.kcal, recordId: data.recordId });
     } else {
-      var msg = (data && data.error) || 'unknown';
-      if (msg === 'too_many') msg = '最大6個までです';
-      else if (msg === 'label_too_long') msg = '表示名が長すぎます (20文字以内)';
-      else if (msg === 'search_text_too_long') msg = '検索語が長すぎます (30文字以内)';
-      else if (msg === 'empty_label') msg = '表示名を入力してください';
-      else if (msg === 'empty_search_text') msg = '検索語を入力してください';
-      showToast("⚠ 追加失敗: " + msg, "error");
+      showToast("⚠ 記録失敗: " + (data && data.error ? data.error : 'unknown'), "error");
     }
   }).catch(function() { showToast("⚠ 通信失敗", "error"); });
-});
-
-// 削除
-function deleteFavorite(favoriteId) {
-  if (!favoriteId) return;
-  if (!confirm("このお気に入りを削除しますか？")) return;
-  showToast("🗑 削除中...", "info");
-  fetch(APP.deployUrl + "?page=favorites_delete", {
-    method: "POST",
-    headers: { "Content-Type": "text/plain;charset=UTF-8" },
-    body: JSON.stringify({ userId: APP.userId, sig: APP.sig, favoriteId: favoriteId }),
-    redirect: "follow",
-  }).then(function(r){return r.json();}).then(function(data) {
-    if (data && data.ok) {
-      showToast("✅ 削除しました", "success");
-      loadFavoritesAndRefresh();
-    } else {
-      showToast("⚠ 削除失敗: " + (data && data.error ? data.error : 'unknown'), "error");
-    }
-  }).catch(function() { showToast("⚠ 通信失敗", "error"); });
-}
-
-function loadFavoritesAndRefresh() {
-  loadFavorites();
-  // 管理モーダルが開いていれば管理リストも再描画
-  setTimeout(function() {
-    if (!$("fav-mgr-modal").classList.contains("hidden")) {
-      renderFavManagerList();
-    }
-  }, 300);
 }
 
 // v3.15.0 Phase 7.1.A: 検索閾値 2文字以上 + debounce 350ms
