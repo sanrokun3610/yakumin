@@ -45,10 +45,7 @@ body{padding-bottom:140px}
 .search-box input:focus{border-color:#d97706;background:#fff;box-shadow:0 0 0 4px rgba(245,158,11,0.2)}
 .hint{font-size:13px;color:#92400e;margin-top:6px;padding-left:4px;font-weight:500}
 
-/* カテゴリ（v3.15.0: フォント拡大 / Phase 7.1.B でモード切替に置換予定） */
-.categories{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:12px 16px;background:#fafaf9;border-bottom:1px solid #eee}
-.cat{padding:12px 6px;min-height:48px;font-size:15px;font-weight:600;border:1px solid #e5e5e5;border-radius:8px;background:#fff;color:#444;cursor:pointer}
-.cat:active{background:#fef3c7}
+/* v3.15.3 Phase 7.1.B 修正: 旧カテゴリボタン6つ廃止 (モード切替+お気に入り+自炊メニューへ寄せる) */
 
 /* 候補リスト（v3.15.0: 大幅拡大） */
 .results{padding:8px 16px}
@@ -123,14 +120,8 @@ body{padding-bottom:140px}
   <div class="hint">2文字以上で候補が出ます（検索キーで閉じる）</div>
 </div>
 
-<div id="categories" class="categories">
-  <button class="cat" data-q="ごはん">🍚 ごはん</button>
-  <button class="cat" data-q="うどん">🍜 麺類</button>
-  <button class="cat" data-q="すき家">🍱 外食</button>
-  <button class="cat" data-q="食パン">🍞 パン</button>
-  <button class="cat" data-q="まぐろ">🥩 肉魚</button>
-  <button class="cat" data-q="サラダ">🥗 野菜</button>
-</div>
+<!-- v3.15.3 Phase 7.1.B 修正: 旧カテゴリボタン6つ廃止
+     お気に入り検索ボタン (Phase 7.1.C) / 自炊メニュー (Phase 7.1.D) で置換予定 -->
 
 <div id="results" class="results"></div>
 
@@ -362,16 +353,7 @@ $("q").addEventListener("keydown", function(e) {
   }
 });
 
-// カテゴリボタン (Phase 7.1.B でモード切替に置換予定)
-Array.prototype.forEach.call(document.querySelectorAll(".cat"), function(btn) {
-  btn.addEventListener("click", function() {
-    if (!state.ready) return;
-    var q = this.getAttribute("data-q");
-    $("q").value = q;
-    showSearching();
-    fetchCandidates(q);
-  });
-});
+// v3.15.3: 旧カテゴリボタン廃止 (お気に入り検索ボタンは Phase 7.1.C で追加)
 
 // 候補取得 API (v3.15.2 Phase 7.1.B: mode パラメータ追加)
 function fetchCandidates(q) {
