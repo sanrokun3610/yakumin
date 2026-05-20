@@ -19,11 +19,7 @@ body{padding-bottom:140px}
 /* 戻るボタン (左上) */
 .back-btn{background:rgba(255,255,255,0.6);border:1px solid #fcd34d;color:#78350f;font-size:14px;font-weight:600;padding:4px 10px;border-radius:6px;cursor:pointer;min-height:32px}
 .back-btn:active{transform:scale(0.96);background:#fff}
-/* v3.17.2 修正: キーボード表示時はヘッダー完全に display:none (iOS WKWebView で確実に効くように) */
-body.kb-open .header{display:none}
-/* キーボード表示中の戻る用フローティングボタン (検索欄左上) */
-.float-back-btn{position:fixed;top:8px;left:8px;z-index:11;background:rgba(255,255,255,0.95);border:1px solid #d4d4d4;color:#374151;font-size:13px;font-weight:600;padding:4px 10px;border-radius:6px;cursor:pointer;min-height:32px;display:none;box-shadow:0 2px 6px rgba(0,0,0,0.1)}
-body.kb-open .float-back-btn{display:block}
+/* v3.17.3 くまさんFB: 自動収納廃止 (ヘッダーは常時表示、上スワイプで自然に隠れる) */
 
 /* コンパクトチップ行 */
 .chip-row{display:flex;gap:5px;flex-wrap:wrap;margin-top:4px}
@@ -48,9 +44,9 @@ body.kb-open .float-back-btn{display:block}
 /* v3.17.0 Phase 7.1.C revised: お気に入りUI P1非表示化 (CSS は残置だが #fav-section は HTML から削除) */
 
 /* v3.17.0 Phase 7.1.C revised: よく使うもの (履歴自動集計) */
-/* v3.17.1 くまさん4点FB: 通常時は非表示、キーボード表示時のみ表示 */
-.frequent-section{padding:8px 12px 4px;background:#fff;display:none}
-body.kb-open .frequent-section{display:block}
+/* v3.17.3 くまさんFB: 検索欄が空のときだけ表示 (.q-has-text で隠す) */
+.frequent-section{padding:8px 12px 4px;background:#fff}
+body.q-has-text .frequent-section{display:none}
 .frequent-section-label{font-size:13px;color:#374151;font-weight:600;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center}
 .frequent-section-hint{font-size:10px;color:#9ca3af;font-weight:normal}
 .frequent-buttons{display:grid;grid-template-columns:repeat(2,1fr);gap:6px}
@@ -94,6 +90,12 @@ body.kb-open .frequent-section{display:block}
 
 /* 検索欄 (v3.17.1 くまさん4点FB: 検索欄のみ画面上部に固定) */
 .search-box{padding:14px 16px 10px;background:#fff;border-bottom:1px solid #eee;position:sticky;top:0;z-index:9}
+/* v3.17.3 くまさんFB: 入力欄右端の × クリアボタン */
+.search-input-wrap{position:relative}
+.search-input-wrap input{padding-right:42px !important}
+.clear-input-btn{position:absolute;right:8px;top:50%;transform:translateY(-50%);width:30px;height:30px;border:none;border-radius:50%;background:#d4d4d4;color:#fff;font-size:16px;font-weight:bold;cursor:pointer;display:none;line-height:1;padding:0}
+.clear-input-btn:active{background:#9ca3af;transform:translateY(-50%) scale(0.92)}
+body.q-has-text .clear-input-btn{display:flex;align-items:center;justify-content:center}
 .search-box input.hidden-init{display:none}
 .search-box input{width:100%;padding:14px 16px;font-size:17px;border:3px solid #f59e0b;border-radius:12px;background:#fffbeb;outline:none;box-shadow:0 2px 6px rgba(245,158,11,0.15);transition:all .15s;font-weight:500;min-height:50px}
 .search-box input::placeholder{color:#b45309;opacity:.7}
@@ -149,8 +151,7 @@ body.kb-open .frequent-section{display:block}
 </style>
 </head>
 <body>
-<!-- v3.17.2 修正: キーボード表示中も戻れるよう、検索欄上にフローティング戻るボタン -->
-<button class="float-back-btn" id="float-back-btn">← 戻る</button>
+<!-- v3.17.3 くまさんFB: フローティング戻るボタン廃止 → ヘッダー戻るボタンに統一 -->
 
 <!-- v3.17.1 くまさん4点FB: ヘッダー左上に「← LINEに戻る」ボタン -->
 <div class="header" id="main-header">
@@ -174,9 +175,12 @@ body.kb-open .frequent-section{display:block}
   </div>
 </div>
 
-<!-- v3.15.5: タップ起動エリア廃止 / 検索ガイド廃止 (くまさん指示) -->
+<!-- v3.17.3 くまさんFB: 入力欄右端に × クリアボタン -->
 <div class="search-box">
-  <input type="text" id="q" placeholder="例：納豆ごはん / すき家 牛丼 / セブン おにぎり" autocomplete="off" inputmode="text" enterkeyhint="search">
+  <div class="search-input-wrap">
+    <input type="text" id="q" placeholder="例：納豆ごはん / すき家 牛丼 / セブン おにぎり" autocomplete="off" inputmode="text" enterkeyhint="search">
+    <button class="clear-input-btn" id="clear-input-btn" type="button" aria-label="入力をクリア">×</button>
+  </div>
   <div class="hint">2文字以上で候補が出ます（検索キーで閉じる）</div>
 </div>
 
@@ -299,6 +303,12 @@ body.kb-open .frequent-section{display:block}
 <script>
 // ==================================================================
 // サンロくん食事入力 SPA (yakusokuai.jp/meal_input/)
+// v3.17.3 / くまさんFB再修正: 自動収納廃止 + × クリアボタン / 2026-05-20
+// - kb-open 機能 (ヘッダー自動収納) を全廃 → ヘッダーは常時表示
+// - 上スワイプで自然に隠れる (sticky でないので)
+// - よく使うものは検索欄が空のとき表示 (body.q-has-text で隠す)
+// - 入力欄右端に × クリアボタン (文字あるときだけ表示)
+// - ヘッダー左上「← 戻る」が常時見える (LIFF closeWindow)
 // v3.17.2 / くまさんFB2修正: kb-open制御を確実化 / 2026-05-20
 // - body.kb-open .header { display:none } (max-height トランジション廃止)
 // - focus/touchstart/click で kb-open 付与 (iOS focus 不安定対策)
@@ -668,39 +678,34 @@ function onReady() {
   showTodayMeals();
   loadFrequent();
 
-  // v3.17.2 修正: kb-open 制御を改善
-  // - focus / touchstart / click のいずれかで kb-open 付与 (iOS focus 不安定対策)
-  // - 文字があれば blur しても kb-open 維持 (候補表示のため)
-  // - 完全に閉じたい時は フローティング ← 戻るボタン
+  // v3.17.3 くまさんFB: 自動収納廃止
+  // - ヘッダーは常時表示 (ユーザーが上スワイプで隠す)
+  // - よく使うものは検索欄が空のとき表示 (body.q-has-text で隠す)
+  // - 入力欄右端の × クリアボタンで一発全削除
   var q = $("q");
-  function enterKbMode() {
-    document.body.classList.add('kb-open');
-  }
-  function exitKbMode() {
-    document.body.classList.remove('kb-open');
+  function updateQTextState() {
+    var hasText = !!(q && q.value && q.value.length > 0);
+    if (hasText) document.body.classList.add('q-has-text');
+    else          document.body.classList.remove('q-has-text');
   }
   if (q) {
-    q.addEventListener('focus', enterKbMode);
-    q.addEventListener('touchstart', enterKbMode, { passive: true });
-    q.addEventListener('click', enterKbMode);
-    q.addEventListener('blur', function() {
-      // 文字が残っていれば kb-open 維持 (候補・よく使うものを引き続き表示)
-      setTimeout(function() {
-        if (document.activeElement === q) return;          // 再フォーカス済
-        if (q.value && q.value.trim().length > 0) return; // 文字があれば維持
-        exitKbMode();
-      }, 300);
-    });
+    q.addEventListener('input', updateQTextState);
+    updateQTextState();
   }
-  // フローティング ← 戻るボタン (キーボード表示中の終了用)
-  var fbb = $("float-back-btn");
-  if (fbb) {
-    fbb.addEventListener('click', function() {
-      if (q) { q.value = ''; q.blur(); }
-      exitKbMode();
-      renderResults([]);
-      hideSearching();
-      showTodayMeals();
+  // × クリアボタン
+  var clrBtn = $("clear-input-btn");
+  if (clrBtn) {
+    clrBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      if (q) {
+        q.value = '';
+        updateQTextState();
+        q.focus();
+        // 検索結果クリア + 当日一覧復帰
+        renderResults([]);
+        hideSearching();
+        showTodayMeals();
+      }
     });
   }
 }
@@ -935,10 +940,14 @@ function recordFromFrequent(item, multiplier) {
 
 // v3.15.0 Phase 7.1.A: 検索閾値 2文字以上 + debounce 350ms
 // v3.15.4 Phase 7.1.B: 未入力時は当日一覧表示、検索中は隠す
+// v3.17.3 くまさんFB: q-has-text class 制御を統合 (× ボタン表示 + よく使うもの非表示)
 $("q").addEventListener("input", function() {
   if (!state.ready) return;
   clearTimeout(state.debounceTimer);
   var v = this.value.trim();
+  // q-has-text: 文字 (空白以外) があれば付与
+  if (this.value.length > 0) document.body.classList.add('q-has-text');
+  else                       document.body.classList.remove('q-has-text');
   if (v.length === 0) {
     hideSearching();
     renderResults([]);  // 未入力時は何も表示しない
