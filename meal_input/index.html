@@ -7,7 +7,7 @@
 <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>食事入力 v3.17.5 - サンロくん</title>
+<title>食事入力</title>
 <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <style>
 /* v3.15.0 Phase 7.1.A: 文字サイズ 16px 基準、タップ領域 44px 最低、行間 1.6 */
@@ -15,15 +15,14 @@
 html,body{font-family:-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif;background:#f5f5f4;color:#1f2937;font-size:16px;line-height:1.6}
 body{padding-bottom:140px}
 
-/* v3.17.1 くまさん4点FB: ヘッダー非固定化 (上下スワイプで隠れる) / 検索欄のみ固定 */
-.header{background:linear-gradient(135deg,#fef9c3,#fde68a);padding:10px 12px 8px;border-bottom:1px solid #fcd34d}
-/* v3.17.5 くまさんFB: 戻るボタンを一番左、タイトルを右側に分離配置 */
+/* v3.17.6 くまさんFB: 自前ヘッダーを LIFF タイトルバー直下に固定、戻るボタンを最上左に最大化 */
+.header{background:linear-gradient(135deg,#fef9c3,#fde68a);padding:10px 12px 8px;border-bottom:1px solid #fcd34d;position:sticky;top:0;z-index:50}
 .header-title{font-size:17px;font-weight:bold;color:#78350f;margin-bottom:6px;display:flex;align-items:center;justify-content:space-between;gap:8px}
 .header-title #header-title-text{flex:1;text-align:right}
 .header-sub{font-size:12px;color:#92400e;margin-top:1px}
-/* 戻るボタン (左上) */
-.back-btn{background:rgba(255,255,255,0.6);border:1px solid #fcd34d;color:#78350f;font-size:14px;font-weight:600;padding:4px 10px;border-radius:6px;cursor:pointer;min-height:32px}
-.back-btn:active{transform:scale(0.96);background:#fff}
+/* v3.17.6 戻るボタン強化: 大きく目立つ、左端に確実に配置 */
+.back-btn{background:#dc2626;border:none;color:#fff;font-size:15px;font-weight:700;padding:8px 16px;border-radius:8px;cursor:pointer;min-height:40px;box-shadow:0 2px 6px rgba(220,38,38,0.3);flex-shrink:0}
+.back-btn:active{transform:scale(0.96);background:#b91c1c}
 /* v3.17.3 くまさんFB: 自動収納廃止 (ヘッダーは常時表示、上スワイプで自然に隠れる) */
 
 /* コンパクトチップ行 */
@@ -93,8 +92,8 @@ body.q-has-text .frequent-section{display:none}
 
 /* v3.15.5: タップ起動エリア廃止 (くまさん指示) */
 
-/* 検索欄 (v3.17.1 くまさん4点FB: 検索欄のみ画面上部に固定) */
-.search-box{padding:14px 16px 10px;background:#fff;border-bottom:1px solid #eee;position:sticky;top:0;z-index:9}
+/* 検索欄 (v3.17.6: ヘッダー固定化に合わせて sticky 解除、自然にスクロール) */
+.search-box{padding:14px 16px 10px;background:#fff;border-bottom:1px solid #eee}
 /* v3.17.3 くまさんFB: 入力欄右端の × クリアボタン */
 .search-input-wrap{position:relative}
 .search-input-wrap input{padding-right:42px !important}
@@ -161,7 +160,7 @@ body.q-has-text .clear-input-btn{display:flex;align-items:center;justify-content
 <!-- v3.17.1 くまさん4点FB: ヘッダー左上に「← LINEに戻る」ボタン -->
 <div class="header" id="main-header">
   <div class="header-title">
-    <button class="back-btn" id="header-back-btn">← 戻る</button>
+    <button class="back-btn" id="header-back-btn">← LINEに戻る</button>
     <span id="header-title-text">🐻 食事を記録</span>
   </div>
   <div class="chip-row" id="meal-type-bar">
@@ -308,6 +307,14 @@ body.q-has-text .clear-input-btn{display:flex;align-items:center;justify-content
 <script>
 // ==================================================================
 // サンロくん食事入力 SPA (yakusokuai.jp/meal_input/)
+// v3.17.6 / くまさんFB: 戻るボタン強化 + 自前ヘッダーをLIFFタイトル直下に固定 / 2026-05-20
+// - <title> から バージョン文字列削除 (LIFFタイトルバー表示を最小化)
+// - .header を sticky top:0 z-index:50 で LIFFタイトル真下に固定
+// - .back-btn を赤色 #dc2626 + 大型化 (40px min-height, 15px font-size, padding 8px 16px)
+// - 文言「← LINEに戻る」で意図を明確化
+// - .search-box の sticky は解除 (header と二重固定を避ける)
+// 注: LIFFタイトルバーの「食事入力」「×」は LINE 標準UI で制御不可
+//     自前ヘッダーをタイトル真下に固定することで「画面の最上部に近い左」を実現
 // v3.17.5 / くまさんFB: 戻るボタンをヘッダー一番左に配置 / 2026-05-20
 // - .header-title を justify-content:space-between に変更
 // - 戻るボタンが左端、タイトル (🐻 食事を記録) が右寄せに
