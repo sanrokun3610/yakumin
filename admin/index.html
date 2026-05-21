@@ -123,16 +123,33 @@ iframe{width:100%;height:calc(100vh + 60px);border:none;display:block;}
   },3000);
 
   // 子 (iframe = GAS admin) から postMessage を受信
+  // Phase Admin-UX-Next-2: navOverlay の表示・非表示は タイムアウト保険つきで管理。
+  //   3層 iframe 構造により、 サーバー処理が異常終了したり、 新 admin HTML の起動 script が
+  //   走らなかったりすると admin_loading_end が来ない可能性がある。
+  //   → 表示開始から 30 秒経過したら強制的に非表示にして「永久固まり」を防ぐ。
+  var navOverlayTimer=null;
+  function hideNavOverlay(){
+    if(navOverlay) navOverlay.style.display='none';
+    if(navOverlayTimer){ clearTimeout(navOverlayTimer); navOverlayTimer=null; }
+  }
+  function showNavOverlay(msg){
+    if(!navOverlay) return;
+    if(navMsg && msg) navMsg.textContent=String(msg).substring(0,100);
+    navOverlay.style.display='flex';
+    if(navOverlayTimer) clearTimeout(navOverlayTimer);
+    navOverlayTimer=setTimeout(function(){
+      // 30秒経っても admin_loading_end が来ない → 強制 hide + 警告
+      if(navMsg) navMsg.textContent='処理が長引いています。 ↻ 最新版 ボタンで再読込してください。';
+      setTimeout(hideNavOverlay,3000);
+    },30000);
+  }
   window.addEventListener('message',function(e){
     if(!e || !e.data) return;
     var data=e.data;
     if(data.type==='admin_loading_start'){
-      if(navOverlay){
-        if(navMsg && data.msg) navMsg.textContent=String(data.msg).substring(0,100);
-        navOverlay.style.display='flex';
-      }
+      showNavOverlay(data.msg);
     }else if(data.type==='admin_loading_end'){
-      if(navOverlay) navOverlay.style.display='none';
+      hideNavOverlay();
     }else if(data.type==='admin_close_print_view'){
       // 印刷ビューの「閉じる」ボタンから通知 → このタブを閉じる
       try{ window.close(); }catch(_){}
