@@ -1,5 +1,6 @@
 // ==================================================================
-// サンロくんのほけんしつ 共通 LIFF 認証 + UI (v3.17.13 / Phase 7)
+// サンロくんのほけんしつ 共通 LIFF 認証 + UI (v3.17.14 / Phase 7)
+// v3.17.14: apiGet/apiPost で sig 期限切れ自動検知 → キャッシュクリア + 自動リロード
 // v3.17.10: sig キャッシュで 2回目以降 認証スキップ (体感速度大幅改善)
 // v3.17.12: 認証中表示を控えめに (背景透明 + 小灰色 「読込中…」)
 // v3.17.13: doFullAuth を init 外に出して hoisting 問題を回避 (体重/記録/血圧/設定の認証失敗修正)
@@ -194,6 +195,20 @@ window.SanroBoot = (function() {
     try { window.close(); } catch (e) {}
   }
 
+  // v3.17.14: sig 期限切れ自動リカバリ
+  function __checkAuthError(data) {
+    if (!data || !data.error) return false;
+    if (data.error === 'unauthorized' || data.error === 'signature_invalid' || data.error === 'no_user_id') {
+      try { localStorage.removeItem(__sigCacheKey()); } catch (e) {}
+      toast('セッション期限切れ。再読み込みします...', 'info');
+      setTimeout(function() {
+        location.replace(location.pathname + '?_t=' + Date.now());
+      }, 800);
+      return true;
+    }
+    return false;
+  }
+
   function apiGet(page, params) {
     var qs = 'userId=' + encodeURIComponent(APP.userId) + '&sig=' + encodeURIComponent(APP.sig);
     if (params) {
@@ -201,14 +216,15 @@ window.SanroBoot = (function() {
         qs += '&' + encodeURIComponent(k) + '=' + encodeURIComponent(params[k]);
       });
     }
-    return fetchJson(APP.deployUrl + '?page=' + encodeURIComponent(page) + '&' + qs);
+    return fetchJson(APP.deployUrl + '?page=' + encodeURIComponent(page) + '&' + qs)
+      .then(function(d) { __checkAuthError(d); return d; });
   }
   function apiPost(page, body) {
     var bd = Object.assign({ userId: APP.userId, sig: APP.sig }, body || {});
     return fetchJson(APP.deployUrl + '?page=' + encodeURIComponent(page), {
       method: 'POST',
       body: JSON.stringify(bd),
-    });
+    }).then(function(d) { __checkAuthError(d); return d; });
   }
 
   return { init: init, $: $, esc: esc, toast: toast, close: close, apiGet: apiGet, apiPost: apiPost, getApp: function(){ return APP; } };

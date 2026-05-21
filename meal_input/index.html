@@ -10,9 +10,9 @@
 <title>食事入力</title>
 <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <script>
-// v3.17.12: LIFF 内ブラウザ強キャッシュ対策 - バージョン違いで強制リロード
+// v3.17.14: LIFF 内ブラウザ強キャッシュ対策 - バージョン違いで強制リロード
 (function() {
-  var CURRENT_VERSION = 'v3.17.12';
+  var CURRENT_VERSION = 'v3.17.14';
   try {
     var stored = localStorage.getItem('meal_input_version');
     if (stored && stored !== CURRENT_VERSION) {
@@ -324,6 +324,10 @@ body.q-has-text .clear-input-btn{display:flex;align-items:center;justify-content
 <script>
 // ==================================================================
 // サンロくん食事入力 SPA (yakusokuai.jp/meal_input/)
+// v3.17.14 / くまさんFB: 古い sig キャッシュ自動リカバリ / 2026-05-20
+// - API 失敗時 (unauthorized/signature_invalid) を検知
+// - localStorage キャッシュをクリア
+// - cache buster クエリ付きで自動リロード → 次回はフル再認証
 // v3.17.12 / くまさんFB: デバッグ表示削除 + 認証中表示を控えめに / 2026-05-20
 // v3.17.10 / くまさんFB: 認証 sig キャッシュ (体感速度大幅改善) / 2026-05-20
 // - localStorage に { userId, sig, displayName, expireAt 12h } を保存
@@ -482,6 +486,11 @@ Array.prototype.forEach.call(document.querySelectorAll('.mode-chip'), function(b
 function loadTodayMeals() {
   if (!state.ready || !APP.qsBase) return;
   fetch(APP.deployUrl + "?page=meal_input_today&" + APP.qsBase).then(function(r){return r.json();}).then(function(data) {
+    // v3.17.14: 認証エラー検知 → キャッシュクリア+リロード
+    if (data && data.error && typeof isAuthError === 'function' && isAuthError(data.error)) {
+      handleSigInvalidated();
+      return;
+    }
     if (!data || !data.ok) {
       hideTodayMeals();
       return;
@@ -852,6 +861,11 @@ function loadFrequent() {
   var mt = APP.mealType || '';
   fetch(APP.deployUrl + "?page=meal_frequent_api&" + APP.qsBase + "&mealType=" + encodeURIComponent(mt) + "&days=60")
     .then(function(r){return r.json();}).then(function(data) {
+      // v3.17.14: 認証エラー検知 → キャッシュクリア+リロード
+      if (data && data.error && typeof isAuthError === 'function' && isAuthError(data.error)) {
+        handleSigInvalidated();
+        return;
+      }
       if (!data || !data.ok) {
         state.frequent = [];
         renderFrequent();
@@ -1087,6 +1101,7 @@ $("q").addEventListener("keydown", function(e) {
 // v3.15.3: 旧カテゴリボタン廃止 (お気に入り検索ボタンは Phase 7.1.C で追加)
 
 // 候補取得 API (v3.15.2 Phase 7.1.B: mode パラメータ追加)
+// v3.17.14: sig 期限切れ検知 → キャッシュクリア + 強制リロード
 function fetchCandidates(q) {
   var reqId = ++state.reqCounter;
   var url = APP.deployUrl + "?page=meal_input_api&" + APP.qsBase +
@@ -1095,11 +1110,31 @@ function fetchCandidates(q) {
   fetch(url).then(function(r){return r.json();}).then(function(data) {
     if (reqId !== state.reqCounter) return;
     hideSearching();
+    // v3.17.14: unauthorized なら古いキャッシュが原因 → クリアして再認証
+    if (data && data.error && isAuthError(data.error)) {
+      handleSigInvalidated();
+      return;
+    }
     if (!data || data.error) { renderResults([]); return; }
     renderResults(data.candidates || []);
   }).catch(function() {
     if (reqId === state.reqCounter) { hideSearching(); renderResults([]); }
   });
+}
+
+// v3.17.14: 認証エラー判定 + 自動リカバリ
+function isAuthError(err) {
+  return err === 'unauthorized' || err === 'signature_invalid' || err === 'no_user_id';
+}
+var __sigInvalidatedHandled = false;
+function handleSigInvalidated() {
+  if (__sigInvalidatedHandled) return;
+  __sigInvalidatedHandled = true;
+  try { localStorage.removeItem(sigCacheKey()); } catch (e) {}
+  showToast("セッション期限切れ。再読み込みします...", "info");
+  setTimeout(function() {
+    location.replace(location.pathname + '?_t=' + Date.now());
+  }, 800);
 }
 
 function showSearching() {
