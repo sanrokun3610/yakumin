@@ -10,9 +10,9 @@
 <title>食事入力</title>
 <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <script>
-// v3.17.19: LIFF 内ブラウザ強キャッシュ対策 - バージョン違いで強制リロード
+// v3.18.0: LIFF 内ブラウザ強キャッシュ対策 - バージョン違いで強制リロード
 (function() {
-  var CURRENT_VERSION = 'v3.17.19';
+  var CURRENT_VERSION = 'v3.18.0';
   // 古い sig キャッシュも強制削除 (くまさんFB対応)
   try {
     Object.keys(localStorage).forEach(function(k) {
@@ -76,6 +76,29 @@ body{padding-bottom:140px}
 /* v3.17.3 くまさんFB: 検索欄が空のときだけ表示 (.q-has-text で隠す) */
 .frequent-section{padding:8px 12px 4px;background:#fff}
 body.q-has-text .frequent-section{display:none}
+
+/* v3.18.0 Phase 7.1.D: 自炊メニュー */
+.home-meals-section{padding:8px 12px 4px;background:#fff}
+body.q-has-text .home-meals-section{display:none}
+.home-meals-section-label{font-size:13px;color:#374151;font-weight:600;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center}
+.home-meals-section-hint{font-size:10px;color:#9ca3af;font-weight:normal}
+.home-meals-buttons{display:grid;grid-template-columns:repeat(2,1fr);gap:6px}
+.home-meal-chip{min-height:48px;padding:8px 10px;font-size:13px;font-weight:600;border:1.5px solid #d4f4dd;border-radius:8px;background:#f0fdf4;color:#166534;cursor:pointer;text-align:left;display:flex;flex-direction:column;justify-content:center;overflow:hidden;-webkit-touch-callout:none;user-select:none}
+.home-meal-chip:active{background:#dcfce7;transform:scale(0.97)}
+.home-meal-chip .name{font-size:14px;font-weight:700;color:#166534;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.home-meal-chip .meta{font-size:11px;color:#15803d;margin-top:2px}
+.home-meals-empty{font-size:12px;color:#9ca3af;text-align:center;padding:6px;font-style:italic}
+
+/* 自炊メニュー確認モーダル */
+.hm-confirm-info{padding:12px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;margin-bottom:12px}
+.hm-confirm-name{font-size:17px;font-weight:bold;color:#14532d}
+.hm-confirm-meta{font-size:14px;color:#166534;margin-top:4px}
+.hm-confirm-memo{font-size:12px;color:#15803d;margin-top:4px;font-style:italic}
+.hm-confirm-btn{width:100%;padding:14px;min-height:48px;font-size:16px;font-weight:bold;border:none;border-radius:8px;cursor:pointer;margin-bottom:6px}
+.hm-btn-record{background:#16a34a;color:#fff}
+.hm-btn-amount{background:#3b82f6;color:#fff}
+.hm-btn-edit{background:#fef3c7;color:#78350f;border:1px solid #fcd34d}
+.hm-btn-cancel{background:#fff;color:#555;border:1px solid #d1d5db}
 .frequent-section-label{font-size:13px;color:#374151;font-weight:600;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center}
 .frequent-section-hint{font-size:10px;color:#9ca3af;font-weight:normal}
 .frequent-buttons{display:grid;grid-template-columns:repeat(2,1fr);gap:6px}
@@ -224,6 +247,17 @@ body.q-has-text .clear-input-btn{display:flex;align-items:center;justify-content
   </div>
 </div>
 
+<!-- v3.18.0 Phase 7.1.D: 自炊メニュー -->
+<div class="home-meals-section" id="home-meals-section">
+  <div class="home-meals-section-label">
+    <span>🏠 自炊メニュー</span>
+    <button id="hm-add-btn" style="background:#16a34a;color:#fff;border:none;font-size:12px;font-weight:600;padding:4px 10px;border-radius:5px;cursor:pointer;min-height:28px">+ 追加</button>
+  </div>
+  <div class="home-meals-buttons" id="home-meals-buttons">
+    <div class="home-meals-empty">+ 追加から登録できます (タップで記録、確認画面で編集も可)</div>
+  </div>
+</div>
+
 <div id="results" class="results"></div>
 
 <!-- v3.15.4 Phase 7.1.B 追加: 未検索時の当日食事一覧 -->
@@ -261,6 +295,73 @@ body.q-has-text .clear-input-btn{display:flex;align-items:center;justify-content
     <div style="font-size:12px;color:#6b7280;margin-bottom:12px">該当する過去の記録もすべて履歴から削除されます（論理削除）</div>
     <button id="frequent-delete-confirm" class="manual-confirm" style="background:#dc2626">削除する</button>
     <button id="frequent-delete-cancel" class="modal-close">やめる</button>
+  </div>
+</div>
+
+<!-- v3.18.0 Phase 7.1.D: 自炊メニュー 確認モーダル -->
+<div id="home-meal-confirm-modal" class="modal hidden">
+  <div class="modal-card">
+    <div class="modal-header">
+      <button class="modal-back-btn" data-modal-back="home-meal-confirm-modal">← 戻る</button>
+    </div>
+    <div class="modal-title">この内容で記録しますか？</div>
+    <div class="hm-confirm-info">
+      <div class="hm-confirm-name" id="hm-confirm-name"></div>
+      <div class="hm-confirm-meta" id="hm-confirm-meta"></div>
+      <div class="hm-confirm-memo" id="hm-confirm-memo"></div>
+    </div>
+    <button id="hm-btn-record" class="hm-confirm-btn hm-btn-record">記録する</button>
+    <button id="hm-btn-amount" class="hm-confirm-btn hm-btn-amount">量を変える</button>
+    <button id="hm-btn-edit" class="hm-confirm-btn hm-btn-edit">編集</button>
+    <button id="hm-btn-cancel" class="hm-confirm-btn hm-btn-cancel">やめる</button>
+  </div>
+</div>
+
+<!-- v3.18.0 Phase 7.1.D: 自炊メニュー 編集モーダル -->
+<div id="home-meal-edit-modal" class="modal hidden">
+  <div class="modal-card">
+    <div class="modal-header">
+      <button class="modal-back-btn" data-modal-back="home-meal-edit-modal">← 戻る</button>
+    </div>
+    <div class="modal-title" id="hm-edit-title">自炊メニューを編集</div>
+    <div style="font-size:13px;color:#666;margin-bottom:6px;font-weight:600">名前 (30文字まで)</div>
+    <input type="text" id="hm-edit-label" placeholder="例: 納豆ごはん" maxlength="30" style="width:100%;padding:12px;font-size:16px;border:1.5px solid #d4d4d4;border-radius:8px;margin-bottom:10px">
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:10px">
+      <div>
+        <div style="font-size:13px;color:#666;margin-bottom:4px;font-weight:600">カロリー</div>
+        <input type="text" id="hm-edit-kcal" placeholder="350" inputmode="numeric" style="width:100%;padding:10px;font-size:15px;border:1.5px solid #d4d4d4;border-radius:8px">
+        <div style="font-size:11px;color:#999;margin-top:2px">kcal</div>
+      </div>
+      <div>
+        <div style="font-size:13px;color:#666;margin-bottom:4px;font-weight:600">量</div>
+        <input type="text" id="hm-edit-amount" placeholder="1" inputmode="decimal" style="width:100%;padding:10px;font-size:15px;border:1.5px solid #d4d4d4;border-radius:8px">
+      </div>
+      <div>
+        <div style="font-size:13px;color:#666;margin-bottom:4px;font-weight:600">単位</div>
+        <select id="hm-edit-unit" style="width:100%;padding:10px;font-size:15px;border:1.5px solid #d4d4d4;border-radius:8px;background:#fff">
+          <option value="人前">人前</option>
+          <option value="個">個</option>
+          <option value="枚">枚</option>
+          <option value="杯">杯</option>
+          <option value="g">g</option>
+          <option value="ml">ml</option>
+        </select>
+      </div>
+    </div>
+    <div style="font-size:13px;color:#666;margin-bottom:6px;font-weight:600">よく使う食事区分 (任意)</div>
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin-bottom:10px">
+      <button class="mt-chip" data-hm-mt="">指定なし</button>
+      <button class="mt-chip" data-hm-mt="breakfast">朝</button>
+      <button class="mt-chip" data-hm-mt="lunch">昼</button>
+      <button class="mt-chip" data-hm-mt="dinner">夕</button>
+      <button class="mt-chip" data-hm-mt="snack">間食</button>
+    </div>
+    <div style="font-size:13px;color:#666;margin-bottom:6px;font-weight:600">メモ (100文字まで)</div>
+    <textarea id="hm-edit-memo" maxlength="100" rows="2" placeholder="例: ごはん150g + 納豆1パック" style="width:100%;padding:10px;font-size:14px;border:1.5px solid #d4d4d4;border-radius:8px;margin-bottom:8px;font-family:inherit"></textarea>
+    <div style="font-size:11px;color:#9ca3af;margin-bottom:10px">※ あとから変更できます</div>
+    <button id="hm-edit-save" class="manual-confirm">保存</button>
+    <button id="hm-edit-delete" class="modal-close" style="color:#dc2626;border-color:#fecaca;background:#fef2f2">このメニューを削除</button>
+    <button id="hm-edit-cancel" class="modal-close">やめる</button>
   </div>
 </div>
 
@@ -332,6 +433,11 @@ body.q-has-text .clear-input-btn{display:flex;align-items:center;justify-content
 <script>
 // ==================================================================
 // サンロくん食事入力 SPA (yakusokuai.jp/meal_input/)
+// v3.18.0 / Phase 7.1.D 自炊メニュー (User_HomeMeals) / 2026-05-21
+// - 食事入力画面に🏠 自炊メニュー 6件表示 (緑系カード)
+// - タップで確認モーダル (記録/量変更/編集/やめる)
+// - 編集モーダル: 名前/kcal/量/単位/食事区分/メモ + 削除ボタン
+// - 設定画面の追加ボタンから新規追加可能 (P2)、現状は編集モーダル流用で追加も可能
 // v3.17.19 / デバッグ表示削除 + 認証完了時の自動再検索 / 2026-05-20
 // - 黒帯デバッグ全削除 (showDebug 関数も削除)
 // - onReady で既に2文字以上入力済みなら自動的に検索発火
@@ -799,6 +905,7 @@ function onReady() {
   loadTodayMeals();
   showTodayMeals();
   loadFrequent();
+  loadHomeMeals();  // v3.18.0 Phase 7.1.D
   // v3.17.19: 認証完了時、既に検索欄に2文字以上あれば自動検索発火
   // (認証完了前にユーザーが入力していた場合の救済)
   try {
@@ -1043,6 +1150,225 @@ $("frequent-delete-confirm").addEventListener('click', function() {
       showToast("✅ 削除しました（" + (data.deletedCount || 0) + "件）", "success");
       loadFrequent();
       loadTodayMeals();
+    } else {
+      showToast("⚠ 削除失敗: " + (data && data.error ? data.error : 'unknown'), "error");
+    }
+  }).catch(function() { showToast("⚠ 通信失敗", "error"); });
+});
+
+// ==================================================================
+// v3.18.0 Phase 7.1.D: 自炊メニュー (User_HomeMeals)
+// docs: HOME_MEAL_MASTER_PLAN.md
+// ==================================================================
+state.homeMeals = [];
+
+function loadHomeMeals() {
+  if (!state.ready || !APP.qsBase) return;
+  fetch(APP.deployUrl + "?page=home_meals_list&" + APP.qsBase).then(function(r){return r.json();}).then(function(data) {
+    if (data && data.error && typeof isAuthError === 'function' && isAuthError(data.error)) {
+      handleSigInvalidated();
+      return;
+    }
+    if (!data || !data.ok) {
+      state.homeMeals = [];
+      renderHomeMeals();
+      return;
+    }
+    state.homeMeals = data.items || [];
+    renderHomeMeals();
+  }).catch(function() {
+    state.homeMeals = [];
+    renderHomeMeals();
+  });
+}
+
+function renderHomeMeals() {
+  var box = $("home-meals-buttons");
+  if (!box) return;
+  if (!state.homeMeals || state.homeMeals.length === 0) {
+    box.innerHTML = '<div class="home-meals-empty">よく作る食事を設定画面から登録できます</div>';
+    return;
+  }
+  box.innerHTML = '';
+  state.homeMeals.forEach(function(it) {
+    var btn = document.createElement('button');
+    btn.className = 'home-meal-chip';
+    btn.title = it.label;
+    var meta = (it.kcal || 0) + ' kcal';
+    if (it.amount && it.unit) meta += ' ・ ' + it.amount + it.unit;
+    btn.innerHTML = '<div class="name">' + esc(it.label) + '</div>' +
+                    '<div class="meta">' + esc(meta) + '</div>';
+    btn.addEventListener('click', function() {
+      openHomeMealConfirm(it);
+    });
+    box.appendChild(btn);
+  });
+}
+
+// 自炊メニュー 確認モーダル
+var pendingHomeMeal = null;
+function openHomeMealConfirm(item) {
+  if (!item) return;
+  pendingHomeMeal = item;
+  $("hm-confirm-name").textContent = item.label;
+  $("hm-confirm-meta").textContent = (item.kcal || 0) + ' kcal' +
+    (item.amount && item.unit ? ' ・ ' + item.amount + item.unit : '');
+  $("hm-confirm-memo").textContent = item.memo || '';
+  $("home-meal-confirm-modal").classList.remove("hidden");
+}
+$("hm-btn-cancel").addEventListener('click', function() {
+  pendingHomeMeal = null;
+  $("home-meal-confirm-modal").classList.add("hidden");
+});
+$("hm-btn-record").addEventListener('click', function() {
+  if (!pendingHomeMeal) return;
+  var it = pendingHomeMeal;
+  pendingHomeMeal = null;
+  $("home-meal-confirm-modal").classList.add("hidden");
+  recordFromHomeMeal(it, 1);
+});
+$("hm-btn-amount").addEventListener('click', function() {
+  if (!pendingHomeMeal) return;
+  var it = pendingHomeMeal;
+  pendingHomeMeal = null;
+  $("home-meal-confirm-modal").classList.add("hidden");
+  var raw = prompt('量の倍率を入力 (0.5/1/1.5/2 など)\n基準: ' + it.label + ' = ' + it.amount + it.unit + ' / ' + it.kcal + 'kcal', '1');
+  if (raw == null) return;
+  var n = Number(String(raw).trim().replace(/[０-９]/g, function(ch){return String.fromCharCode(ch.charCodeAt(0)-0xFEE0);}));
+  if (isNaN(n) || n < 0.1 || n > 10) {
+    alert("0.1 〜 10 の範囲で入力してください");
+    return;
+  }
+  recordFromHomeMeal(it, n);
+});
+$("hm-btn-edit").addEventListener('click', function() {
+  if (!pendingHomeMeal) return;
+  var it = pendingHomeMeal;
+  pendingHomeMeal = null;
+  $("home-meal-confirm-modal").classList.add("hidden");
+  openHomeMealEdit(it);
+});
+
+function recordFromHomeMeal(item, multiplier) {
+  showToast("📡 記録中...", "info");
+  fetch(APP.deployUrl + "?page=home_meals_record", {
+    method: "POST",
+    headers: { "Content-Type": "text/plain;charset=UTF-8" },
+    body: JSON.stringify({
+      userId: APP.userId, sig: APP.sig,
+      homeMealId: item.homeMealId,
+      mealType: APP.mealType || 'lunch',
+      amount: multiplier || 1,
+    }),
+    redirect: "follow",
+  }).then(function(r){return r.json();}).then(function(data) {
+    if (data && data.ok) {
+      showToast("✅ 記録しました " + (data.label || '') + ' ' + (data.kcal || '?') + 'kcal', "success");
+      loadTodayMeals();
+      showTodayMeals();
+      loadFrequent();
+      addToRecorded({ label: data.label, kcal: data.kcal, recordId: data.recordId });
+    } else {
+      showToast("⚠ 記録失敗: " + (data && data.error ? data.error : 'unknown'), "error");
+    }
+  }).catch(function() { showToast("⚠ 通信失敗", "error"); });
+}
+
+// 自炊メニュー 編集モーダル
+var pendingHomeMealEdit = null;
+var pendingHomeMealEditMt = '';
+function openHomeMealEdit(item) {
+  pendingHomeMealEdit = item;
+  pendingHomeMealEditMt = item.mealTypeDefault || '';
+  $("hm-edit-title").textContent = item ? '自炊メニューを編集' : '自炊メニューを追加';
+  $("hm-edit-label").value = item ? item.label : '';
+  $("hm-edit-kcal").value = item ? item.kcal : '';
+  $("hm-edit-amount").value = item ? item.amount : '1';
+  $("hm-edit-unit").value = item ? (item.unit || '人前') : '人前';
+  $("hm-edit-memo").value = item ? (item.memo || '') : '';
+  // mealType chip
+  Array.prototype.forEach.call(document.querySelectorAll('[data-hm-mt]'), function(b) {
+    b.classList.toggle('selected', b.getAttribute('data-hm-mt') === pendingHomeMealEditMt);
+  });
+  // 削除ボタンは編集時のみ表示
+  $("hm-edit-delete").style.display = item ? '' : 'none';
+  $("home-meal-edit-modal").classList.remove("hidden");
+}
+Array.prototype.forEach.call(document.querySelectorAll('[data-hm-mt]'), function(btn) {
+  btn.addEventListener('click', function() {
+    pendingHomeMealEditMt = this.getAttribute('data-hm-mt');
+    Array.prototype.forEach.call(document.querySelectorAll('[data-hm-mt]'), function(b) {
+      b.classList.toggle('selected', b === btn);
+    });
+  });
+});
+$("hm-edit-cancel").addEventListener('click', function() {
+  pendingHomeMealEdit = null;
+  pendingHomeMealEditMt = '';
+  $("home-meal-edit-modal").classList.add("hidden");
+});
+// + 追加ボタン (新規登録)
+$("hm-add-btn").addEventListener('click', function() {
+  openHomeMealEdit(null);
+  $("hm-edit-title").textContent = '自炊メニューを追加';
+});
+$("hm-edit-save").addEventListener('click', function() {
+  var label = $("hm-edit-label").value.trim();
+  var kcal = Number($("hm-edit-kcal").value.trim().replace(/[０-９]/g, function(ch){return String.fromCharCode(ch.charCodeAt(0)-0xFEE0);}));
+  var amount = Number($("hm-edit-amount").value.trim().replace(/[０-９]/g, function(ch){return String.fromCharCode(ch.charCodeAt(0)-0xFEE0);}).replace(/．/g, '.')) || 1;
+  var unit = $("hm-edit-unit").value;
+  var memo = $("hm-edit-memo").value.trim();
+  if (!label) { alert("名前を入力してください"); return; }
+  if (label.length > 30) { alert("名前は30文字以内で入力してください"); return; }
+  if (isNaN(kcal) || kcal < 0 || kcal > 3000) { alert("カロリーは 0〜3000 で入力してください"); return; }
+  if (memo.length > 100) { alert("メモは100文字以内で入力してください"); return; }
+  var isEditing = !!pendingHomeMealEdit;
+  var existingId = pendingHomeMealEdit ? pendingHomeMealEdit.homeMealId : null;
+  var mt = pendingHomeMealEditMt;
+  pendingHomeMealEdit = null;
+  pendingHomeMealEditMt = '';
+  $("home-meal-edit-modal").classList.add("hidden");
+  showToast(isEditing ? "✏ 編集中..." : "➕ 追加中...", "info");
+  var body = { userId: APP.userId, sig: APP.sig, label: label, kcal: kcal, unit: unit, amount: amount, memo: memo, mealTypeDefault: mt };
+  if (isEditing) body.homeMealId = existingId;
+  var page = isEditing ? "home_meals_update" : "home_meals_add";
+  fetch(APP.deployUrl + "?page=" + page, {
+    method: "POST",
+    headers: { "Content-Type": "text/plain;charset=UTF-8" },
+    body: JSON.stringify(body),
+    redirect: "follow",
+  }).then(function(r){return r.json();}).then(function(data) {
+    if (data && data.ok) {
+      showToast("✅ 保存しました", "success");
+      loadHomeMeals();
+    } else {
+      var msg = (data && data.error) || 'unknown';
+      if (msg === 'too_many_total') msg = '自炊メニューは最大20件までです';
+      else if (msg === 'too_many_favorites') msg = '表示は最大6件までです (他を非表示にしてください)';
+      else if (msg === 'label_too_long') msg = '名前が長すぎます';
+      else if (msg === 'invalid_kcal') msg = 'カロリーが範囲外';
+      else if (msg === 'invalid_unit') msg = '単位が不正';
+      showToast("⚠ 保存失敗: " + msg, "error");
+    }
+  }).catch(function() { showToast("⚠ 通信失敗", "error"); });
+});
+$("hm-edit-delete").addEventListener('click', function() {
+  if (!pendingHomeMealEdit) return;
+  if (!confirm('この自炊メニューを削除しますか？')) return;
+  var id = pendingHomeMealEdit.homeMealId;
+  pendingHomeMealEdit = null;
+  pendingHomeMealEditMt = '';
+  $("home-meal-edit-modal").classList.add("hidden");
+  showToast("🗑 削除中...", "info");
+  fetch(APP.deployUrl + "?page=home_meals_delete", {
+    method: "POST",
+    headers: { "Content-Type": "text/plain;charset=UTF-8" },
+    body: JSON.stringify({ userId: APP.userId, sig: APP.sig, homeMealId: id }),
+    redirect: "follow",
+  }).then(function(r){return r.json();}).then(function(data) {
+    if (data && data.ok) {
+      showToast("✅ 削除しました", "success");
+      loadHomeMeals();
     } else {
       showToast("⚠ 削除失敗: " + (data && data.error ? data.error : 'unknown'), "error");
     }
