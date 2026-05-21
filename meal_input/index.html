@@ -7,7 +7,7 @@
 <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>食事入力 v3.17.4 - サンロくん</title>
+<title>食事入力 v3.17.5 - サンロくん</title>
 <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <style>
 /* v3.15.0 Phase 7.1.A: 文字サイズ 16px 基準、タップ領域 44px 最低、行間 1.6 */
@@ -17,7 +17,9 @@ body{padding-bottom:140px}
 
 /* v3.17.1 くまさん4点FB: ヘッダー非固定化 (上下スワイプで隠れる) / 検索欄のみ固定 */
 .header{background:linear-gradient(135deg,#fef9c3,#fde68a);padding:10px 12px 8px;border-bottom:1px solid #fcd34d}
-.header-title{font-size:17px;font-weight:bold;color:#78350f;margin-bottom:6px;display:flex;align-items:center;gap:8px}
+/* v3.17.5 くまさんFB: 戻るボタンを一番左、タイトルを右側に分離配置 */
+.header-title{font-size:17px;font-weight:bold;color:#78350f;margin-bottom:6px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.header-title #header-title-text{flex:1;text-align:right}
 .header-sub{font-size:12px;color:#92400e;margin-top:1px}
 /* 戻るボタン (左上) */
 .back-btn{background:rgba(255,255,255,0.6);border:1px solid #fcd34d;color:#78350f;font-size:14px;font-weight:600;padding:4px 10px;border-radius:6px;cursor:pointer;min-height:32px}
@@ -306,6 +308,9 @@ body.q-has-text .clear-input-btn{display:flex;align-items:center;justify-content
 <script>
 // ==================================================================
 // サンロくん食事入力 SPA (yakusokuai.jp/meal_input/)
+// v3.17.5 / くまさんFB: 戻るボタンをヘッダー一番左に配置 / 2026-05-20
+// - .header-title を justify-content:space-between に変更
+// - 戻るボタンが左端、タイトル (🐻 食事を記録) が右寄せに
 // v3.17.4 / 致命的バグ修正: setHeader が戻るボタンを消去していた問題 / 2026-05-20
 // - setHeader() が .header-title 全体を textContent 上書きしていた
 //   → 戻るボタンが初期化時に消去 → $("header-back-btn") が null
