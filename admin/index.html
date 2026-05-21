@@ -64,9 +64,16 @@ iframe{width:100%;height:calc(100vh + 60px);border:none;display:block;}
   var GAS_URL='https://script.google.com/macros/s/AKfycbwqJPueCoeMtpY8WcCAHQjYXIROi8VAaqsbZmuf2iUQ65MG6teaJOC2CwZiGrUNlsd6/exec';
   var params=new URLSearchParams(window.location.search);
 
+  // fmPrintMode=1 が指定されていれば 食品マスタ印刷ビューを iframe で表示
+  var isPrintMode = params.get('fmPrintMode')==='1';
+  if(isPrintMode){
+    document.title='食品マスタ印刷ビュー - サンロくんのほけんしつ';
+  }
+
   // 親ページに渡された URL パラメータを GAS にそのまま転送
   var fwdParams=[
     'key','activeTab',
+    'fmPrintMode',
     'fmChain','fmMenu','fmSourceType','fmSource','fmActive','fmPage','fmPageSize',
     'fcStatus','fcPriority','fcAction'
   ];
@@ -87,7 +94,6 @@ iframe{width:100%;height:calc(100vh + 60px);border:none;display:block;}
   iframe.addEventListener('load',function(){
     if(loadingScreen) loadingScreen.style.display='none';
     iframe.style.display='block';
-    // navigation 完了 → オーバーレイ非表示
     if(navOverlay) navOverlay.style.display='none';
   });
 
@@ -100,12 +106,8 @@ iframe{width:100%;height:calc(100vh + 60px);border:none;display:block;}
   },3000);
 
   // 子 (iframe = GAS admin) から postMessage を受信
-  //   メッセージ形式: {type:'admin_loading_start', msg:'検索中...', sub:'数秒お待ちください'}
-  //   セキュリティ: source は iframe.contentWindow であることを確認
   window.addEventListener('message',function(e){
     if(!e || !e.data) return;
-    // GAS は googleusercontent.com 経由で配信されるため、 origin チェックは緩めにする
-    // (script.google.com からの redirected iframe content は origin が変動する)
     var data=e.data;
     if(data.type==='admin_loading_start'){
       if(navOverlay){
@@ -114,6 +116,9 @@ iframe{width:100%;height:calc(100vh + 60px);border:none;display:block;}
       }
     }else if(data.type==='admin_loading_end'){
       if(navOverlay) navOverlay.style.display='none';
+    }else if(data.type==='admin_close_print_view'){
+      // 印刷ビューの「閉じる」ボタンから通知 → このタブを閉じる
+      try{ window.close(); }catch(_){}
     }
   });
 
