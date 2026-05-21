@@ -65,9 +65,7 @@
     <div class="sanro-info-row"><span class="label">性別</span><span class="value" id="info-gender">—</span></div>
   </div>
 
-  <div style="padding:16px">
-    <button class="sanro-btn outline" id="btn-close">完了してLINEに戻る</button>
-  </div>
+  <!-- v3.17.9 くまさんFB: 「完了してLINEに戻る」廃止 → ヘッダー左上の共通 ← 戻るに統一 -->
 </div>
 
 <script src="/common/common.js"></script>
@@ -153,7 +151,7 @@ document.getElementById('btn-edit-body').addEventListener('click', function() {
   });
 });
 
-document.getElementById('btn-close').addEventListener('click', function() { SanroBoot.close(); });
+// v3.17.9: btn-close 廃止 (共通 sanro-back-btn が SanroBoot.close を呼ぶ)
 </script>
 </body>
 </html>

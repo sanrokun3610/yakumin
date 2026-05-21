@@ -4,8 +4,13 @@ html,body{font-family:-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif;ba
 body{padding-bottom:80px}
 
 .sanro-header{background:linear-gradient(135deg,#fef9c3,#fde68a);padding:16px;border-bottom:1px solid #fcd34d;position:sticky;top:0;z-index:10}
-.sanro-header-title{font-size:18px;font-weight:bold;color:#78350f}
+.sanro-header-title{font-size:18px;font-weight:bold;color:#78350f;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.sanro-header-title-text{flex:1;text-align:right}
 .sanro-header-sub,.sanro-username{font-size:12px;color:#92400e;margin-top:2px}
+
+/* v3.17.9 くまさんFB: 共通戻るボタン (グレー、ヘッダー一番左) */
+.sanro-back-btn{background:#6b7280;border:none;color:#fff;font-size:14px;font-weight:600;padding:6px 14px;border-radius:8px;cursor:pointer;min-height:36px;box-shadow:0 1px 3px rgba(107,114,128,0.25);flex-shrink:0}
+.sanro-back-btn:active{transform:scale(0.96);background:#4b5563}
 
 .sanro-section{padding:16px;background:#fff;margin-bottom:8px}
 .sanro-section-title{font-size:14px;font-weight:bold;color:#78350f;margin-bottom:10px;display:flex;align-items:center;gap:6px}

@@ -10,9 +10,9 @@
 <title>食事入力</title>
 <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <script>
-// v3.17.8: LIFF 内ブラウザ強キャッシュ対策 - バージョン違いで強制リロード
+// v3.17.9: LIFF 内ブラウザ強キャッシュ対策 - バージョン違いで強制リロード
 (function() {
-  var CURRENT_VERSION = 'v3.17.8';
+  var CURRENT_VERSION = 'v3.17.9';
   try {
     var stored = localStorage.getItem('meal_input_version');
     if (stored && stored !== CURRENT_VERSION) {
@@ -37,9 +37,9 @@ body{padding-bottom:140px}
 .header-title{font-size:17px;font-weight:bold;color:#78350f;margin-bottom:6px;display:flex;align-items:center;justify-content:space-between;gap:8px}
 .header-title #header-title-text{flex:1;text-align:right}
 .header-sub{font-size:12px;color:#92400e;margin-top:1px}
-/* v3.17.7 くまさんFB: 戻るボタンを青に変更、文言「戻る」に短縮 */
-.back-btn{background:#2563eb;border:none;color:#fff;font-size:15px;font-weight:700;padding:8px 16px;border-radius:8px;cursor:pointer;min-height:40px;box-shadow:0 2px 6px rgba(37,99,235,0.3);flex-shrink:0}
-.back-btn:active{transform:scale(0.96);background:#1d4ed8}
+/* v3.17.9 くまさんFB: 戻るボタンを青→グレーに変更 (色がきつすぎ) */
+.back-btn{background:#6b7280;border:none;color:#fff;font-size:14px;font-weight:600;padding:6px 14px;border-radius:8px;cursor:pointer;min-height:36px;box-shadow:0 1px 3px rgba(107,114,128,0.25);flex-shrink:0}
+.back-btn:active{transform:scale(0.96);background:#4b5563}
 /* v3.17.3 くまさんFB: 自動収納廃止 (ヘッダーは常時表示、上スワイプで自然に隠れる) */
 
 /* コンパクトチップ行 */
@@ -177,7 +177,7 @@ body.q-has-text .clear-input-btn{display:flex;align-items:center;justify-content
 <!-- v3.17.1 くまさん4点FB: ヘッダー左上に「← LINEに戻る」ボタン -->
 <div class="header" id="main-header">
   <div class="header-title">
-    <button class="back-btn" id="header-back-btn" style="background:#2563eb !important;color:#fff !important;border-color:#1d4ed8 !important">← 戻る</button>
+    <button class="back-btn" id="header-back-btn" style="background:#6b7280 !important;color:#fff !important;border-color:#4b5563 !important">← 戻る</button>
     <span id="header-title-text">🐻 食事を記録</span>
   </div>
   <div class="chip-row" id="meal-type-bar">
@@ -324,6 +324,7 @@ body.q-has-text .clear-input-btn{display:flex;align-items:center;justify-content
 <script>
 // ==================================================================
 // サンロくん食事入力 SPA (yakusokuai.jp/meal_input/)
+// v3.17.9 / くまさんFB: 戻るボタン 青→グレーに変更、共通 sanro-back-btn と統一 / 2026-05-20
 // v3.17.8 / LIFF キャッシュ強制更新 + inline style 強制青 / 2026-05-20
 // - LIFF 内ブラウザの強キャッシュで v3.17.7 (青) が反映されない問題対応
 // - <head> 内に localStorage version check + 不一致なら location.replace で強制リロード

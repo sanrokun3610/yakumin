@@ -1,7 +1,8 @@
 // ==================================================================
-// サンロくんのほけんしつ 共通 LIFF 認証 + UI (v3.14.6 / Phase 7)
+// サンロくんのほけんしつ 共通 LIFF 認証 + UI (v3.17.9 / Phase 7)
 // 各 Web App ページから読み込んで使う。
 // 使用方法: window.__SANRO__ = { liffId, deployUrl, onReady } を定義 → SanroBoot.init() 呼び出し
+// v3.17.9: ヘッダーに共通戻るボタン (グレー) を自動挿入
 // ==================================================================
 window.SanroBoot = (function() {
   var APP = { userId: '', sig: '', displayName: '', deployUrl: '', liffId: '' };
@@ -54,10 +55,36 @@ window.SanroBoot = (function() {
     });
   }
 
+  // v3.17.9 くまさんFB: 共通戻るボタンを sanro-header-title の左に自動挿入
+  function injectBackButton() {
+    try {
+      var titleEl = document.querySelector('.sanro-header-title');
+      if (!titleEl) return;
+      // 既に存在すれば skip
+      if (titleEl.querySelector('.sanro-back-btn')) return;
+      // 既存の文字を保持して span でラップ
+      var originalText = titleEl.textContent;
+      titleEl.innerHTML = '';
+      var backBtn = document.createElement('button');
+      backBtn.className = 'sanro-back-btn';
+      backBtn.textContent = '← 戻る';
+      backBtn.setAttribute('style', 'background:#6b7280 !important;color:#fff !important;border-color:#4b5563 !important');
+      backBtn.addEventListener('click', close);
+      titleEl.appendChild(backBtn);
+      var titleText = document.createElement('span');
+      titleText.className = 'sanro-header-title-text';
+      titleText.textContent = originalText;
+      titleEl.appendChild(titleText);
+    } catch (e) {}
+  }
+
   function init(config) {
     APP.liffId = config.liffId || '';
     APP.deployUrl = config.deployUrl || '';
     var onReady = config.onReady || function(){};
+
+    // v3.17.9: 戻るボタンを最初に挿入 (認証失敗時でも戻れるように)
+    injectBackButton();
 
     if (!window.liff || !APP.liffId) {
       showError($('sanro-status'), 'LIFFが利用できません。LINEメニューから開き直してください。');
