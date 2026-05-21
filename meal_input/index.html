@@ -7,12 +7,12 @@
 <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>食事入力</title>
+<title>食事入力 v3.17.10</title>
 <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <script>
-// v3.17.9: LIFF 内ブラウザ強キャッシュ対策 - バージョン違いで強制リロード
+// v3.17.10: LIFF 内ブラウザ強キャッシュ対策 - バージョン違いで強制リロード
 (function() {
-  var CURRENT_VERSION = 'v3.17.9';
+  var CURRENT_VERSION = 'v3.17.10';
   try {
     var stored = localStorage.getItem('meal_input_version');
     if (stored && stored !== CURRENT_VERSION) {
@@ -324,6 +324,11 @@ body.q-has-text .clear-input-btn{display:flex;align-items:center;justify-content
 <script>
 // ==================================================================
 // サンロくん食事入力 SPA (yakusokuai.jp/meal_input/)
+// v3.17.10 / くまさんFB: 認証 sig キャッシュ (体感速度大幅改善) / 2026-05-20
+// - localStorage に { userId, sig, displayName, expireAt 12h } を保存
+// - 2回目以降は LIFF init / getProfile / GAS sign API を全部スキップ → 即 onReady
+// - バックグラウンドで残り 4h 未満なら再認証 (sig 更新)
+// - 体感: 認証中 2-7秒 → ほぼ 0秒
 // v3.17.9 / くまさんFB: 戻るボタン 青→グレーに変更、共通 sanro-back-btn と統一 / 2026-05-20
 // v3.17.8 / LIFF キャッシュ強制更新 + inline style 強制青 / 2026-05-20
 // - LIFF 内ブラウザの強キャッシュで v3.17.7 (青) が反映されない問題対応
@@ -659,22 +664,82 @@ $("edit-save").addEventListener('click', function() {
   }).catch(function() { showToast("⚠ 通信失敗", "error"); });
 });
 
+// v3.17.10 認証 sig キャッシュ (体感速度大幅改善)
+var SIG_CACHE_TTL_MS = 12 * 60 * 60 * 1000;  // 12h
+function sigCacheKey() { return 'sanro_meal_input_sig_' + (APP.liffId || 'default'); }
+function loadSigCache() {
+  try {
+    var raw = localStorage.getItem(sigCacheKey());
+    if (!raw) return null;
+    var c = JSON.parse(raw);
+    if (!c || !c.userId || !c.sig || !c.expireAt) return null;
+    if (c.expireAt < Date.now()) return null;
+    return c;
+  } catch (e) { return null; }
+}
+function saveSigCache(userId, sig, displayName) {
+  try {
+    localStorage.setItem(sigCacheKey(), JSON.stringify({
+      userId: userId, sig: sig, displayName: displayName || '',
+      expireAt: Date.now() + SIG_CACHE_TTL_MS,
+      savedAt: Date.now(),
+    }));
+  } catch (e) {}
+}
+function applyAuthState(userId, sig, displayName, isBackground) {
+  APP.userId = userId;
+  APP.sig = sig;
+  APP.qsBase = "userId=" + encodeURIComponent(userId) + "&sig=" + encodeURIComponent(sig);
+  if (displayName) {
+    var hdr = document.querySelector(".header");
+    if (hdr && !document.querySelector(".header-sub")) {
+      var s = document.createElement("div");
+      s.className = "header-sub";
+      s.textContent = displayName + "さん";
+      hdr.appendChild(s);
+    }
+  }
+  if (!isBackground) {
+    state.ready = true;
+    onReady();
+  }
+}
+
 // LIFF SDK で認証 → サーバーで sig 発行 → ready
 function bootstrap() {
-  if (!window.liff || !APP.liffId) {
+  if (!APP.liffId) {
     showFatalError("LIFFが利用できません。LINEのメニューから「食事入力」を押し直してください。");
     return;
   }
-  showBootstrapLoading();
+  // v3.17.10: キャッシュがあれば即 onReady
+  var cached = loadSigCache();
+  if (cached) {
+    applyAuthState(cached.userId, cached.sig, cached.displayName, false);
+    // バックグラウンドで残り 4h 未満なら再認証
+    var remaining = cached.expireAt - Date.now();
+    if (remaining < 4 * 60 * 60 * 1000) {
+      setTimeout(function() { doFullAuth(true); }, 100);
+    }
+    return;
+  }
+  doFullAuth(false);
+}
+
+function doFullAuth(isBackground) {
+  if (!window.liff || !APP.liffId) {
+    if (!isBackground) showFatalError("LIFFが利用できません。LINEのメニューから「食事入力」を押し直してください。");
+    return;
+  }
+  if (!isBackground) showBootstrapLoading();
   liff.init({ liffId: APP.liffId, withLoginOnExternalBrowser: false }).then(function() {
     if (!liff.isInClient() && !liff.isLoggedIn()) {
-      liff.login();
+      if (!isBackground) liff.login();
       return null;
     }
     return liff.getProfile();
   }).then(function(profile) {
     if (!profile || !profile.userId) {
-      showFatalError("プロフィール取得に失敗しました。LINEのメニューから開き直してください。");
+      if (!isBackground) showFatalError("プロフィール取得に失敗しました。LINEのメニューから開き直してください。");
       return;
     }
     var accessToken = null;
@@ -686,27 +751,17 @@ function bootstrap() {
       redirect: "follow",
     }).then(function(r){return r.json();}).then(function(data) {
       if (!data || !data.ok) {
-        showFatalError("認証に失敗しました。LINEのメニューから開き直してください。");
+        if (!isBackground) showFatalError("認証に失敗しました。LINEのメニューから開き直してください。");
         return;
       }
-      APP.userId = data.userId;
-      APP.sig = data.sig;
-      APP.qsBase = "userId=" + encodeURIComponent(APP.userId) + "&sig=" + encodeURIComponent(APP.sig);
-      if (data.displayName) {
-        var hdr = document.querySelector(".header");
-        if (hdr && !document.querySelector(".header-sub")) {
-          var s = document.createElement("div");
-          s.className = "header-sub";
-          s.textContent = data.displayName + "さん";
-          hdr.appendChild(s);
-        }
-      }
-      state.ready = true;
-      onReady();
+      saveSigCache(data.userId, data.sig, data.displayName);
+      applyAuthState(data.userId, data.sig, data.displayName, isBackground);
     });
   }).catch(function(err) {
+    if (isBackground) return;  // バックグラウンド失敗は無視
     var msg = err && err.message ? String(err.message) : "";
     msg = msg.replace(/https?:\/\/[^\s"<>]+/g, '').substring(0, 80);
+    try { localStorage.removeItem(sigCacheKey()); } catch (e) {}
     showFatalError("LIFF初期化に失敗しました" + (msg ? ": " + msg : ""));
   });
 }
