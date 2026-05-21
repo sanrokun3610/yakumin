@@ -90,7 +90,9 @@ iframe{width:100%;height:calc(100vh + 60px);border:none;display:block;}
     'key','activeTab',
     'fmPrintMode',
     'fmChain','fmMenu','fmSourceType','fmSource','fmActive','fmPage','fmPageSize',
-    'fcStatus','fcPriority','fcAction'
+    'fcStatus','fcPriority','fcAction',
+    // Phase Admin-UX-Next-1: 操作ログタブ用フィルタ
+    'alAction','alActor','alFrom','alTo','alKeyword','alPage','alPageSize'
   ];
   var qs='page=admin';
   fwdParams.forEach(function(n){
