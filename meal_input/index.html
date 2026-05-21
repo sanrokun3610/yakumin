@@ -10,9 +10,17 @@
 <title>食事入力</title>
 <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <script>
-// v3.17.14: LIFF 内ブラウザ強キャッシュ対策 - バージョン違いで強制リロード
+// v3.17.15: LIFF 内ブラウザ強キャッシュ対策 - バージョン違いで強制リロード
 (function() {
-  var CURRENT_VERSION = 'v3.17.14';
+  var CURRENT_VERSION = 'v3.17.15';
+  // 古い sig キャッシュも強制削除 (くまさんFB対応)
+  try {
+    Object.keys(localStorage).forEach(function(k) {
+      if (k.indexOf('sanro_meal_input_sig') === 0 || k.indexOf('sanro_sig_cache') === 0) {
+        localStorage.removeItem(k);
+      }
+    });
+  } catch (e) {}
   try {
     var stored = localStorage.getItem('meal_input_version');
     if (stored && stored !== CURRENT_VERSION) {
@@ -324,6 +332,11 @@ body.q-has-text .clear-input-btn{display:flex;align-items:center;justify-content
 <script>
 // ==================================================================
 // サンロくん食事入力 SPA (yakusokuai.jp/meal_input/)
+// v3.17.15 / 緊急修正: sig キャッシュ機構を一旦無効化 / 2026-05-20
+// くまさんFB「検索にでません」対応
+// - 古い sig が GAS で unauthorized になっていた問題の根本対策
+// - 毎回フル認証で確実に動く状態へ戻す (認証中表示は短く0.5-2秒)
+// - localStorage の古いキャッシュも起動時に強制削除
 // v3.17.14 / くまさんFB: 古い sig キャッシュ自動リカバリ / 2026-05-20
 // - API 失敗時 (unauthorized/signature_invalid) を検知
 // - localStorage キャッシュをクリア
@@ -688,13 +701,8 @@ function loadSigCache() {
   } catch (e) { return null; }
 }
 function saveSigCache(userId, sig, displayName) {
-  try {
-    localStorage.setItem(sigCacheKey(), JSON.stringify({
-      userId: userId, sig: sig, displayName: displayName || '',
-      expireAt: Date.now() + SIG_CACHE_TTL_MS,
-      savedAt: Date.now(),
-    }));
-  } catch (e) {}
+  // v3.17.15: sig キャッシュ機構を一旦無効化 (save しない)
+  return;
 }
 function applyAuthState(userId, sig, displayName, isBackground) {
   APP.userId = userId;
@@ -715,22 +723,16 @@ function applyAuthState(userId, sig, displayName, isBackground) {
   }
 }
 
-// LIFF SDK で認証 → サーバーで sig 発行 → ready
+// v3.17.15: sig キャッシュ機構を一旦無効化 (くまさんFB「検索にでません」対応)
+// → 古い sig が悪さしていた可能性。毎回フル認証で確実に動く状態へ戻す。
 function bootstrap() {
   if (!APP.liffId) {
     showFatalError("LIFFが利用できません。LINEのメニューから「食事入力」を押し直してください。");
     return;
   }
-  // v3.17.10: キャッシュがあれば即 onReady
-  var cached = loadSigCache();
-  if (cached) {
-    applyAuthState(cached.userId, cached.sig, cached.displayName, false);
-    var remaining = cached.expireAt - Date.now();
-    if (remaining < 4 * 60 * 60 * 1000) {
-      setTimeout(function() { doFullAuth(true); }, 100);
-    }
-    return;
-  }
+  // 古いキャッシュは強制削除
+  try { localStorage.removeItem(sigCacheKey()); } catch (e) {}
+  // 必ずフル認証
   doFullAuth(false);
 }
 

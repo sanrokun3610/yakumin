@@ -1,6 +1,8 @@
 // ==================================================================
-// サンロくんのほけんしつ 共通 LIFF 認証 + UI (v3.17.14 / Phase 7)
+// サンロくんのほけんしつ 共通 LIFF 認証 + UI (v3.17.15 / Phase 7)
 // v3.17.14: apiGet/apiPost で sig 期限切れ自動検知 → キャッシュクリア + 自動リロード
+// v3.17.15: sig キャッシュ機構を一旦無効化 (くまさんFB「検索にでません」対応)
+//   毎回フル認証で確実に動く状態へ戻す
 // v3.17.10: sig キャッシュで 2回目以降 認証スキップ (体感速度大幅改善)
 // v3.17.12: 認証中表示を控えめに (背景透明 + 小灰色 「読込中…」)
 // v3.17.13: doFullAuth を init 外に出して hoisting 問題を回避 (体重/記録/血圧/設定の認証失敗修正)
@@ -100,13 +102,8 @@ window.SanroBoot = (function() {
     } catch (e) { return null; }
   }
   function saveSigCache(userId, sig, displayName) {
-    try {
-      localStorage.setItem(__sigCacheKey(), JSON.stringify({
-        userId: userId, sig: sig, displayName: displayName || '',
-        expireAt: Date.now() + SIG_CACHE_TTL_MS,
-        savedAt: Date.now(),
-      }));
-    } catch (e) {}
+    // v3.17.15: sig キャッシュ機構を一旦無効化
+    return;
   }
   function clearSigCache() {
     try { localStorage.removeItem(__sigCacheKey()); } catch (e) {}
@@ -166,25 +163,9 @@ window.SanroBoot = (function() {
     // v3.17.9: 戻るボタンを最初に挿入 (認証失敗時でも戻れるように)
     injectBackButton();
 
-    // v3.17.10: sig キャッシュがあれば即 onReady (LIFF + GAS 認証スキップ)
-    var cached = loadSigCache();
-    if (cached) {
-      APP.userId = cached.userId;
-      APP.sig = cached.sig;
-      APP.displayName = cached.displayName || '';
-      var nameEl0 = document.querySelector('.sanro-username');
-      if (nameEl0 && APP.displayName) nameEl0.textContent = APP.displayName + 'さん';
-      var status0 = $('sanro-status');
-      if (status0) status0.innerHTML = '';
-      try { _onReadyCallback(APP); } catch (e) {}
-      var remaining = cached.expireAt - Date.now();
-      if (remaining < 4 * 60 * 60 * 1000) {
-        setTimeout(function() { doFullAuth(true); }, 100);
-      }
-      return;
-    }
-
-    // キャッシュなし → 通常フル認証
+    // v3.17.15: sig キャッシュ機構を一旦無効化 (くまさんFB対応)
+    // 古い sig が悪さしていた可能性 → 毎回フル認証で確実に動く状態へ
+    try { localStorage.removeItem(__sigCacheKey()); } catch (e) {}
     doFullAuth(false);
   }
 
