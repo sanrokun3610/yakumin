@@ -10,9 +10,9 @@
 <title>食事入力</title>
 <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <script>
-// v3.17.15: LIFF 内ブラウザ強キャッシュ対策 - バージョン違いで強制リロード
+// v3.17.16: LIFF 内ブラウザ強キャッシュ対策 - バージョン違いで強制リロード
 (function() {
-  var CURRENT_VERSION = 'v3.17.15';
+  var CURRENT_VERSION = 'v3.17.16';
   // 古い sig キャッシュも強制削除 (くまさんFB対応)
   try {
     Object.keys(localStorage).forEach(function(k) {
@@ -332,6 +332,9 @@ body.q-has-text .clear-input-btn{display:flex;align-items:center;justify-content
 <script>
 // ==================================================================
 // サンロくん食事入力 SPA (yakusokuai.jp/meal_input/)
+// v3.17.16 / デバッグ: 検索失敗原因切り分け / 2026-05-20
+// - fetchCandidates にリクエストURL/レスポンス状態を画面下部に表示 (12秒)
+// - くまさんが「すき家」検索時に何が起きてるか把握するため
 // v3.17.15 / 緊急修正: sig キャッシュ機構を一旦無効化 / 2026-05-20
 // くまさんFB「検索にでません」対応
 // - 古い sig が GAS で unauthorized になっていた問題の根本対策
@@ -1104,22 +1107,56 @@ $("q").addEventListener("keydown", function(e) {
 
 // 候補取得 API (v3.15.2 Phase 7.1.B: mode パラメータ追加)
 // v3.17.14: sig 期限切れ検知 → キャッシュクリア + 強制リロード
+// v3.17.16 一時的デバッグ: 検索失敗原因切り分けのため画面下部に状態表示
+function showDebug(msg) {
+  try {
+    var d = document.getElementById('__dbg__');
+    if (!d) {
+      d = document.createElement('div');
+      d.id = '__dbg__';
+      d.style.cssText = 'position:fixed;bottom:6px;left:6px;right:6px;background:rgba(0,0,0,0.88);color:#fff;padding:8px 10px;font-size:11px;line-height:1.5;border-radius:6px;z-index:9999;word-break:break-all;font-family:monospace';
+      document.body.appendChild(d);
+    }
+    d.textContent = '[v3.17.16] ' + msg;
+    clearTimeout(d.__hideT);
+    d.__hideT = setTimeout(function(){ try { d.remove(); } catch(e){} }, 12000);
+  } catch (e) {}
+}
 function fetchCandidates(q) {
   var reqId = ++state.reqCounter;
   var url = APP.deployUrl + "?page=meal_input_api&" + APP.qsBase +
             "&q=" + encodeURIComponent(q) +
             "&mode=" + encodeURIComponent(APP.searchMode || 'all');
-  fetch(url).then(function(r){return r.json();}).then(function(data) {
+  // デバッグ: リクエスト直前の状態
+  showDebug('req q=' + q + ' qs=' + (APP.qsBase ? 'OK[' + APP.qsBase.substring(0,30) + '...]' : '空!!') + ' mode=' + (APP.searchMode || 'all'));
+  fetch(url).then(function(r){
+    return r.text().then(function(txt){ return { status: r.status, txt: txt }; });
+  }).then(function(res) {
     if (reqId !== state.reqCounter) return;
     hideSearching();
-    // v3.17.14: unauthorized なら古いキャッシュが原因 → クリアして再認証
+    var data = null;
+    try { data = JSON.parse(res.txt); } catch (e) {
+      showDebug('parse fail status=' + res.status + ' body=' + res.txt.substring(0, 100));
+      renderResults([]);
+      return;
+    }
+    // デバッグ: レスポンス内容
+    var dbg = 'res status=' + res.status;
+    if (data) {
+      if (data.error) dbg += ' err=' + data.error;
+      if (data.candidates) dbg += ' cands=' + data.candidates.length;
+      if (data.mode) dbg += ' mode=' + data.mode;
+      if (data.hasAny != null) dbg += ' hasAny=' + data.hasAny;
+    }
+    showDebug(dbg);
     if (data && data.error && isAuthError(data.error)) {
       handleSigInvalidated();
       return;
     }
     if (!data || data.error) { renderResults([]); return; }
     renderResults(data.candidates || []);
-  }).catch(function() {
+  }).catch(function(err) {
+    showDebug('catch err=' + (err && err.message ? err.message : String(err)));
     if (reqId === state.reqCounter) { hideSearching(); renderResults([]); }
   });
 }
