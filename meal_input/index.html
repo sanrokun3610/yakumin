@@ -10,9 +10,9 @@
 <title>食事入力</title>
 <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <script>
-// v3.17.16: LIFF 内ブラウザ強キャッシュ対策 - バージョン違いで強制リロード
+// v3.17.18: LIFF 内ブラウザ強キャッシュ対策 - バージョン違いで強制リロード
 (function() {
-  var CURRENT_VERSION = 'v3.17.16';
+  var CURRENT_VERSION = 'v3.17.18';
   // 古い sig キャッシュも強制削除 (くまさんFB対応)
   try {
     Object.keys(localStorage).forEach(function(k) {
@@ -332,6 +332,8 @@ body.q-has-text .clear-input-btn{display:flex;align-items:center;justify-content
 <script>
 // ==================================================================
 // サンロくん食事入力 SPA (yakusokuai.jp/meal_input/)
+// v3.17.18 / デバッグ拡張: onReady到達 + input発火を可視化 / 2026-05-20
+// (GAS @308 で meal_input_sign 等を復旧済み)
 // v3.17.16 / デバッグ: 検索失敗原因切り分け / 2026-05-20
 // - fetchCandidates にリクエストURL/レスポンス状態を画面下部に表示 (12秒)
 // - くまさんが「すき家」検索時に何が起きてるか把握するため
@@ -790,6 +792,8 @@ function showFatalError(msg) {
   if (box) box.innerHTML = "<div class=\"empty\" style=\"color:#dc2626\">⚠ " + msg + "</div>";
 }
 function onReady() {
+  // v3.17.18 デバッグ: onReady到達確認
+  if (typeof showDebug === 'function') showDebug('onReady fired (v3.17.18)');
   var box = $("results");
   if (box) box.innerHTML = "";
   loadTodayMeals();
@@ -1065,6 +1069,8 @@ function recordFromFrequent(item, multiplier) {
 // v3.15.4 Phase 7.1.B: 未入力時は当日一覧表示、検索中は隠す
 // v3.17.3 くまさんFB: q-has-text class 制御を統合 (× ボタン表示 + よく使うもの非表示)
 $("q").addEventListener("input", function() {
+  // v3.17.18 デバッグ: input イベント発火確認
+  if (typeof showDebug === 'function') showDebug('input fired v=' + this.value + ' ready=' + state.ready);
   if (!state.ready) return;
   clearTimeout(state.debounceTimer);
   var v = this.value.trim();
