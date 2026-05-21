@@ -43,6 +43,18 @@ iframe{width:100%;height:calc(100vh + 60px);border:none;display:block;}
   border-radius:50%;animation:spin 0.6s linear infinite;margin-bottom:16px;
 }
 #navOverlay .sub{font-size:11px;color:#888;margin-top:8px;font-weight:normal;}
+
+/* 強制リロードボタン (右上に固定) - iframe より上に表示し、 GAS の HTML キャッシュをバイパス */
+#forceReloadBtn{
+  position:fixed;top:8px;right:10px;z-index:10001;
+  background:#16a34a;color:#fff;border:none;border-radius:6px;
+  padding:6px 12px;font-size:11px;font-weight:bold;cursor:pointer;
+  box-shadow:0 2px 6px rgba(0,0,0,0.25);
+  opacity:0.85;transition:opacity 0.15s;
+}
+#forceReloadBtn:hover{opacity:1;}
+#forceReloadBtn:active{transform:translateY(1px);}
+#forceReloadBtn.hidden{display:none;}
 </style>
 </head>
 <body>
@@ -51,6 +63,9 @@ iframe{width:100%;height:calc(100vh + 60px);border:none;display:block;}
   <div>管理画面を読込中…</div>
 </div>
 <iframe id="app" style="display:none;"></iframe>
+
+<!-- 右上の強制リロードボタン (キャッシュバイパス用) -->
+<button id="forceReloadBtn" title="GAS のキャッシュをバイパスして最新版を取得">↻ 最新版</button>
 
 <!-- iframe navigation 中のオーバーレイ (親ページに常駐) -->
 <div id="navOverlay">
@@ -123,6 +138,26 @@ iframe{width:100%;height:calc(100vh + 60px);border:none;display:block;}
   });
 
   iframe.src=GAS_URL+'?'+qs;
+
+  // 右上の 「↻ 最新版」 ボタン: GAS のキャッシュをバイパスして iframe を再読込
+  //   GAS の HTML レスポンスはブラウザに数分キャッシュされるため、 デプロイ直後でも 古い画面が表示されることがある。
+  //   このボタンは iframe.src に `_t=<unix時刻>` を付与して 必ず新規 URL にすることで、 ブラウザキャッシュを確実に回避する。
+  var reloadBtn=document.getElementById('forceReloadBtn');
+  if(reloadBtn){
+    // 印刷ビューでは不要 (印刷専用ビューなのでリロードボタンを隠す)
+    if(isPrintMode){ reloadBtn.classList.add('hidden'); }
+    reloadBtn.addEventListener('click',function(){
+      // ローディング表示
+      if(navOverlay){
+        if(navMsg) navMsg.textContent='最新版を取得中...';
+        navOverlay.style.display='flex';
+      }
+      // 既存の _t=... を取り除いてから 新しいタイムスタンプを付与
+      var src=iframe.src.replace(/[?&]_t=\d+/g,'');
+      var sep=src.indexOf('?')>=0 ? '&' : '?';
+      iframe.src=src+sep+'_t='+Date.now();
+    });
+  }
 })();
 </script>
 </body>
