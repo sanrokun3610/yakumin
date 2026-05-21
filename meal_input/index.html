@@ -7,12 +7,12 @@
 <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>食事入力 v3.17.11</title>
+<title>食事入力</title>
 <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <script>
-// v3.17.11: LIFF 内ブラウザ強キャッシュ対策 - バージョン違いで強制リロード
+// v3.17.12: LIFF 内ブラウザ強キャッシュ対策 - バージョン違いで強制リロード
 (function() {
-  var CURRENT_VERSION = 'v3.17.11';
+  var CURRENT_VERSION = 'v3.17.12';
   try {
     var stored = localStorage.getItem('meal_input_version');
     if (stored && stored !== CURRENT_VERSION) {
@@ -324,6 +324,7 @@ body.q-has-text .clear-input-btn{display:flex;align-items:center;justify-content
 <script>
 // ==================================================================
 // サンロくん食事入力 SPA (yakusokuai.jp/meal_input/)
+// v3.17.12 / くまさんFB: デバッグ表示削除 + 認証中表示を控えめに / 2026-05-20
 // v3.17.10 / くまさんFB: 認証 sig キャッシュ (体感速度大幅改善) / 2026-05-20
 // - localStorage に { userId, sig, displayName, expireAt 12h } を保存
 // - 2回目以降は LIFF init / getProfile / GAS sign API を全部スキップ → 即 onReady
@@ -712,39 +713,16 @@ function bootstrap() {
     return;
   }
   // v3.17.10: キャッシュがあれば即 onReady
-  // v3.17.11: デバッグ表示でキャッシュ状況を可視化
   var cached = loadSigCache();
-  // デバッグ: localStorage の生の値を確認
-  var rawLs = null;
-  try { rawLs = localStorage.getItem(sigCacheKey()); } catch (e) {}
-  var debugInfo = '';
   if (cached) {
-    var remH = Math.round((cached.expireAt - Date.now()) / (60 * 60 * 1000) * 10) / 10;
-    debugInfo = '⚡キャッシュHIT 残り' + remH + 'h';
     applyAuthState(cached.userId, cached.sig, cached.displayName, false);
-    // バックグラウンドで残り 4h 未満なら再認証
     var remaining = cached.expireAt - Date.now();
     if (remaining < 4 * 60 * 60 * 1000) {
       setTimeout(function() { doFullAuth(true); }, 100);
     }
-  } else {
-    if (rawLs) {
-      debugInfo = '⚠キャッシュ期限切れ - 再認証';
-    } else {
-      debugInfo = '🔐 初回認証 (localStorage 空)';
-    }
-    doFullAuth(false);
+    return;
   }
-  // 画面下部に一時的にデバッグ表示 (5秒で消える)
-  setTimeout(function() {
-    try {
-      var d = document.createElement('div');
-      d.style.cssText = 'position:fixed;bottom:8px;left:8px;right:8px;background:rgba(0,0,0,0.85);color:#fff;padding:8px 12px;font-size:12px;border-radius:6px;z-index:9999;text-align:center;line-height:1.5';
-      d.textContent = '[v3.17.11] ' + debugInfo;
-      document.body.appendChild(d);
-      setTimeout(function(){ try { d.remove(); } catch(e){} }, 5000);
-    } catch (e) {}
-  }, 0);
+  doFullAuth(false);
 }
 
 function doFullAuth(isBackground) {
@@ -789,8 +767,9 @@ function doFullAuth(isBackground) {
 }
 
 function showBootstrapLoading() {
+  // v3.17.12: 認証中表示を控えめに (検索欄が見えていれば違和感少なく)
   var box = $("results");
-  if (box) box.innerHTML = "<div class=\"searching\">🔐 認証中…</div>";
+  if (box) box.innerHTML = "";
 }
 function showFatalError(msg) {
   var box = $("results");

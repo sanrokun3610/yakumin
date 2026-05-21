@@ -1,6 +1,7 @@
 // ==================================================================
-// サンロくんのほけんしつ 共通 LIFF 認証 + UI (v3.17.10 / Phase 7)
+// サンロくんのほけんしつ 共通 LIFF 認証 + UI (v3.17.12 / Phase 7)
 // v3.17.10: sig キャッシュで 2回目以降 認証スキップ (体感速度大幅改善)
+// v3.17.12: 認証中表示を控えめに (背景透明 + 小灰色 「読込中…」)
 // 各 Web App ページから読み込んで使う。
 // 使用方法: window.__SANRO__ = { liffId, deployUrl, onReady } を定義 → SanroBoot.init() 呼び出し
 // v3.17.9: ヘッダーに共通戻るボタン (グレー) を自動挿入
@@ -13,7 +14,8 @@ window.SanroBoot = (function() {
 
   function showLoading(container, msg) {
     if (!container) return;
-    container.innerHTML = '<div class="sanro-loading">🔐 ' + esc(msg || '認証中…') + '</div>';
+    /* v3.17.12: 認証中表示を控えめに (画面が真っ白に見える違和感を軽減) */
+    container.innerHTML = '<div class="sanro-loading" style="background:transparent;border:none;color:#999;font-weight:normal">読込中…</div>';
   }
   function showError(container, msg) {
     if (!container) return;
@@ -143,7 +145,7 @@ window.SanroBoot = (function() {
         if (!isBackground) showError($('sanro-status'), 'LIFFが利用できません。LINEメニューから開き直してください。');
         return;
       }
-      if (!isBackground) showLoading($('sanro-status'), '認証中…');
+      if (!isBackground) showLoading($('sanro-status'), '読込中…');
 
       liff.init({ liffId: APP.liffId, withLoginOnExternalBrowser: false }).then(function() {
         return liff.getProfile();
