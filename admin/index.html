@@ -11,21 +11,16 @@
   GAS Web App の admin ページを iframe で表示する。
 
   目的:
-   1) yakusokuai.jp ドメインで管理画面を提供 (ユーザー体験向上)
-   2) GAS 標準フッター 「このアプリケーションは Google Apps Script の
-      ユーザーによって作成されたものです」 を画面外に追い出す
-   3) URL パラメータ (key, activeTab, fmChain, fcStatus 等) を引き継ぐ
-
-  仕組み:
-   - body を overflow:hidden + 100vh 固定で 親ページのスクロール禁止
-   - iframe の高さを viewport より 60px 大きく → GAS フッターが下にはみ出して見えない
-   - iframe 内部の長いコンテンツは iframe 内の標準スクロールバーで操作可能
+   1) yakusokuai.jp ドメインで管理画面を提供
+   2) GAS 標準フッターを画面外に追い出す (iframe height +60px)
+   3) iframe 内 navigation の「真っ白時間」 を 親オーバーレイで覆い隠す
+      (フォーム submit → 新ページロード中の 1-3秒を視覚的に埋める)
 */
 *{margin:0;padding:0;box-sizing:border-box;}
 html,body{overflow:hidden;height:100vh;width:100%;}
 body{background:#f5f5f4;font-family:-apple-system,sans-serif;}
 iframe{width:100%;height:calc(100vh + 60px);border:none;display:block;}
-.loading{
+.loading-screen{
   display:flex;flex-direction:column;align-items:center;justify-content:center;
   height:100vh;color:#666;
 }
@@ -34,21 +29,42 @@ iframe{width:100%;height:calc(100vh + 60px);border:none;display:block;}
   border-radius:50%;animation:spin 0.8s linear infinite;margin-bottom:16px;
 }
 @keyframes spin{to{transform:rotate(360deg);}}
+
+/* iframe navigation 中の オーバーレイ (親ページに常駐) */
+#navOverlay{
+  display:none;position:fixed;inset:0;
+  background:rgba(245,245,244,0.92);backdrop-filter:blur(2px);
+  z-index:9999;align-items:center;justify-content:center;flex-direction:column;
+  font-size:14px;color:#166534;font-weight:600;
+  transition:opacity 0.15s;
+}
+#navOverlay .big-spinner{
+  width:52px;height:52px;border:5px solid #d1fae5;border-top-color:#16a34a;
+  border-radius:50%;animation:spin 0.6s linear infinite;margin-bottom:16px;
+}
+#navOverlay .sub{font-size:11px;color:#888;margin-top:8px;font-weight:normal;}
 </style>
 </head>
 <body>
-<div id="loading" class="loading">
+<div id="loading" class="loading-screen">
   <div class="spinner"></div>
   <div>管理画面を読込中…</div>
 </div>
 <iframe id="app" style="display:none;"></iframe>
+
+<!-- iframe navigation 中のオーバーレイ (親ページに常駐) -->
+<div id="navOverlay">
+  <div class="big-spinner"></div>
+  <div id="navOverlayMsg">読込中... 数秒お待ちください</div>
+  <div class="sub" id="navOverlaySub">サーバーで処理中です</div>
+</div>
+
 <script>
 (function(){
   var GAS_URL='https://script.google.com/macros/s/AKfycbwqJPueCoeMtpY8WcCAHQjYXIROi8VAaqsbZmuf2iUQ65MG6teaJOC2CwZiGrUNlsd6/exec';
   var params=new URLSearchParams(window.location.search);
 
   // 親ページに渡された URL パラメータを GAS にそのまま転送
-  // (admin の状態保持: ログイン後の key、 タブ、 食品マスタフィルタ、 改善候補フィルタ 等)
   var fwdParams=[
     'key','activeTab',
     'fmChain','fmMenu','fmSourceType','fmSource','fmActive','fmPage','fmPageSize',
@@ -63,18 +79,45 @@ iframe{width:100%;height:calc(100vh + 60px);border:none;display:block;}
   });
 
   var iframe=document.getElementById('app');
-  iframe.src=GAS_URL+'?'+qs;
+  var navOverlay=document.getElementById('navOverlay');
+  var navMsg=document.getElementById('navOverlayMsg');
+  var loadingScreen=document.getElementById('loading');
+
+  // iframe 初回ロード完了
   iframe.addEventListener('load',function(){
-    document.getElementById('loading').style.display='none';
+    if(loadingScreen) loadingScreen.style.display='none';
     iframe.style.display='block';
+    // navigation 完了 → オーバーレイ非表示
+    if(navOverlay) navOverlay.style.display='none';
   });
-  // フォールバック: load イベントが発火しない場合でも 2秒後に表示
+
+  // フォールバック: load イベントが発火しない場合でも 3秒後に表示
   setTimeout(function(){
     if(iframe.style.display==='none'){
-      document.getElementById('loading').style.display='none';
+      if(loadingScreen) loadingScreen.style.display='none';
       iframe.style.display='block';
     }
-  },2000);
+  },3000);
+
+  // 子 (iframe = GAS admin) から postMessage を受信
+  //   メッセージ形式: {type:'admin_loading_start', msg:'検索中...', sub:'数秒お待ちください'}
+  //   セキュリティ: source は iframe.contentWindow であることを確認
+  window.addEventListener('message',function(e){
+    if(!e || !e.data) return;
+    // GAS は googleusercontent.com 経由で配信されるため、 origin チェックは緩めにする
+    // (script.google.com からの redirected iframe content は origin が変動する)
+    var data=e.data;
+    if(data.type==='admin_loading_start'){
+      if(navOverlay){
+        if(navMsg && data.msg) navMsg.textContent=String(data.msg).substring(0,100);
+        navOverlay.style.display='flex';
+      }
+    }else if(data.type==='admin_loading_end'){
+      if(navOverlay) navOverlay.style.display='none';
+    }
+  });
+
+  iframe.src=GAS_URL+'?'+qs;
 })();
 </script>
 </body>
