@@ -1,7 +1,8 @@
 // ==================================================================
-// サンロくんのほけんしつ 共通 LIFF 認証 + UI (v3.17.12 / Phase 7)
+// サンロくんのほけんしつ 共通 LIFF 認証 + UI (v3.17.13 / Phase 7)
 // v3.17.10: sig キャッシュで 2回目以降 認証スキップ (体感速度大幅改善)
 // v3.17.12: 認証中表示を控えめに (背景透明 + 小灰色 「読込中…」)
+// v3.17.13: doFullAuth を init 外に出して hoisting 問題を回避 (体重/記録/血圧/設定の認証失敗修正)
 // 各 Web App ページから読み込んで使う。
 // 使用方法: window.__SANRO__ = { liffId, deployUrl, onReady } を定義 → SanroBoot.init() 呼び出し
 // v3.17.9: ヘッダーに共通戻るボタン (グレー) を自動挿入
@@ -110,10 +111,56 @@ window.SanroBoot = (function() {
     try { localStorage.removeItem(__sigCacheKey()); } catch (e) {}
   }
 
+  // v3.17.13: onReady を closure 外で参照できるよう module-level に保持
+  var _onReadyCallback = function() {};
+
+  // v3.17.13: doFullAuth を init 外に出して hoisting 問題を回避
+  function doFullAuth(isBackground) {
+    if (!window.liff || !APP.liffId) {
+      if (!isBackground) showError($('sanro-status'), 'LIFFが利用できません。LINEメニューから開き直してください。');
+      return;
+    }
+    if (!isBackground) showLoading($('sanro-status'), '読込中…');
+
+    liff.init({ liffId: APP.liffId, withLoginOnExternalBrowser: false }).then(function() {
+      return liff.getProfile();
+    }).then(function(profile) {
+      if (!profile) return;
+      var accessToken = null;
+      try { accessToken = liff.getAccessToken(); } catch (e) {}
+      return fetchJson(APP.deployUrl + '?page=meal_input_sign', {
+        method: 'POST',
+        body: JSON.stringify({ userId: profile.userId, accessToken: accessToken, displayName: profile.displayName || '' }),
+      }).then(function(data) {
+        if (!data || !data.ok) {
+          if (!isBackground) showError($('sanro-status'), '認証失敗: ' + (data && data.error ? data.error : 'unknown'));
+          return;
+        }
+        APP.userId = data.userId;
+        APP.sig = data.sig;
+        APP.displayName = data.displayName || '';
+        saveSigCache(APP.userId, APP.sig, APP.displayName);
+        if (isBackground) return;  // バックグラウンドは UI 更新しない
+        var nameEl = document.querySelector('.sanro-username');
+        if (nameEl && APP.displayName) nameEl.textContent = APP.displayName + 'さん';
+        var status = $('sanro-status');
+        if (status) status.innerHTML = '';
+        try { _onReadyCallback(APP); } catch (e) { showError($('sanro-status'), '初期化エラー: ' + e.message); }
+      });
+    }).catch(function(err) {
+      if (isBackground) return;  // バックグラウンド失敗は無視
+      var msg = err && err.message ? String(err.message) : (typeof err === 'string' ? err : '');
+      msg = msg.replace(/https?:\/\/[^\s"<>]+/g, '').replace(/<[^>]+>/g, '').substring(0, 80);
+      if (!msg) msg = '通信エラー';
+      clearSigCache();
+      showError($('sanro-status'), '認証エラー: ' + msg + '（リッチメニューから開き直してください）');
+    });
+  }
+
   function init(config) {
     APP.liffId = config.liffId || '';
     APP.deployUrl = config.deployUrl || '';
-    var onReady = config.onReady || function(){};
+    _onReadyCallback = config.onReady || function(){};
 
     // v3.17.9: 戻るボタンを最初に挿入 (認証失敗時でも戻れるように)
     injectBackButton();
@@ -128,8 +175,7 @@ window.SanroBoot = (function() {
       if (nameEl0 && APP.displayName) nameEl0.textContent = APP.displayName + 'さん';
       var status0 = $('sanro-status');
       if (status0) status0.innerHTML = '';
-      try { onReady(APP); } catch (e) {}
-      // バックグラウンドで sig 期限残り 4h 未満なら再認証
+      try { _onReadyCallback(APP); } catch (e) {}
       var remaining = cached.expireAt - Date.now();
       if (remaining < 4 * 60 * 60 * 1000) {
         setTimeout(function() { doFullAuth(true); }, 100);
@@ -139,50 +185,6 @@ window.SanroBoot = (function() {
 
     // キャッシュなし → 通常フル認証
     doFullAuth(false);
-
-    function doFullAuth(isBackground) {
-      if (!window.liff || !APP.liffId) {
-        if (!isBackground) showError($('sanro-status'), 'LIFFが利用できません。LINEメニューから開き直してください。');
-        return;
-      }
-      if (!isBackground) showLoading($('sanro-status'), '読込中…');
-
-      liff.init({ liffId: APP.liffId, withLoginOnExternalBrowser: false }).then(function() {
-        return liff.getProfile();
-      }).then(function(profile) {
-        if (!profile) return;
-        var accessToken = null;
-        try { accessToken = liff.getAccessToken(); } catch (e) {}
-        return fetchJson(APP.deployUrl + '?page=meal_input_sign', {
-          method: 'POST',
-          body: JSON.stringify({ userId: profile.userId, accessToken: accessToken, displayName: profile.displayName || '' }),
-        }).then(function(data) {
-          if (!data || !data.ok) {
-            if (!isBackground) showError($('sanro-status'), '認証失敗: ' + (data && data.error ? data.error : 'unknown'));
-            return;
-          }
-          APP.userId = data.userId;
-          APP.sig = data.sig;
-          APP.displayName = data.displayName || '';
-          // キャッシュ更新
-          saveSigCache(APP.userId, APP.sig, APP.displayName);
-          if (isBackground) return;  // バックグラウンドは UI 更新しない
-          var nameEl = document.querySelector('.sanro-username');
-          if (nameEl && APP.displayName) nameEl.textContent = APP.displayName + 'さん';
-          var status = $('sanro-status');
-          if (status) status.innerHTML = '';
-          try { onReady(APP); } catch (e) { showError($('sanro-status'), '初期化エラー: ' + e.message); }
-        });
-      }).catch(function(err) {
-        if (isBackground) return;  // バックグラウンド失敗は無視 (キャッシュで動作中)
-        var msg = err && err.message ? String(err.message) : (typeof err === 'string' ? err : '');
-        msg = msg.replace(/https?:\/\/[^\s"<>]+/g, '').replace(/<[^>]+>/g, '').substring(0, 80);
-        if (!msg) msg = '通信エラー';
-        // 認証失敗時はキャッシュもクリア
-        clearSigCache();
-        showError($('sanro-status'), '認証エラー: ' + msg + '（リッチメニューから開き直してください）');
-      });
-    }
   }
 
   function close() {
