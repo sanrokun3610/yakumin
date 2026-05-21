@@ -9,6 +9,23 @@
 <meta http-equiv="Expires" content="0">
 <title>食事入力</title>
 <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<script>
+// v3.17.8: LIFF 内ブラウザ強キャッシュ対策 - バージョン違いで強制リロード
+(function() {
+  var CURRENT_VERSION = 'v3.17.8';
+  try {
+    var stored = localStorage.getItem('meal_input_version');
+    if (stored && stored !== CURRENT_VERSION) {
+      localStorage.setItem('meal_input_version', CURRENT_VERSION);
+      // バージョンが変わった → ハードリロード (cache buster クエリ付与)
+      var url = location.pathname + '?v=' + CURRENT_VERSION + '&t=' + Date.now();
+      location.replace(url);
+      return;
+    }
+    localStorage.setItem('meal_input_version', CURRENT_VERSION);
+  } catch (e) {}
+})();
+</script>
 <style>
 /* v3.15.0 Phase 7.1.A: 文字サイズ 16px 基準、タップ領域 44px 最低、行間 1.6 */
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
@@ -160,7 +177,7 @@ body.q-has-text .clear-input-btn{display:flex;align-items:center;justify-content
 <!-- v3.17.1 くまさん4点FB: ヘッダー左上に「← LINEに戻る」ボタン -->
 <div class="header" id="main-header">
   <div class="header-title">
-    <button class="back-btn" id="header-back-btn">← 戻る</button>
+    <button class="back-btn" id="header-back-btn" style="background:#2563eb !important;color:#fff !important;border-color:#1d4ed8 !important">← 戻る</button>
     <span id="header-title-text">🐻 食事を記録</span>
   </div>
   <div class="chip-row" id="meal-type-bar">
@@ -307,6 +324,10 @@ body.q-has-text .clear-input-btn{display:flex;align-items:center;justify-content
 <script>
 // ==================================================================
 // サンロくん食事入力 SPA (yakusokuai.jp/meal_input/)
+// v3.17.8 / LIFF キャッシュ強制更新 + inline style 強制青 / 2026-05-20
+// - LIFF 内ブラウザの強キャッシュで v3.17.7 (青) が反映されない問題対応
+// - <head> 内に localStorage version check + 不一致なら location.replace で強制リロード
+// - 戻るボタンに inline style !important で青色を強制
 // v3.17.7 / くまさんFB: 戻るボタン 赤→青、文言「← 戻る」に短縮 / 2026-05-20
 // v3.17.6 / くまさんFB: 戻るボタン強化 + 自前ヘッダーをLIFFタイトル直下に固定 / 2026-05-20
 // - <title> から バージョン文字列削除 (LIFFタイトルバー表示を最小化)
