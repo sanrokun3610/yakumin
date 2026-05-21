@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0">
+<title>管理画面 - サンロくんのほけんしつ</title>
+<style>
+/*
+  yakusokuai.jp/admin/index.html
+  ─────────────────────────────────────────────
+  GAS Web App の admin ページを iframe で表示する。
+
+  目的:
+   1) yakusokuai.jp ドメインで管理画面を提供 (ユーザー体験向上)
+   2) GAS 標準フッター 「このアプリケーションは Google Apps Script の
+      ユーザーによって作成されたものです」 を画面外に追い出す
+   3) URL パラメータ (key, activeTab, fmChain, fcStatus 等) を引き継ぐ
+
+  仕組み:
+   - body を overflow:hidden + 100vh 固定で 親ページのスクロール禁止
+   - iframe の高さを viewport より 60px 大きく → GAS フッターが下にはみ出して見えない
+   - iframe 内部の長いコンテンツは iframe 内の標準スクロールバーで操作可能
+*/
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{overflow:hidden;height:100vh;width:100%;}
+body{background:#f5f5f4;font-family:-apple-system,sans-serif;}
+iframe{width:100%;height:calc(100vh + 60px);border:none;display:block;}
+.loading{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  height:100vh;color:#666;
+}
+.spinner{
+  width:40px;height:40px;border:4px solid #e5e5e5;border-top:4px solid #22c55e;
+  border-radius:50%;animation:spin 0.8s linear infinite;margin-bottom:16px;
+}
+@keyframes spin{to{transform:rotate(360deg);}}
+</style>
+</head>
+<body>
+<div id="loading" class="loading">
+  <div class="spinner"></div>
+  <div>管理画面を読込中…</div>
+</div>
+<iframe id="app" style="display:none;"></iframe>
+<script>
+(function(){
+  var GAS_URL='https://script.google.com/macros/s/AKfycbwqJPueCoeMtpY8WcCAHQjYXIROi8VAaqsbZmuf2iUQ65MG6teaJOC2CwZiGrUNlsd6/exec';
+  var params=new URLSearchParams(window.location.search);
+
+  // 親ページに渡された URL パラメータを GAS にそのまま転送
+  // (admin の状態保持: ログイン後の key、 タブ、 食品マスタフィルタ、 改善候補フィルタ 等)
+  var fwdParams=[
+    'key','activeTab',
+    'fmChain','fmMenu','fmSourceType','fmSource','fmActive','fmPage','fmPageSize',
+    'fcStatus','fcPriority','fcAction'
+  ];
+  var qs='page=admin';
+  fwdParams.forEach(function(n){
+    var v=params.get(n);
+    if(v!==null && v!==''){
+      qs+='&'+encodeURIComponent(n)+'='+encodeURIComponent(v);
+    }
+  });
+
+  var iframe=document.getElementById('app');
+  iframe.src=GAS_URL+'?'+qs;
+  iframe.addEventListener('load',function(){
+    document.getElementById('loading').style.display='none';
+    iframe.style.display='block';
+  });
+  // フォールバック: load イベントが発火しない場合でも 2秒後に表示
+  setTimeout(function(){
+    if(iframe.style.display==='none'){
+      document.getElementById('loading').style.display='none';
+      iframe.style.display='block';
+    }
+  },2000);
+})();
+</script>
+</body>
+</html>
