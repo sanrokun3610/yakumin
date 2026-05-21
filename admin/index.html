@@ -3,6 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0">
+<!-- Phase Admin-UX-Next-3: 親ページ HTML 自体のブラウザキャッシュを完全無効化。
+     これが無いと、 親ページの JS (showNavOverlay / タイムアウト保険 / 閉じるボタン等) が
+     古いまま使われ続けて 修正が反映されない事故になる。 -->
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>管理画面 - サンロくんのほけんしつ</title>
 <style>
 /*
@@ -44,6 +50,15 @@ iframe{width:100%;height:calc(100vh + 60px);border:none;display:block;}
 }
 #navOverlay .sub{font-size:11px;color:#888;margin-top:8px;font-weight:normal;}
 
+/* Phase Admin-UX-Next-3: overlay の 「✕ 閉じる」 ボタン (手動解除の安全弁) */
+#navOverlayCloseBtn{
+  margin-top:20px;background:#ef4444;color:#fff;border:none;border-radius:6px;
+  padding:8px 18px;font-size:12px;font-weight:bold;cursor:pointer;
+  box-shadow:0 2px 6px rgba(0,0,0,0.2);
+}
+#navOverlayCloseBtn:hover{background:#dc2626;}
+#navOverlayCloseBtn:active{transform:translateY(1px);}
+
 /* 強制リロードボタン (右上に固定) - iframe より上に表示し、 GAS の HTML キャッシュをバイパス */
 #forceReloadBtn{
   position:fixed;top:8px;right:10px;z-index:10001;
@@ -65,19 +80,25 @@ iframe{width:100%;height:calc(100vh + 60px);border:none;display:block;}
 <iframe id="app" style="display:none;"></iframe>
 
 <!-- 右上の強制リロードボタン (キャッシュバイパス用) -->
-<button id="forceReloadBtn" title="GAS のキャッシュをバイパスして最新版を取得">↻ 最新版</button>
+<button id="forceReloadBtn" title="親ページごと完全リロード (キャッシュ完全無効化)">↻ 最新版</button>
 
 <!-- iframe navigation 中のオーバーレイ (親ページに常駐) -->
 <div id="navOverlay">
   <div class="big-spinner"></div>
   <div id="navOverlayMsg">読込中... 数秒お待ちください</div>
   <div class="sub" id="navOverlaySub">サーバーで処理中です</div>
+  <!-- Phase Admin-UX-Next-3: 手動「閉じる」 ボタン (固まり時のユーザー脱出口) -->
+  <button id="navOverlayCloseBtn" type="button">✕ 閉じる</button>
 </div>
 
 <script>
 (function(){
   var GAS_URL='https://script.google.com/macros/s/AKfycbwqJPueCoeMtpY8WcCAHQjYXIROi8VAaqsbZmuf2iUQ65MG6teaJOC2CwZiGrUNlsd6/exec';
   var params=new URLSearchParams(window.location.search);
+
+  // Phase Admin-UX-Next-3: ビルドタグ (Cmd+Shift+R 不要を期待する自己診断用)
+  var BUILD_TAG='admin-ux-next-3:'+(new Date().toISOString().substring(0,10));
+  console.log('[adminParent] loaded build='+BUILD_TAG);
 
   // fmPrintMode=1 が指定されていれば 食品マスタ印刷ビューを iframe で表示
   var isPrintMode = params.get('fmPrintMode')==='1';
@@ -105,13 +126,16 @@ iframe{width:100%;height:calc(100vh + 60px);border:none;display:block;}
   var iframe=document.getElementById('app');
   var navOverlay=document.getElementById('navOverlay');
   var navMsg=document.getElementById('navOverlayMsg');
+  var navSub=document.getElementById('navOverlaySub');
+  var navCloseBtn=document.getElementById('navOverlayCloseBtn');
   var loadingScreen=document.getElementById('loading');
 
-  // iframe 初回ロード完了
+  // iframe 初回ロード完了 (= 親 iframe[id=app] の src 自体が新しいURLに切り替わった時のみ発火)
   iframe.addEventListener('load',function(){
+    console.log('[adminParent] iframe load event fired');
     if(loadingScreen) loadingScreen.style.display='none';
     iframe.style.display='block';
-    if(navOverlay) navOverlay.style.display='none';
+    hideNavOverlay();
   });
 
   // フォールバック: load イベントが発火しない場合でも 3秒後に表示
@@ -122,30 +146,52 @@ iframe{width:100%;height:calc(100vh + 60px);border:none;display:block;}
     }
   },3000);
 
-  // 子 (iframe = GAS admin) から postMessage を受信
-  // Phase Admin-UX-Next-2: navOverlay の表示・非表示は タイムアウト保険つきで管理。
-  //   3層 iframe 構造により、 サーバー処理が異常終了したり、 新 admin HTML の起動 script が
-  //   走らなかったりすると admin_loading_end が来ない可能性がある。
-  //   → 表示開始から 30 秒経過したら強制的に非表示にして「永久固まり」を防ぐ。
+  // ──────────────────────────────────────────────────────────────────
+  // Phase Admin-UX-Next-3: navOverlay 管理 (10秒タイムアウト保険 + 手動閉じる)
+  //   重要: 3層 iframe 構造で 親 iframe[id=app] の load イベントが
+  //         サンドボックス内ナビゲーションでは発火しないため、
+  //         GAS 側の admin_loading_end postMessage が来ない場合は
+  //         10秒タイムアウトで強制 hide する。
+  //   さらに ✕ 閉じる ボタンで ユーザーが手動解除も可能 (最終安全弁)。
+  // ──────────────────────────────────────────────────────────────────
   var navOverlayTimer=null;
   function hideNavOverlay(){
+    console.log('[adminParent] hideNavOverlay called');
     if(navOverlay) navOverlay.style.display='none';
+    if(navMsg) navMsg.textContent='読込中... 数秒お待ちください';
+    if(navSub) navSub.textContent='サーバーで処理中です';
     if(navOverlayTimer){ clearTimeout(navOverlayTimer); navOverlayTimer=null; }
   }
   function showNavOverlay(msg){
+    console.log('[adminParent] showNavOverlay called msg=', msg);
     if(!navOverlay) return;
     if(navMsg && msg) navMsg.textContent=String(msg).substring(0,100);
+    if(navSub) navSub.textContent='サーバーで処理中です (10秒で自動解除)';
     navOverlay.style.display='flex';
     if(navOverlayTimer) clearTimeout(navOverlayTimer);
+    // タイムアウトを 30秒 → 10秒 に短縮 (Phase Admin-UX-Next-3)
     navOverlayTimer=setTimeout(function(){
-      // 30秒経っても admin_loading_end が来ない → 強制 hide + 警告
-      if(navMsg) navMsg.textContent='処理が長引いています。 ↻ 最新版 ボタンで再読込してください。';
-      setTimeout(hideNavOverlay,3000);
-    },30000);
+      console.warn('[adminParent] navOverlay 10s timeout fired - force hiding');
+      if(navMsg) navMsg.textContent='処理が長引いています。 画面が更新されない場合は ↻ 最新版 を押してください。';
+      if(navSub) navSub.textContent='10秒経過したので 自動で閉じます';
+      setTimeout(hideNavOverlay,2500);
+    },10000);
   }
+
+  // 手動「✕ 閉じる」ボタン (固まり時のユーザー脱出口)
+  if(navCloseBtn){
+    navCloseBtn.addEventListener('click',function(){
+      console.log('[adminParent] navOverlay manual close clicked');
+      hideNavOverlay();
+    });
+  }
+
+  // 子 (iframe = GAS admin) から postMessage を受信
   window.addEventListener('message',function(e){
     if(!e || !e.data) return;
     var data=e.data;
+    if(typeof data!=='object') return;
+    console.log('[adminParent] message received type=', data.type, 'msg=', data.msg);
     if(data.type==='admin_loading_start'){
       showNavOverlay(data.msg);
     }else if(data.type==='admin_loading_end'){
@@ -158,23 +204,26 @@ iframe{width:100%;height:calc(100vh + 60px);border:none;display:block;}
 
   iframe.src=GAS_URL+'?'+qs;
 
-  // 右上の 「↻ 最新版」 ボタン: GAS のキャッシュをバイパスして iframe を再読込
-  //   GAS の HTML レスポンスはブラウザに数分キャッシュされるため、 デプロイ直後でも 古い画面が表示されることがある。
-  //   このボタンは iframe.src に `_t=<unix時刻>` を付与して 必ず新規 URL にすることで、 ブラウザキャッシュを確実に回避する。
+  // ──────────────────────────────────────────────────────────────────
+  // Phase Admin-UX-Next-3: 「↻ 最新版」 ボタンは 親ページごと完全リロード
+  //   以前は iframe.src しか更新しなかったため、 親ページの JS (showNavOverlay 等) は
+  //   ブラウザキャッシュの古い版が動き続け、 修正が反映されない事故があった。
+  //   親ページの URL に _t=<unix時刻> を付けて window.location.href で遷移すれば、
+  //   親 HTML + 親 JS + iframe すべてが最新版になる。
+  // ──────────────────────────────────────────────────────────────────
   var reloadBtn=document.getElementById('forceReloadBtn');
   if(reloadBtn){
-    // 印刷ビューでは不要 (印刷専用ビューなのでリロードボタンを隠す)
     if(isPrintMode){ reloadBtn.classList.add('hidden'); }
     reloadBtn.addEventListener('click',function(){
-      // ローディング表示
+      console.log('[adminParent] forceReload clicked - reloading parent page itself');
       if(navOverlay){
         if(navMsg) navMsg.textContent='最新版を取得中...';
         navOverlay.style.display='flex';
       }
-      // 既存の _t=... を取り除いてから 新しいタイムスタンプを付与
-      var src=iframe.src.replace(/[?&]_t=\d+/g,'');
-      var sep=src.indexOf('?')>=0 ? '&' : '?';
-      iframe.src=src+sep+'_t='+Date.now();
+      // 親ページ自体を リロード (_t= でブラウザキャッシュも バイパス)
+      var purl=window.location.href.replace(/[?&]_t=\d+/g,'');
+      var psep=purl.indexOf('?')>=0 ? '&' : '?';
+      window.location.href=purl+psep+'_t='+Date.now();
     });
   }
 })();
