@@ -65,8 +65,96 @@
     <div class="sanro-info-row"><span class="label">性別</span><span class="value" id="info-gender">—</span></div>
   </div>
 
+  <!-- v3.18.0 Phase 7.1.D: 自炊メニュー管理 (HOME_MEAL_MASTER_PLAN.md Section 3) -->
+  <div class="sanro-section">
+    <div class="sanro-section-title">🏠 自炊メニュー</div>
+    <div style="font-size:12px;color:#666;line-height:1.6;margin-bottom:10px">
+      よく使う食事を登録できます。<br>
+      食事入力で選びやすくなります。
+    </div>
+    <div class="sanro-info-row">
+      <span class="label">現在の登録</span>
+      <span class="value" id="hm-count">— / 20</span>
+    </div>
+    <div id="hm-list" style="margin:8px 0"></div>
+    <div style="height:6px"></div>
+    <button class="sanro-btn secondary" id="btn-hm-add">+ 自炊メニューを追加</button>
+  </div>
+
   <!-- v3.17.9 くまさんFB: 「完了してLINEに戻る」廃止 → ヘッダー左上の共通 ← 戻るに統一 -->
 </div>
+
+<!-- v3.18.0 Phase 7.1.D: 自炊メニュー編集モーダル (meal_input/index.html の home-meal-edit-modal パターン流用) -->
+<div id="hm-edit-modal" class="modal hidden" style="position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:100;display:flex;align-items:center;justify-content:center;padding:16px">
+  <div style="background:#fff;border-radius:12px;padding:16px;width:100%;max-width:420px;max-height:90vh;overflow-y:auto">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <button id="hm-edit-back" style="background:#f0f0f0;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:13px">← 戻る</button>
+      <div style="font-size:11px;color:#9ca3af" id="hm-edit-mode-label">新規登録</div>
+    </div>
+    <div style="font-size:16px;font-weight:700;color:#166534;margin-bottom:10px" id="hm-edit-title">自炊メニューを登録</div>
+
+    <div style="font-size:13px;color:#666;margin-bottom:6px;font-weight:600">名前 (30文字まで)</div>
+    <input type="text" id="hm-edit-label" placeholder="例: 納豆ごはん" maxlength="30" style="width:100%;padding:12px;font-size:16px;border:1.5px solid #d4d4d4;border-radius:8px;margin-bottom:10px;box-sizing:border-box">
+
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:10px">
+      <div>
+        <div style="font-size:13px;color:#666;margin-bottom:4px;font-weight:600">カロリー</div>
+        <input type="text" id="hm-edit-kcal" placeholder="350" inputmode="numeric" style="width:100%;padding:10px;font-size:15px;border:1.5px solid #d4d4d4;border-radius:8px;box-sizing:border-box">
+        <div style="font-size:11px;color:#999;margin-top:2px">kcal</div>
+      </div>
+      <div>
+        <div style="font-size:13px;color:#666;margin-bottom:4px;font-weight:600">量</div>
+        <input type="text" id="hm-edit-amount" placeholder="1" inputmode="decimal" style="width:100%;padding:10px;font-size:15px;border:1.5px solid #d4d4d4;border-radius:8px;box-sizing:border-box">
+      </div>
+      <div>
+        <div style="font-size:13px;color:#666;margin-bottom:4px;font-weight:600">単位</div>
+        <select id="hm-edit-unit" style="width:100%;padding:10px;font-size:15px;border:1.5px solid #d4d4d4;border-radius:8px;background:#fff;box-sizing:border-box">
+          <option value="人前">人前</option>
+          <option value="個">個</option>
+          <option value="枚">枚</option>
+          <option value="杯">杯</option>
+          <option value="g">g</option>
+          <option value="ml">ml</option>
+        </select>
+      </div>
+    </div>
+
+    <div style="font-size:13px;color:#666;margin-bottom:6px;font-weight:600">よく使う食事区分 (任意)</div>
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin-bottom:10px" id="hm-mt-chips">
+      <button type="button" class="hm-mt-chip selected" data-hm-mt="">指定なし</button>
+      <button type="button" class="hm-mt-chip" data-hm-mt="breakfast">朝</button>
+      <button type="button" class="hm-mt-chip" data-hm-mt="lunch">昼</button>
+      <button type="button" class="hm-mt-chip" data-hm-mt="dinner">夕</button>
+      <button type="button" class="hm-mt-chip" data-hm-mt="snack">間食</button>
+    </div>
+
+    <div style="font-size:13px;color:#666;margin-bottom:6px;font-weight:600">メモ (100文字まで)</div>
+    <textarea id="hm-edit-memo" maxlength="100" rows="2" placeholder="例: ごはん150g + 納豆1パック" style="width:100%;padding:10px;font-size:14px;border:1.5px solid #d4d4d4;border-radius:8px;margin-bottom:8px;font-family:inherit;box-sizing:border-box"></textarea>
+
+    <div style="font-size:11px;color:#9ca3af;margin-bottom:10px">※ あとから変更できます</div>
+
+    <button class="sanro-btn primary" id="hm-edit-save" style="margin-bottom:8px">保存</button>
+    <button class="sanro-btn" id="hm-edit-delete" style="color:#dc2626;border-color:#fecaca;background:#fef2f2;margin-bottom:8px;display:none">このメニューを削除</button>
+    <button class="sanro-btn" id="hm-edit-cancel">やめる</button>
+  </div>
+</div>
+
+<style>
+.hm-mt-chip{padding:8px 4px;font-size:12px;border:1.5px solid #d4d4d4;border-radius:8px;background:#fff;color:#666;cursor:pointer;font-weight:600;-webkit-touch-callout:none;user-select:none}
+.hm-mt-chip.selected{background:#dcfce7;border-color:#166534;color:#166534}
+.hm-mt-chip:active{transform:scale(0.97)}
+.hm-row{display:flex;align-items:center;justify-content:space-between;padding:8px 4px;border-bottom:1px solid #f0f0f0;gap:8px}
+.hm-row:last-child{border-bottom:none}
+.hm-row .hm-info{flex:1;min-width:0}
+.hm-row .hm-name{font-size:14px;font-weight:600;color:#166534;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hm-row .hm-meta{font-size:11px;color:#888;margin-top:2px}
+.hm-row .hm-actions{display:flex;gap:4px;flex-shrink:0}
+.hm-row .hm-actions button{padding:5px 10px;font-size:11px;border:1px solid #d4d4d4;background:#fff;border-radius:6px;cursor:pointer;color:#666}
+.hm-row .hm-actions .hm-edit-btn{color:#0369a1;border-color:#bae6fd}
+.hm-row .hm-actions .hm-del-btn{color:#dc2626;border-color:#fecaca}
+.hm-empty{font-size:12px;color:#9ca3af;text-align:center;padding:12px;font-style:italic}
+.hidden{display:none !important}
+</style>
 
 <script src="/common/common.js"></script>
 <script>
@@ -76,6 +164,8 @@ SanroBoot.init({
   onReady: function(APP) {
     document.getElementById('content').classList.remove('hidden');
     loadUserInfo();
+    // v3.18.0 Phase 7.1.D: 自炊メニュー一覧も並列取得 (loadUserInfo と独立で軽量)
+    if (typeof hmLoad === 'function') hmLoad();
   }
 });
 var GOAL_LABELS = { 'diet': 'ダイエット', 'bulkup': '体力アップ', 'health': '健康維持', 'diabetes': '糖尿病管理' };
@@ -152,6 +242,198 @@ document.getElementById('btn-edit-body').addEventListener('click', function() {
 });
 
 // v3.17.9: btn-close 廃止 (共通 sanro-back-btn が SanroBoot.close を呼ぶ)
+
+// ====================================================================
+// v3.18.0 Phase 7.1.D: 自炊メニュー管理
+//   - apiGet('home_meals_all') で max 20件取得 → 一覧描画
+//   - apiPost('home_meals_add') / 'home_meals_update' / 'home_meals_delete'
+//   - HOME_MEAL_MASTER_PLAN.md Section 3 の設計準拠
+// ====================================================================
+var HM_MAX = 20;
+var hmEditingId = null; // null=新規, 'hm_xxx'=編集
+var hmSelectedMealType = ''; // 食事区分chip 選択値
+
+function hmLoad() {
+  SanroBoot.apiGet('home_meals_all').then(function(data) {
+    if (!data || !data.ok) {
+      document.getElementById('hm-list').innerHTML = '<div class="hm-empty">読込失敗: ' + ((data && data.error) || 'unknown') + '</div>';
+      document.getElementById('hm-count').textContent = '? / ' + HM_MAX;
+      return;
+    }
+    var items = data.items || [];
+    document.getElementById('hm-count').textContent = items.length + ' / ' + HM_MAX;
+    hmRender(items);
+  }).catch(function(err) {
+    document.getElementById('hm-list').innerHTML = '<div class="hm-empty">通信失敗: ' + (err && err.message ? err.message : err) + '</div>';
+  });
+}
+
+function hmRender(items) {
+  var box = document.getElementById('hm-list');
+  if (!items || items.length === 0) {
+    box.innerHTML = '<div class="hm-empty">まだ登録されていません<br>下の「+ 自炊メニューを追加」 から始めてください</div>';
+    return;
+  }
+  var html = '';
+  items.forEach(function(it, idx) {
+    var safeLabel = String(it.label || '').replace(/[<>&"]/g, function(c) {
+      return { '<':'&lt;', '>':'&gt;', '&':'&amp;', '"':'&quot;' }[c];
+    });
+    var unit = String(it.unit || '人前');
+    var amount = it.amount != null ? it.amount : 1;
+    var kcal = it.kcal != null ? Math.round(it.kcal) : 0;
+    var fav = (it.isFavorite === true || it.isFavorite === 'true') ? ' ⭐' : '';
+    html += '<div class="hm-row" data-hm-id="' + encodeURIComponent(it.homeMealId) + '">' +
+      '<div class="hm-info">' +
+        '<div class="hm-name">' + (idx + 1) + '. ' + safeLabel + fav + '</div>' +
+        '<div class="hm-meta">' + kcal + ' kcal / ' + amount + ' ' + unit + '</div>' +
+      '</div>' +
+      '<div class="hm-actions">' +
+        '<button class="hm-edit-btn" data-hm-edit="' + encodeURIComponent(it.homeMealId) + '">編集</button>' +
+        '<button class="hm-del-btn" data-hm-del="' + encodeURIComponent(it.homeMealId) + '" data-hm-name="' + safeLabel + '">削除</button>' +
+      '</div>' +
+    '</div>';
+  });
+  box.innerHTML = html;
+  // 編集 / 削除 ボタン handler
+  Array.prototype.forEach.call(box.querySelectorAll('[data-hm-edit]'), function(btn) {
+    btn.addEventListener('click', function() {
+      var id = decodeURIComponent(this.getAttribute('data-hm-edit'));
+      var item = items.find(function(x) { return x.homeMealId === id; });
+      if (item) hmOpenEdit(item);
+    });
+  });
+  Array.prototype.forEach.call(box.querySelectorAll('[data-hm-del]'), function(btn) {
+    btn.addEventListener('click', function() {
+      var id = decodeURIComponent(this.getAttribute('data-hm-del'));
+      var name = this.getAttribute('data-hm-name');
+      if (!confirm('「' + name + '」 を削除しますか？\n(LINE 検索や食事入力からも表示されなくなります)')) return;
+      hmDelete(id);
+    });
+  });
+}
+
+function hmOpenAdd() {
+  hmEditingId = null;
+  hmSelectedMealType = '';
+  document.getElementById('hm-edit-mode-label').textContent = '新規登録';
+  document.getElementById('hm-edit-title').textContent = '自炊メニューを登録';
+  document.getElementById('hm-edit-label').value = '';
+  document.getElementById('hm-edit-kcal').value = '';
+  document.getElementById('hm-edit-amount').value = '1';
+  document.getElementById('hm-edit-unit').value = '人前';
+  document.getElementById('hm-edit-memo').value = '';
+  hmUpdateMtChips('');
+  document.getElementById('hm-edit-delete').style.display = 'none';
+  document.getElementById('hm-edit-modal').classList.remove('hidden');
+}
+
+function hmOpenEdit(item) {
+  hmEditingId = item.homeMealId;
+  hmSelectedMealType = String(item.mealTypeDefault || '');
+  document.getElementById('hm-edit-mode-label').textContent = '編集';
+  document.getElementById('hm-edit-title').textContent = '自炊メニューを編集';
+  document.getElementById('hm-edit-label').value = String(item.label || '');
+  document.getElementById('hm-edit-kcal').value = item.kcal != null ? String(item.kcal) : '';
+  document.getElementById('hm-edit-amount').value = item.amount != null ? String(item.amount) : '1';
+  document.getElementById('hm-edit-unit').value = String(item.unit || '人前');
+  document.getElementById('hm-edit-memo').value = String(item.memo || '');
+  hmUpdateMtChips(hmSelectedMealType);
+  document.getElementById('hm-edit-delete').style.display = '';
+  document.getElementById('hm-edit-modal').classList.remove('hidden');
+}
+
+function hmCloseEdit() {
+  document.getElementById('hm-edit-modal').classList.add('hidden');
+  hmEditingId = null;
+}
+
+function hmUpdateMtChips(selected) {
+  Array.prototype.forEach.call(document.querySelectorAll('.hm-mt-chip'), function(btn) {
+    btn.classList.toggle('selected', btn.getAttribute('data-hm-mt') === selected);
+  });
+}
+
+function hmSave() {
+  var label  = document.getElementById('hm-edit-label').value.trim();
+  var kcalS  = document.getElementById('hm-edit-kcal').value.trim();
+  var amtS   = document.getElementById('hm-edit-amount').value.trim();
+  var unit   = document.getElementById('hm-edit-unit').value;
+  var memo   = document.getElementById('hm-edit-memo').value.trim();
+  var mt     = hmSelectedMealType;
+
+  if (!label) { SanroBoot.toast('名前を入力してください', 'error'); return; }
+  if (label.length > 30) { SanroBoot.toast('名前は30文字以内', 'error'); return; }
+  var kcal = parseFloat(kcalS);
+  if (!isFinite(kcal) || kcal < 0 || kcal > 3000) { SanroBoot.toast('カロリーは 0〜3000', 'error'); return; }
+  var amount = parseFloat(amtS);
+  if (!isFinite(amount) || amount <= 0 || amount > 999) { SanroBoot.toast('量は 0より大きい数値', 'error'); return; }
+  if (memo.length > 100) { SanroBoot.toast('メモは100文字以内', 'error'); return; }
+
+  var body = { label: label, kcal: kcal, unit: unit, amount: amount, memo: memo, mealTypeDefault: mt };
+  var page;
+  if (hmEditingId) {
+    body.homeMealId = hmEditingId;
+    page = 'home_meals_update';
+  } else {
+    page = 'home_meals_add';
+  }
+
+  SanroBoot.apiPost(page, body).then(function(data) {
+    if (data && data.ok) {
+      SanroBoot.toast(hmEditingId ? '✅ 保存しました' : '✅ 登録しました', 'success');
+      hmCloseEdit();
+      hmLoad();
+    } else {
+      SanroBoot.toast('失敗: ' + ((data && data.error) || 'unknown'), 'error');
+    }
+  }).catch(function(err) {
+    SanroBoot.toast('通信失敗: ' + (err && err.message ? err.message : err), 'error');
+  });
+}
+
+function hmDelete(homeMealId) {
+  SanroBoot.apiPost('home_meals_delete', { homeMealId: homeMealId }).then(function(data) {
+    if (data && data.ok) {
+      SanroBoot.toast('✅ 削除しました', 'success');
+      hmLoad();
+    } else {
+      SanroBoot.toast('削除失敗: ' + ((data && data.error) || 'unknown'), 'error');
+    }
+  }).catch(function(err) {
+    SanroBoot.toast('通信失敗: ' + (err && err.message ? err.message : err), 'error');
+  });
+}
+
+// 編集モーダル内の削除ボタン → 確認 → 削除
+document.getElementById('hm-edit-delete').addEventListener('click', function() {
+  if (!hmEditingId) return;
+  var name = document.getElementById('hm-edit-label').value.trim() || 'このメニュー';
+  if (!confirm('「' + name + '」 を削除しますか？')) return;
+  hmDelete(hmEditingId);
+  hmCloseEdit();
+});
+
+// 食事区分 chip ハンドラ (イベント委譲)
+document.getElementById('hm-mt-chips').addEventListener('click', function(e) {
+  var btn = e.target.closest('.hm-mt-chip');
+  if (!btn) return;
+  hmSelectedMealType = btn.getAttribute('data-hm-mt') || '';
+  hmUpdateMtChips(hmSelectedMealType);
+});
+
+// 各種ボタン
+document.getElementById('btn-hm-add').addEventListener('click', hmOpenAdd);
+document.getElementById('hm-edit-back').addEventListener('click', hmCloseEdit);
+document.getElementById('hm-edit-cancel').addEventListener('click', hmCloseEdit);
+document.getElementById('hm-edit-save').addEventListener('click', hmSave);
+
+// モーダル背景クリックで閉じる (内側はキャンセル)
+document.getElementById('hm-edit-modal').addEventListener('click', function(e) {
+  if (e.target === this) hmCloseEdit();
+});
+
+// 初回ロードは SanroBoot.init の onReady で hmLoad() 呼出済 (上記参照)
 </script>
 </body>
 </html>
