@@ -89,7 +89,18 @@ body{font-family:'Noto Sans JP',-apple-system,sans-serif;background:linear-gradi
 h1{font-size:30px;font-weight:900;letter-spacing:1px;margin-bottom:8px;}
 .tagline{font-size:14px;color:rgba(255,255,255,.85);line-height:1.7;margin-bottom:32px;}
 .coming{display:inline-block;font-size:12px;font-weight:700;letter-spacing:1.5px;background:rgba(255,255,255,.18);padding:6px 16px;border-radius:100px;backdrop-filter:blur(4px);margin-bottom:24px;}
-.footer{margin-top:40px;font-size:11px;color:rgba(255,255,255,.6);}
+.footer{margin-top:40px;font-size:11px;color:rgba(255,255,255,.6);line-height:1.8;}
+.about{text-align:left;background:rgba(255,255,255,.13);border-radius:16px;padding:24px 20px;margin-top:32px;backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.2);}
+.about-title{font-size:18px;font-weight:900;letter-spacing:2px;margin-bottom:10px;text-align:center;}
+.about-desc{font-size:13px;line-height:1.8;color:rgba(255,255,255,.92);margin-bottom:20px;border-bottom:1px solid rgba(255,255,255,.2);padding-bottom:16px;}
+.info-block{margin-bottom:16px;}
+.info-heading{font-size:11px;font-weight:700;letter-spacing:1.5px;color:rgba(255,255,255,.65);text-transform:uppercase;margin-bottom:6px;}
+.info-row{display:flex;gap:10px;font-size:13px;margin-bottom:4px;}
+.info-label{color:rgba(255,255,255,.65);min-width:52px;}
+.info-val{color:#fff;}
+.info-list{list-style:none;font-size:13px;line-height:1.9;color:rgba(255,255,255,.92);}
+.info-list li::before{content:"・";}
+.contact-link{color:#fff;text-decoration:none;font-size:14px;font-weight:700;border-bottom:1px solid rgba(255,255,255,.5);padding-bottom:1px;}
 </style>
 </head>
 <body>
@@ -99,7 +110,30 @@ h1{font-size:30px;font-weight:900;letter-spacing:1px;margin-bottom:8px;}
 <h1>医療×AIで、<br>現場を変える</h1>
 <p class="tagline">調剤薬局・病院向け業務効率化アプリ<br>「やくみん（薬速搭載）」公式サイト</p>
 <div class="coming">COMING SOON</div>
-<div class="footer">© 2026 やくみん / 薬速</div>
+
+<div class="about">
+  <h2 class="about-title">YAKUSOKU / 薬速</h2>
+  <p class="about-desc">YAKUSOKUは、医療・薬局向けアプリケーションおよび業務支援ツールの企画・開発を行う事業です。</p>
+  <div class="info-block">
+    <div class="info-heading">Representative</div>
+    <div class="info-row"><span class="info-label">代表</span><span class="info-val">木村 敦</span></div>
+    <div class="info-row"><span class="info-label">所在地</span><span class="info-val">山梨県甲府市</span></div>
+  </div>
+  <div class="info-block">
+    <div class="info-heading">事業内容</div>
+    <ul class="info-list">
+      <li>医療・薬局向けアプリケーションの開発</li>
+      <li>薬局業務支援ツールの企画・開発</li>
+      <li>医療現場向けPoCおよび業務改善支援</li>
+    </ul>
+  </div>
+  <div class="info-block" style="margin-bottom:0">
+    <div class="info-heading">お問い合わせ</div>
+    <a href="mailto:info@yakusokuai.jp" class="contact-link">info@yakusokuai.jp</a>
+  </div>
+</div>
+
+<div class="footer">YAKUSOKU / 薬速 ｜ 代表：木村 敦<br>Contact: <a href="mailto:info@yakusokuai.jp" style="color:rgba(255,255,255,.6);text-decoration:none;">info@yakusokuai.jp</a><br>© YAKUSOKU</div>
 </div>
 </body>
 </html>
