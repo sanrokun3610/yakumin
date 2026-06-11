@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="referrer" content="no-referrer">
 <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -12,7 +12,8 @@
 <script>
 // v3.18.0: LIFF 内ブラウザ強キャッシュ対策 - バージョン違いで強制リロード
 (function() {
-  var CURRENT_VERSION = 'v3.18.0';
+  var CURRENT_VERSION = 'v3.19.0';
+  window.__APP_BUILD = CURRENT_VERSION;  // build表示用（版マーカーと同一の単一定数）
   // 古い sig キャッシュも強制削除 (くまさんFB対応)
   try {
     Object.keys(localStorage).forEach(function(k) {
@@ -74,7 +75,8 @@ body{padding-bottom:140px}
 
 /* v3.17.0 Phase 7.1.C revised: よく使うもの (履歴自動集計) */
 /* v3.17.3 くまさんFB: 検索欄が空のときだけ表示 (.q-has-text で隠す) */
-.frequent-section{padding:8px 12px 4px;background:#fff}
+/* v3.19.0: よく使うもの常設表示は廃止（くまさん判断 2026-06-11: 表示領域圧迫のため。データ/APIは温存） */
+.frequent-section{display:none;padding:8px 12px 4px;background:#fff}
 body.q-has-text .frequent-section{display:none}
 
 /* v3.18.0 Phase 7.1.D: 自炊メニュー */
@@ -163,6 +165,10 @@ body.q-has-text .clear-input-btn{display:flex;align-items:center;justify-content
 .result-item.selecting{background:#fde68a !important;opacity:0.7;pointer-events:none;border-color:#f59e0b}
 .result-item .label{font-size:17px;font-weight:700;flex:1;color:#1f2937}
 .result-item .kcal{font-size:16px;color:#92400e;font-weight:700;margin-left:8px;white-space:nowrap}
+/* v3.19.0 検索V2: 件数ヘッダー・さらに表示・build表示 */
+.results-header{font-size:14px;color:#6b7280;padding:4px 4px 8px}
+.more-btn{min-height:48px;width:100%;padding:12px;font-size:16px;border:1px solid #fcd34d;border-radius:10px;background:#fffbeb;color:#78350f;cursor:pointer;margin-top:8px;font-weight:600}
+.build-tag{font-size:12px;color:#b8b5ad;text-align:center;padding:8px 0 4px}
 .result-item.history{border-left:4px solid #10b981}
 .result-item.restaurant{border-left:4px solid #f59e0b}
 .result-item.food{border-left:4px solid #6b7280}
@@ -528,7 +534,8 @@ window.__APP__ = {
 (function(){
 var $ = function(id) { return document.getElementById(id); };
 var APP = window.__APP__;
-var state = { selected: null, sizes: null, recordedItems: [], debounceTimer: null, reqCounter: 0, ready: false };
+var state = { selected: null, sizes: null, recordedItems: [], debounceTimer: null, reqCounter: 0, ready: false,
+  lastQuery: "", searchCache: {}, searchCacheKeys: [] };  // v3.19.0 検索V2
 
 // 食事区分マスタ
 var MEAL_LABELS = {
@@ -600,7 +607,7 @@ Array.prototype.forEach.call(document.querySelectorAll('.mode-chip'), function(b
     if (state.ready && v.length >= 2) {
       clearTimeout(state.debounceTimer);
       showSearching();
-      fetchCandidates(v);
+      fetchCandidates(v, 0, false);  // mode変更時も offset=0
     } else {
       // 未入力なら結果クリア
       renderResults([]);
@@ -1427,7 +1434,8 @@ $("q").addEventListener("input", function() {
   }
   hideTodayMeals();    // 2文字以上で検索開始 → 当日一覧は隠す
   showSearching();
-  state.debounceTimer = setTimeout(function() { fetchCandidates(v); }, 350);
+  // v3.19.0 検索V2: debounce 300ms / 検索語変更時は offset=0
+  state.debounceTimer = setTimeout(function() { fetchCandidates(v, 0, false); }, 300);
 });
 
 // v3.15.0 Phase 7.1.A: Enter キーで検索実行 + blur (キーボード閉じる)
@@ -1438,7 +1446,7 @@ $("q").addEventListener("keydown", function(e) {
     var v = this.value.trim();
     if (v.length >= 2) {
       showSearching();
-      fetchCandidates(v);
+      fetchCandidates(v, 0, false);
     }
     this.blur();  // キーボードを閉じる
   }
@@ -1448,25 +1456,76 @@ $("q").addEventListener("keydown", function(e) {
 
 // 候補取得 API (v3.15.2 Phase 7.1.B: mode パラメータ追加)
 // v3.17.14: sig 期限切れ検知 → キャッシュクリア + 強制リロード
-function fetchCandidates(q) {
+// v3.19.0 検索V2: offset/limit ページング + クエリ結果キャッシュ(セッション内Map・最大50)
+function searchCacheKey(q, mode, offset) {
+  return q.replace(/[\s　]+/g, " ") + "|" + mode + "|" + offset;
+}
+function searchCachePut(key, data) {
+  state.searchCache[key] = data;
+  state.searchCacheKeys.push(key);
+  if (state.searchCacheKeys.length > 50) { delete state.searchCache[state.searchCacheKeys.shift()]; }
+}
+function fetchCandidates(q, offset, append) {
   // 認証未完了なら検索しない (qsBase が空)
   if (!APP.qsBase) return;
+  offset = offset || 0;
+  var mode = APP.searchMode || 'all';
   var reqId = ++state.reqCounter;
+  state.lastQuery = q;
+  var key = searchCacheKey(q, mode, offset);
+  var cached = state.searchCache[key];
+  if (cached) { hideSearching(); handleSearchData(cached, append); return; }
   var url = APP.deployUrl + "?page=meal_input_api&" + APP.qsBase +
             "&q=" + encodeURIComponent(q) +
-            "&mode=" + encodeURIComponent(APP.searchMode || 'all');
+            "&mode=" + encodeURIComponent(mode) +
+            "&offset=" + offset + "&limit=20";
   fetch(url).then(function(r){return r.json();}).then(function(data) {
-    if (reqId !== state.reqCounter) return;
+    if (reqId !== state.reqCounter) return;  // 古いレスポンスは破棄
     hideSearching();
     if (data && data.error && isAuthError(data.error)) {
       handleSigInvalidated();
       return;
     }
     if (!data || data.error) { renderResults([]); return; }
-    renderResults(data.candidates || []);
+    searchCachePut(key, data);
+    handleSearchData(data, append);
   }).catch(function() {
     if (reqId === state.reqCounter) { hideSearching(); renderResults([]); }
   });
+}
+
+// v3.19.0 検索V2: 件数ヘッダー + 20件ずつ段階描画 + さらに表示
+function handleSearchData(data, append) {
+  var box = $("results");
+  if (!box) return;
+  var cands = data.candidates || [];
+  if (!append) {
+    if (!data.totalCount && cands.length === 0) { renderResults([]); return; }  // mode別の候補なし文言を再利用
+    box.innerHTML = "";
+    if (data.totalCount > 0) {
+      var head = document.createElement("div");
+      head.className = "results-header";
+      head.textContent = data.totalCount + "件見つかりました";
+      box.appendChild(head);
+    }
+  } else {
+    var oldBtn = document.getElementById("more-btn");
+    if (oldBtn) oldBtn.remove();
+  }
+  cands.forEach(function(c) { appendCandidateCard(box, c); });
+  if (data.hasMore && data.nextOffset != null) {
+    var remain = data.totalCount - data.nextOffset;
+    var btn = document.createElement("button");
+    btn.id = "more-btn";
+    btn.className = "more-btn";
+    btn.textContent = "さらに" + Math.min(20, remain) + "件表示（残り" + remain + "件）";
+    btn.addEventListener("click", function() {
+      btn.disabled = true;
+      btn.textContent = "読み込み中…";
+      fetchCandidates(state.lastQuery, data.nextOffset, true);
+    });
+    box.appendChild(btn);
+  }
 }
 
 // v3.17.14: 認証エラー判定 + 自動リカバリ
@@ -1527,25 +1586,28 @@ function renderResults(cands) {
     return;
   }
   box.innerHTML = "";
-  cands.forEach(function(c, idx) {
-    var div = document.createElement("div");
-    var cls = "result-item";
-    if (c.source === "history") cls += " history";
-    else if (c.source && c.source.indexOf("restaurant") === 0) cls += " restaurant";
-    else cls += " food";
-    div.className = cls;
-    div.innerHTML = "<div class=\"label\">" + esc(c.label || "") + "</div>" +
-      "<div class=\"kcal\">" + (c.kcal != null ? c.kcal + "kcal" : "") + "</div>";
-    div.addEventListener("click", function() {
-      if (div.classList.contains("selecting")) return;
-      Array.prototype.forEach.call(document.querySelectorAll(".result-item"), function(el) {
-        el.classList.remove("selecting");
-      });
-      div.classList.add("selecting");
-      onCandidatePick(c);
+  cands.forEach(function(c) { appendCandidateCard(box, c); });
+}
+
+// v3.19.0 検索V2: 候補カード生成（renderResults / handleSearchData 共用）
+function appendCandidateCard(box, c) {
+  var div = document.createElement("div");
+  var cls = "result-item";
+  if (c.source === "history") cls += " history";
+  else if (c.source && c.source.indexOf("restaurant") === 0) cls += " restaurant";
+  else cls += " food";
+  div.className = cls;
+  div.innerHTML = "<div class=\"label\">" + esc(c.label || "") + "</div>" +
+    "<div class=\"kcal\">" + (c.kcal != null ? c.kcal + "kcal" : "") + "</div>";
+  div.addEventListener("click", function() {
+    if (div.classList.contains("selecting")) return;
+    Array.prototype.forEach.call(document.querySelectorAll(".result-item"), function(el) {
+      el.classList.remove("selecting");
     });
-    box.appendChild(div);
+    div.classList.add("selecting");
+    onCandidatePick(c);
   });
+  box.appendChild(div);
 }
 
 function onCandidatePick(c) {
@@ -1555,6 +1617,11 @@ function onCandidatePick(c) {
   state.sizes = null;
   setTimeout(function() { state.processing = false; }, 5000);
 
+  // v3.19.0 検索V2: V2外食候補はサイズ確定済み(1行=1候補) → サイズ取得を省略して既存保存フローへ
+  if (c.v2 && c.sizeRow) {
+    saveRecord(c, c.size, c.kcal, c.sizeRow);
+    return;
+  }
   if (c.source === "restaurant_exact" || c.source === "restaurant_partial" || c.source === "restaurant_chain_partial") {
     fetchSizesAndShow(c);
   } else if (c.source === "history") {
@@ -1724,6 +1791,14 @@ function showToast(msg, type) {
   else if (type === "error") setTimeout(function() { t.classList.add("hidden"); }, 8000);
 }
 function esc(s) { var d = document.createElement("div"); d.textContent = String(s == null ? "" : s); return d.innerHTML; }
+
+// v3.19.0: build表示（版マーカーと同一の単一定数。HTML/APIどちらが古いかの切り分け用）
+try {
+  var __bt = document.createElement('div');
+  __bt.className = 'build-tag';
+  __bt.textContent = 'UI build ' + (window.__APP_BUILD || '?');
+  document.body.appendChild(__bt);
+} catch (e) {}
 
 bootstrap();
 })();
