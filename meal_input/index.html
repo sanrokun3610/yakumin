@@ -18,7 +18,7 @@ try {
 if (window.__PHOTO_MODE) document.documentElement.className += ' photo-mode';
 // v3.18.0: LIFF 内ブラウザ強キャッシュ対策 - バージョン違いで強制リロード
 (function() {
-  var CURRENT_VERSION = 'v3.20.0';
+  var CURRENT_VERSION = 'v3.20.1';
   window.__APP_BUILD = CURRENT_VERSION;  // build表示用（版マーカーと同一の単一定数）
   // 古い sig キャッシュも強制削除 (くまさんFB対応)
   try {
@@ -212,6 +212,8 @@ body.q-has-text .clear-input-btn{display:flex;align-items:center;justify-content
 .photo-guide{font-size:16px;color:#444;line-height:1.6;margin-bottom:14px}
 .photo-big-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:64px;font-size:18px;font-weight:bold;border:2px solid #fcd34d;border-radius:12px;background:#fde68a;color:#78350f;cursor:pointer}
 .photo-big-btn:active{background:#fcd34d}
+.photo-big-btn.secondary{margin-top:8px;min-height:48px;font-size:16px;background:#fffbeb}
+.photo-big-btn.secondary:active{background:#fde68a}
 .photo-preview-img{width:100%;border-radius:12px;border:1px solid #e5e7eb;display:block;margin-bottom:10px}
 .photo-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .photo-actions button{min-height:48px;padding:12px;font-size:16px;border-radius:10px;border:1px solid #fcd34d;background:#fffbeb;color:#78350f;cursor:pointer;font-weight:600}
@@ -295,9 +297,13 @@ body.q-has-text .clear-input-btn{display:flex;align-items:center;justify-content
 
 <!-- v3.20.0 撮影モード (mode=photo) 専用パネル。通常入力時は非表示 -->
 <div id="photo-panel">
-  <div class="photo-guide">写真を撮って、そのまま記録できます。<br>食事の区分（朝/昼/夕…）は上のボタンで変更できます。</div>
+  <div class="photo-guide">写真を撮るか、アルバムから選んで記録できます。<br>食事の区分（朝/昼/夕…）は上のボタンで変更できます。</div>
   <input type="file" id="photo-input" accept="image/*" capture="environment" style="display:none">
-  <button id="photo-camera-btn" class="photo-big-btn" type="button">📷 カメラを起動</button>
+  <input type="file" id="photo-album-input" accept="image/*" style="display:none">
+  <div id="photo-start-wrap">
+    <button id="photo-camera-btn" class="photo-big-btn" type="button">📷 カメラを起動</button>
+    <button id="photo-album-btn" class="photo-big-btn secondary" type="button">🖼️ アルバムから選ぶ</button>
+  </div>
   <div id="photo-preview-wrap" class="hidden">
     <img id="photo-preview" class="photo-preview-img" alt="撮影した食事の写真">
     <div class="photo-actions">
@@ -1848,7 +1854,8 @@ function esc(s) { var d = document.createElement("div"); d.textContent = String(
 // v3.20.0 撮影モード (mode=photo): 既存の認証(APP)・食事区分チップ・エラー復旧をそのまま再利用
 if (window.__PHOTO_MODE) (function() {
   setHeader('🐻 食事を撮影');
-  var pInput = $("photo-input"), pPrev = $("photo-preview");
+  var pInput = $("photo-input"), pAlbum = $("photo-album-input"), pPrev = $("photo-preview");
+  var pLast = pInput;  // 撮り直す用: 直前に使った取得元（カメラ/アルバム）を再度開く
   var pState = { dataUrl: null, submitting: false };
   function pStatus(msg, isErr) {
     var s = $("photo-status");
@@ -1858,23 +1865,25 @@ if (window.__PHOTO_MODE) (function() {
     s.classList.remove('hidden');
   }
   function pShow(stage) {
-    $("photo-camera-btn").classList.toggle('hidden', stage !== 'start');
+    $("photo-start-wrap").classList.toggle('hidden', stage !== 'start');
     $("photo-preview-wrap").classList.toggle('hidden', stage !== 'preview');
     $("photo-done").classList.toggle('hidden', stage !== 'done');
     if (stage !== 'preview') pState.dataUrl = null;
   }
-  $("photo-camera-btn").addEventListener('click', function() { pInput.click(); });
-  $("photo-retake").addEventListener('click', function() { pInput.value = ''; pStatus(null); pInput.click(); });
-  $("photo-again").addEventListener('click', function() { pInput.value = ''; pStatus(null); pShow('start'); });
+  $("photo-camera-btn").addEventListener('click', function() { pLast = pInput; pInput.click(); });
+  $("photo-album-btn").addEventListener('click', function() { pLast = pAlbum; pAlbum.click(); });
+  $("photo-retake").addEventListener('click', function() { pLast.value = ''; pStatus(null); pLast.click(); });
+  $("photo-again").addEventListener('click', function() { pInput.value = ''; pAlbum.value = ''; pStatus(null); pShow('start'); });
   $("photo-to-normal").addEventListener('click', function() { location.replace(location.pathname); });
   $("photo-close").addEventListener('click', function() {
     if (window.liff && APP.liffId) { try { liff.closeWindow(); return; } catch (e) {} }
     try { window.close(); } catch (e) {}
   });
   // 撮影/選択 → canvasで縮小JPEG化（HEIC・EXIF向きはブラウザのデコードに委ねる）
-  pInput.addEventListener('change', function() {
+  function pOnPick() {
+    var src = this;
     pStatus(null);
-    var f = pInput.files && pInput.files[0];
+    var f = src.files && src.files[0];
     if (!f) return;  // キャンセルはエラー扱いしない
     var url = URL.createObjectURL(f);
     var img = new Image();
@@ -1901,7 +1910,9 @@ if (window.__PHOTO_MODE) (function() {
       pStatus('この画像形式には対応していません。別の写真でお試しください。', true);
     };
     img.src = url;
-  });
+  }
+  pInput.addEventListener('change', pOnPick);
+  pAlbum.addEventListener('change', pOnPick);
   var PHOTO_ERRORS = {
     not_food: '食べ物の写真と認識できませんでした。撮り直してください。',
     quota_exceeded: '本日の画像分析の上限に達しました。文字入力で記録してください。',
