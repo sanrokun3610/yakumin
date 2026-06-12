@@ -18,7 +18,7 @@ try {
 if (window.__PHOTO_MODE) document.documentElement.className += ' photo-mode';
 // v3.18.0: LIFF 内ブラウザ強キャッシュ対策 - バージョン違いで強制リロード
 (function() {
-  var CURRENT_VERSION = 'v3.20.1';
+  var CURRENT_VERSION = 'v3.21.0';
   window.__APP_BUILD = CURRENT_VERSION;  // build表示用（版マーカーと同一の単一定数）
   // 古い sig キャッシュも強制削除 (くまさんFB対応)
   try {
@@ -225,6 +225,23 @@ body.q-has-text .clear-input-btn{display:flex;align-items:center;justify-content
 .photo-done-title{font-size:16px;font-weight:bold;color:#166534;margin-bottom:6px}
 .photo-done-body{font-size:15px;color:#444;line-height:1.6;margin-bottom:10px}
 .photo-link-btn{display:block;width:100%;min-height:48px;margin-top:16px;padding:12px;font-size:15px;border:1px solid #d1d5db;border-radius:10px;background:#fff;color:#555;cursor:pointer;text-align:center}
+/* v3.21.0 Phase 1-D: 解析結果確認画面 */
+.pc-card{padding:14px;border:1px solid #fcd34d;border-radius:12px;background:#fffbeb;margin-bottom:12px}
+.pc-name{font-size:18px;font-weight:bold;color:#78350f;line-height:1.4}
+.pc-kcal{font-size:15px;color:#92400e;margin:4px 0 8px}
+.pc-items{border-top:1px dashed #fcd34d;padding-top:8px}
+.pc-item{display:flex;justify-content:space-between;font-size:14px;color:#444;padding:2px 0}
+.pc-item.pc-hidden-item{color:#999;font-size:13px}
+.pc-note{font-size:12px;color:#999;margin-top:8px}
+.pc-q-block{margin-bottom:12px}
+.pc-q{font-size:15px;font-weight:600;color:#444;margin-bottom:6px}
+.pc-chips{display:flex;flex-wrap:wrap;gap:8px}
+.pc-chip{min-height:44px;padding:10px 14px;font-size:15px;border:1px solid #d1d5db;border-radius:22px;background:#fff;color:#444;cursor:pointer}
+.pc-chip.sel{background:#fde68a;border-color:#f59e0b;color:#78350f;font-weight:bold}
+.pc-chip.pc-chip-dim{color:#888;border-style:dashed}
+#pc-name-input{width:100%;min-height:44px;padding:10px 12px;font-size:16px;border:1px solid #d1d5db;border-radius:10px;margin-bottom:10px;box-sizing:border-box}
+.pc-commit{min-height:56px;background:#15803d;border-color:#15803d;color:#fff;margin-bottom:8px}
+.pc-commit:active{background:#166534}
 /* v3.15.5: トーストを下部に移動 (くまさん指示) - recorded バーより上に重ねる */
 .toast{position:fixed;bottom:120px;left:50%;transform:translateX(-50%);padding:14px 22px;background:rgba(31,41,55,0.92);color:#fff;border-radius:10px;font-size:15px;font-weight:600;z-index:200;max-width:90%;text-align:center;box-shadow:0 4px 16px rgba(0,0,0,0.25)}
 
@@ -308,7 +325,39 @@ body.q-has-text .clear-input-btn{display:flex;align-items:center;justify-content
     <img id="photo-preview" class="photo-preview-img" alt="撮影した食事の写真">
     <div class="photo-actions">
       <button id="photo-retake" type="button">撮り直す</button>
-      <button id="photo-submit" type="button" class="photo-primary">解析して登録</button>
+      <button id="photo-submit" type="button" class="photo-primary">🔍 解析する</button>
+    </div>
+  </div>
+  <!-- v3.21.0 Phase 1-D: 解析結果の確認画面（即登録の廃止） -->
+  <div id="photo-confirm" class="hidden">
+    <div class="pc-card">
+      <div class="pc-name" id="pc-name"></div>
+      <div class="pc-kcal" id="pc-kcal"></div>
+      <div class="pc-items" id="pc-items"></div>
+      <div class="pc-note">AIの推定値です。「直す」から修正できます。</div>
+    </div>
+    <div id="pc-alts" class="pc-q-block hidden">
+      <div class="pc-q">🤖 もしかして、どれに近いですか？</div>
+      <div class="pc-chips" id="pc-alt-chips"></div>
+    </div>
+    <div id="pc-count" class="pc-q-block hidden">
+      <div class="pc-q" id="pc-count-q"></div>
+      <div class="pc-chips" id="pc-count-chips"></div>
+    </div>
+    <div id="pc-portionq" class="pc-q-block hidden">
+      <div class="pc-q">どれくらい食べましたか？</div>
+      <div class="pc-chips" id="pc-portionq-chips"></div>
+    </div>
+    <div id="pc-edit" class="pc-q-block hidden">
+      <div class="pc-q">料理名:</div>
+      <input id="pc-name-input" type="text" maxlength="60" placeholder="例: カツ丼" autocomplete="off">
+      <div class="pc-q">量:</div>
+      <div class="pc-chips" id="pc-portion-chips"></div>
+    </div>
+    <button id="pc-commit" class="photo-big-btn pc-commit" type="button">✅ この内容で登録</button>
+    <div class="photo-actions">
+      <button id="pc-edit-btn" type="button">✏️ 直す</button>
+      <button id="pc-cancel" type="button">🗑 取り消す</button>
     </div>
   </div>
   <div id="photo-status" class="photo-status hidden"></div>
@@ -1856,7 +1905,7 @@ if (window.__PHOTO_MODE) (function() {
   setHeader('🐻 食事を撮影');
   var pInput = $("photo-input"), pAlbum = $("photo-album-input"), pPrev = $("photo-preview");
   var pLast = pInput;  // 撮り直す用: 直前に使った取得元（カメラ/アルバム）を再度開く
-  var pState = { dataUrl: null, submitting: false };
+  var pState = { dataUrl: null, submitting: false, source: 'liff_camera', ana: null, sel: { name: null, count: null, portionPct: null, portion: null } };
   function pStatus(msg, isErr) {
     var s = $("photo-status");
     if (msg == null) { s.classList.add('hidden'); return; }
@@ -1865,10 +1914,13 @@ if (window.__PHOTO_MODE) (function() {
     s.classList.remove('hidden');
   }
   function pShow(stage) {
+    document.querySelector('#photo-panel .photo-guide').classList.toggle('hidden', stage !== 'start');
     $("photo-start-wrap").classList.toggle('hidden', stage !== 'start');
     $("photo-preview-wrap").classList.toggle('hidden', stage !== 'preview');
+    $("photo-confirm").classList.toggle('hidden', stage !== 'confirm');
     $("photo-done").classList.toggle('hidden', stage !== 'done');
-    if (stage !== 'preview') pState.dataUrl = null;
+    // dataUrlは確認→登録（commit時の画像送信）まで保持する
+    if (stage === 'start' || stage === 'done') { pState.dataUrl = null; pConfirmReset(); }
   }
   $("photo-camera-btn").addEventListener('click', function() { pLast = pInput; pInput.click(); });
   $("photo-album-btn").addEventListener('click', function() { pLast = pAlbum; pAlbum.click(); });
@@ -1885,6 +1937,7 @@ if (window.__PHOTO_MODE) (function() {
     pStatus(null);
     var f = src.files && src.files[0];
     if (!f) return;  // キャンセルはエラー扱いしない
+    pState.source = (src === pAlbum) ? 'liff_album' : 'liff_camera';  // 修正学習の経路記録用
     var url = URL.createObjectURL(f);
     var img = new Image();
     img.onload = function() {
@@ -1920,7 +1973,138 @@ if (window.__PHOTO_MODE) (function() {
     analyze_failed: '分析できませんでした。もう一度お試しください。',
     not_registered: 'はじめにLINEで友だち追加と登録を済ませてください。',
     bad_image: 'この画像形式には対応していません。',
+    analysis_expired: '時間が経って解析結果が無効になりました。もう一度撮影してください。',
+    commit_failed: '登録に失敗しました。もう一度お試しください。',
   };
+
+  function pPost(page, body) {
+    return fetch(APP.deployUrl + '?page=' + page, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
+      body: JSON.stringify(body),
+      redirect: 'follow',
+    }).then(function(r) { return r.json(); });
+  }
+
+  // ---- v3.21.0 Phase 1-D: 解析結果の確認画面 ----
+  function pConfirmReset() {
+    pState.ana = null;
+    pState.sel = { name: null, count: null, portionPct: null, portion: null };
+    $("pc-edit").classList.add('hidden');
+    $("pc-name-input").value = '';
+  }
+  function pChip(label, selected, dim, onTap) {
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'pc-chip' + (selected ? ' sel' : '') + (dim ? ' pc-chip-dim' : '');
+    b.textContent = label;
+    b.addEventListener('click', onTap);
+    return b;
+  }
+  function pMarkSel(wrap, btn) {
+    var chips = wrap.querySelectorAll('.pc-chip');
+    for (var i = 0; i < chips.length; i++) chips[i].classList.remove('sel');
+    if (btn) btn.classList.add('sel');
+  }
+  // 表示用のkcal概算（確定値はサーバー側で再計算される）
+  function pKcalPreview() {
+    var a = pState.ana; if (!a) return;
+    var k = a.kcal || 0;
+    if (pState.sel.count != null && a.unitCount > 0) k = k * pState.sel.count / a.unitCount;
+    else if (pState.sel.portionPct != null) k = k * pState.sel.portionPct / 100;
+    if (pState.sel.portion === 'small') k = k * 0.7;
+    else if (pState.sel.portion === 'half') k = k * 0.5;
+    else if (pState.sel.portion === 'large') k = k * 1.4;
+    $("pc-kcal").textContent = '推定 約' + Math.round(k) + 'kcal';
+  }
+  function pSetName(name) {
+    pState.sel.name = name;
+    $("pc-name").textContent = name || (pState.ana && pState.ana.label) || '食事';
+  }
+  function pRenderConfirm(a) {
+    pConfirmReset();
+    pState.ana = a;
+    $("pc-name").textContent = a.label || '食事';
+    $("pc-kcal").textContent = '推定 約' + (a.kcal || 0) + 'kcal';
+
+    var itemsWrap = $("pc-items");
+    itemsWrap.innerHTML = '';
+    (a.items || []).forEach(function(it) {
+      var row = document.createElement('div');
+      row.className = 'pc-item' + (it.hidden ? ' pc-hidden-item' : '');
+      var nm = document.createElement('span');
+      nm.textContent = (it.hidden ? '＋' : '') + it.name + (it.g ? ' ' + it.g + 'g' : '');
+      var kc = document.createElement('span');
+      kc.textContent = (it.kcal || 0) + 'kcal';
+      row.appendChild(nm); row.appendChild(kc);
+      itemsWrap.appendChild(row);
+    });
+
+    // 低confidence かつ 代替候補あり のときだけ候補質問を表示
+    var altsWrap = $("pc-alts"), altChips = $("pc-alt-chips");
+    altChips.innerHTML = '';
+    if (a.lowConfidence && a.alternatives && a.alternatives.length > 0) {
+      var firstChip = pChip(a.label, true, false, function() { pSetName(null); pMarkSel(altChips, firstChip); });
+      altChips.appendChild(firstChip);
+      a.alternatives.forEach(function(alt) {
+        var c = pChip(alt, false, false, function() { pSetName(alt); pMarkSel(altChips, c); });
+        altChips.appendChild(c);
+      });
+      altChips.appendChild(pChip('どれでもない', false, true, function() {
+        $("pc-edit").classList.remove('hidden');
+        pMarkSel(altChips, null);
+        try { $("pc-name-input").focus(); } catch (e) {}
+      }));
+      altChips.appendChild(pChip('わからない', false, true, function() { pSetName(null); pMarkSel(altChips, firstChip); }));
+      altsWrap.classList.remove('hidden');
+    } else {
+      altsWrap.classList.add('hidden');
+    }
+
+    // 個数質問（複数個入りのみ。全部=無変更が初期選択）
+    var cntWrap = $("pc-count"), cntChips = $("pc-count-chips");
+    cntChips.innerHTML = '';
+    if (a.askCount && a.unitCount > 1) {
+      var uN = a.unitName || '個';
+      $("pc-count-q").textContent = '何' + uN + '食べましたか？（' + a.unitCount + uN + '入り）';
+      var maxC = Math.min(a.unitCount - 1, 6);
+      for (var i = 1; i <= maxC; i++) (function(n) {
+        var c = pChip(n + uN, false, false, function() { pState.sel.count = n; pMarkSel(cntChips, c); pKcalPreview(); });
+        cntChips.appendChild(c);
+      })(i);
+      var allChip = pChip('全部', true, false, function() { pState.sel.count = null; pMarkSel(cntChips, allChip); pKcalPreview(); });
+      cntChips.appendChild(allChip);
+      cntChips.appendChild(pChip('わからない', false, true, function() { pState.sel.count = null; pMarkSel(cntChips, allChip); pKcalPreview(); }));
+      cntWrap.classList.remove('hidden');
+    } else {
+      cntWrap.classList.add('hidden');
+    }
+
+    // 分量質問（大袋・シェア系のみ）
+    var pqWrap = $("pc-portionq"), pqChips = $("pc-portionq-chips");
+    pqChips.innerHTML = '';
+    if (a.askPortion) {
+      [['全部', null], ['3/4', 75], ['半分', 50], ['1/3', 33], ['1/4', 25], ['少しだけ', 15]].forEach(function(opt) {
+        var c = pChip(opt[0], opt[1] == null, false, function() { pState.sel.portionPct = opt[1]; pMarkSel(pqChips, c); pKcalPreview(); });
+        pqChips.appendChild(c);
+      });
+      pqWrap.classList.remove('hidden');
+    } else {
+      pqWrap.classList.add('hidden');
+    }
+
+    // 「直す」パネル: 量チップ（既存の盛量補正と同倍率）
+    var ptChips = $("pc-portion-chips");
+    ptChips.innerHTML = '';
+    [['少なめ(0.7倍)', 'small'], ['ふつう', null], ['多め(1.4倍)', 'large']].forEach(function(opt) {
+      var c = pChip(opt[0], opt[1] == null, false, function() { pState.sel.portion = opt[1]; pMarkSel(ptChips, c); pKcalPreview(); });
+      ptChips.appendChild(c);
+    });
+
+    pShow('confirm');
+  }
+
+  // 解析（この時点ではまだ登録しない）
   $("photo-submit").addEventListener('click', function() {
     if (pState.submitting) return;  // 二重送信防止
     if (!pState.dataUrl) { pStatus('先に写真を撮ってください。', true); return; }
@@ -1929,16 +2113,47 @@ if (window.__PHOTO_MODE) (function() {
     var btn = $("photo-submit");
     btn.disabled = true;
     pStatus('🔍 解析しています…（30秒ほどかかることがあります）');
-    fetch(APP.deployUrl + '?page=meal_photo_save', {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
-      body: JSON.stringify({
-        userId: APP.userId, sig: APP.sig,
-        mealType: APP.mealType,
-        imageBase64: pState.dataUrl.split(',')[1],
-      }),
-      redirect: 'follow',
-    }).then(function(r) { return r.json(); }).then(function(data) {
+    pPost('meal_photo_analyze', {
+      userId: APP.userId, sig: APP.sig,
+      mealType: APP.mealType,
+      imageBase64: pState.dataUrl.split(',')[1],
+    }).then(function(data) {
+      pState.submitting = false;
+      btn.disabled = false;
+      if (data && data.ok) { pStatus(null); pRenderConfirm(data); return; }
+      var errCode = data && data.error;
+      if (errCode && typeof isAuthError === 'function' && isAuthError(errCode)) { handleSigInvalidated(); return; }
+      pStatus(PHOTO_ERRORS[errCode] || '分析に失敗しました。もう一度お試しください。', true);
+    }).catch(function() {
+      pState.submitting = false;
+      btn.disabled = false;
+      pStatus('通信に失敗しました。電波状況を確認して再度お試しください。', true);
+    });
+  });
+
+  // 登録確定
+  $("pc-commit").addEventListener('click', function() {
+    if (pState.submitting || !pState.ana) return;  // 二重送信防止
+    var a = pState.ana;
+    var corrections = {};
+    var typedName = $("pc-name-input").value.replace(/\s+/g, ' ').trim();
+    var finalName = typedName || pState.sel.name || '';
+    if (finalName && finalName !== a.label) corrections.mealName = finalName.substring(0, 60);
+    if (pState.sel.count != null) corrections.unitCount = pState.sel.count;
+    if (pState.sel.portionPct != null) corrections.portionPct = pState.sel.portionPct;
+    if (pState.sel.portion) corrections.portion = pState.sel.portion;
+    pState.submitting = true;
+    var btn = $("pc-commit");
+    btn.disabled = true;
+    pStatus('📝 登録しています…');
+    pPost('meal_photo_commit', {
+      userId: APP.userId, sig: APP.sig,
+      analysisId: a.analysisId,
+      mealType: APP.mealType,
+      sourceContext: pState.source,
+      imageBase64: pState.dataUrl ? pState.dataUrl.split(',')[1] : '',
+      corrections: corrections,
+    }).then(function(data) {
       pState.submitting = false;
       btn.disabled = false;
       if (data && data.ok) {
@@ -1951,12 +2166,29 @@ if (window.__PHOTO_MODE) (function() {
       }
       var errCode = data && data.error;
       if (errCode && typeof isAuthError === 'function' && isAuthError(errCode)) { handleSigInvalidated(); return; }
+      if (errCode === 'analysis_expired') { pStatus(PHOTO_ERRORS.analysis_expired, true); pShow('start'); return; }
       pStatus(PHOTO_ERRORS[errCode] || '登録に失敗しました。もう一度お試しください。', true);
     }).catch(function() {
       pState.submitting = false;
       btn.disabled = false;
       pStatus('通信に失敗しました。電波状況を確認して再度お試しください。', true);
     });
+  });
+
+  // 「直す」パネル開閉
+  $("pc-edit-btn").addEventListener('click', function() {
+    $("pc-edit").classList.toggle('hidden');
+  });
+
+  // 取り消し（登録せず終了。学習保存もされない）
+  $("pc-cancel").addEventListener('click', function() {
+    var a = pState.ana;
+    if (a && a.analysisId) {
+      try { pPost('meal_photo_cancel', { userId: APP.userId, sig: APP.sig, analysisId: a.analysisId }); } catch (e) {}
+    }
+    pInput.value = ''; pAlbum.value = '';
+    pStatus(null);
+    pShow('start');
   });
 })();
 
