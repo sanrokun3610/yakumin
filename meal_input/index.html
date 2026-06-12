@@ -10,9 +10,15 @@
 <title>食事入力</title>
 <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <script>
+// v3.20.0 撮影モード (mode=photo) 判定 — 描画前に html へ class を付与（通常画面のちらつき防止）
+window.__PHOTO_MODE = false;
+try {
+  window.__PHOTO_MODE = (new URLSearchParams(location.search).get('mode') === 'photo');
+} catch (e) {}
+if (window.__PHOTO_MODE) document.documentElement.className += ' photo-mode';
 // v3.18.0: LIFF 内ブラウザ強キャッシュ対策 - バージョン違いで強制リロード
 (function() {
-  var CURRENT_VERSION = 'v3.19.0';
+  var CURRENT_VERSION = 'v3.20.0';
   window.__APP_BUILD = CURRENT_VERSION;  // build表示用（版マーカーと同一の単一定数）
   // 古い sig キャッシュも強制削除 (くまさんFB対応)
   try {
@@ -27,7 +33,9 @@
     if (stored && stored !== CURRENT_VERSION) {
       localStorage.setItem('meal_input_version', CURRENT_VERSION);
       // バージョンが変わった → ハードリロード (cache buster クエリ付与)
-      var url = location.pathname + '?v=' + CURRENT_VERSION + '&t=' + Date.now();
+      // v3.20.0: mode=photo 等の既存クエリを失わないように引き継ぐ
+      var url = location.pathname + '?v=' + CURRENT_VERSION + '&t=' + Date.now()
+        + (window.__PHOTO_MODE ? '&mode=photo' : '');
       location.replace(url);
       return;
     }
@@ -194,6 +202,27 @@ body.q-has-text .clear-input-btn{display:flex;align-items:center;justify-content
 .manual-confirm{width:100%;padding:14px;min-height:48px;font-size:16px;font-weight:bold;border:none;border-radius:8px;background:#16a34a;color:#fff;cursor:pointer;margin-bottom:8px}
 .modal-close{width:100%;padding:12px;min-height:44px;font-size:14px;border:1px solid #d1d5db;border-radius:8px;background:#fff;color:#555;cursor:pointer}
 .hidden{display:none !important}
+
+/* v3.20.0 撮影モード (mode=photo): 検索系UIを隠し撮影パネルのみ表示。レイアウト・既存スタイルは不変更 */
+#photo-panel{display:none}
+.photo-mode .search-box, .photo-mode #mode-switch, .photo-mode #frequent-section,
+.photo-mode #home-meals-section, .photo-mode #results, .photo-mode #today-meals-section{display:none !important}
+.photo-mode #photo-panel{display:block}
+#photo-panel{padding:16px}
+.photo-guide{font-size:16px;color:#444;line-height:1.6;margin-bottom:14px}
+.photo-big-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:64px;font-size:18px;font-weight:bold;border:2px solid #fcd34d;border-radius:12px;background:#fde68a;color:#78350f;cursor:pointer}
+.photo-big-btn:active{background:#fcd34d}
+.photo-preview-img{width:100%;border-radius:12px;border:1px solid #e5e7eb;display:block;margin-bottom:10px}
+.photo-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.photo-actions button{min-height:48px;padding:12px;font-size:16px;border-radius:10px;border:1px solid #fcd34d;background:#fffbeb;color:#78350f;cursor:pointer;font-weight:600}
+.photo-actions button.photo-primary{background:#15803d;color:#fff;border-color:#15803d}
+.photo-actions button:disabled{opacity:.5}
+.photo-status{margin-top:12px;padding:14px;border-radius:10px;background:#fffbeb;border:1px dashed #fcd34d;color:#92400e;font-size:15px;text-align:center;line-height:1.6}
+.photo-status.error{background:#fef2f2;border:1px solid #fecaca;color:#b91c1c}
+.photo-done{margin-top:12px;padding:16px;border-radius:12px;background:#f0fdf4;border:1px solid #86efac}
+.photo-done-title{font-size:16px;font-weight:bold;color:#166534;margin-bottom:6px}
+.photo-done-body{font-size:15px;color:#444;line-height:1.6;margin-bottom:10px}
+.photo-link-btn{display:block;width:100%;min-height:48px;margin-top:16px;padding:12px;font-size:15px;border:1px solid #d1d5db;border-radius:10px;background:#fff;color:#555;cursor:pointer;text-align:center}
 /* v3.15.5: トーストを下部に移動 (くまさん指示) - recorded バーより上に重ねる */
 .toast{position:fixed;bottom:120px;left:50%;transform:translateX(-50%);padding:14px 22px;background:rgba(31,41,55,0.92);color:#fff;border-radius:10px;font-size:15px;font-weight:600;z-index:200;max-width:90%;text-align:center;box-shadow:0 4px 16px rgba(0,0,0,0.25)}
 
@@ -262,6 +291,30 @@ body.q-has-text .clear-input-btn{display:flex;align-items:center;justify-content
   <div class="home-meals-buttons" id="home-meals-buttons">
     <div class="home-meals-empty">+ 追加から登録できます (タップで記録、確認画面で編集も可)</div>
   </div>
+</div>
+
+<!-- v3.20.0 撮影モード (mode=photo) 専用パネル。通常入力時は非表示 -->
+<div id="photo-panel">
+  <div class="photo-guide">写真を撮って、そのまま記録できます。<br>食事の区分（朝/昼/夕…）は上のボタンで変更できます。</div>
+  <input type="file" id="photo-input" accept="image/*" capture="environment" style="display:none">
+  <button id="photo-camera-btn" class="photo-big-btn" type="button">📷 カメラを起動</button>
+  <div id="photo-preview-wrap" class="hidden">
+    <img id="photo-preview" class="photo-preview-img" alt="撮影した食事の写真">
+    <div class="photo-actions">
+      <button id="photo-retake" type="button">撮り直す</button>
+      <button id="photo-submit" type="button" class="photo-primary">解析して登録</button>
+    </div>
+  </div>
+  <div id="photo-status" class="photo-status hidden"></div>
+  <div id="photo-done" class="photo-done hidden">
+    <div class="photo-done-title">記録しました 🐻</div>
+    <div class="photo-done-body" id="photo-done-body"></div>
+    <div class="photo-actions">
+      <button id="photo-again" type="button">もう1枚撮る</button>
+      <button id="photo-close" type="button" class="photo-primary">LINEに戻る</button>
+    </div>
+  </div>
+  <button id="photo-to-normal" class="photo-link-btn" type="button">⌨️ 文字で入力する（通常入力に切り替え）</button>
 </div>
 
 <div id="results" class="results"></div>
@@ -1791,6 +1844,110 @@ function showToast(msg, type) {
   else if (type === "error") setTimeout(function() { t.classList.add("hidden"); }, 8000);
 }
 function esc(s) { var d = document.createElement("div"); d.textContent = String(s == null ? "" : s); return d.innerHTML; }
+
+// v3.20.0 撮影モード (mode=photo): 既存の認証(APP)・食事区分チップ・エラー復旧をそのまま再利用
+if (window.__PHOTO_MODE) (function() {
+  setHeader('🐻 食事を撮影');
+  var pInput = $("photo-input"), pPrev = $("photo-preview");
+  var pState = { dataUrl: null, submitting: false };
+  function pStatus(msg, isErr) {
+    var s = $("photo-status");
+    if (msg == null) { s.classList.add('hidden'); return; }
+    s.textContent = msg;
+    s.classList.toggle('error', !!isErr);
+    s.classList.remove('hidden');
+  }
+  function pShow(stage) {
+    $("photo-camera-btn").classList.toggle('hidden', stage !== 'start');
+    $("photo-preview-wrap").classList.toggle('hidden', stage !== 'preview');
+    $("photo-done").classList.toggle('hidden', stage !== 'done');
+    if (stage !== 'preview') pState.dataUrl = null;
+  }
+  $("photo-camera-btn").addEventListener('click', function() { pInput.click(); });
+  $("photo-retake").addEventListener('click', function() { pInput.value = ''; pStatus(null); pInput.click(); });
+  $("photo-again").addEventListener('click', function() { pInput.value = ''; pStatus(null); pShow('start'); });
+  $("photo-to-normal").addEventListener('click', function() { location.replace(location.pathname); });
+  $("photo-close").addEventListener('click', function() {
+    if (window.liff && APP.liffId) { try { liff.closeWindow(); return; } catch (e) {} }
+    try { window.close(); } catch (e) {}
+  });
+  // 撮影/選択 → canvasで縮小JPEG化（HEIC・EXIF向きはブラウザのデコードに委ねる）
+  pInput.addEventListener('change', function() {
+    pStatus(null);
+    var f = pInput.files && pInput.files[0];
+    if (!f) return;  // キャンセルはエラー扱いしない
+    var url = URL.createObjectURL(f);
+    var img = new Image();
+    img.onload = function() {
+      try {
+        var max = 1280;
+        var w = img.naturalWidth, h = img.naturalHeight;
+        var sc = Math.min(1, max / Math.max(w, h));
+        var cv = document.createElement('canvas');
+        cv.width = Math.max(1, Math.round(w * sc));
+        cv.height = Math.max(1, Math.round(h * sc));
+        cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height);
+        pState.dataUrl = cv.toDataURL('image/jpeg', 0.85);
+        URL.revokeObjectURL(url);
+        pPrev.src = pState.dataUrl;
+        pShow('preview');
+      } catch (eC) {
+        URL.revokeObjectURL(url);
+        pStatus('写真の読み込みに失敗しました。もう一度お試しください。', true);
+      }
+    };
+    img.onerror = function() {
+      URL.revokeObjectURL(url);
+      pStatus('この画像形式には対応していません。別の写真でお試しください。', true);
+    };
+    img.src = url;
+  });
+  var PHOTO_ERRORS = {
+    not_food: '食べ物の写真と認識できませんでした。撮り直してください。',
+    quota_exceeded: '本日の画像分析の上限に達しました。文字入力で記録してください。',
+    image_too_large: '画像サイズが大きすぎます。もう一度お試しください。',
+    analyze_failed: '分析できませんでした。もう一度お試しください。',
+    not_registered: 'はじめにLINEで友だち追加と登録を済ませてください。',
+    bad_image: 'この画像形式には対応していません。',
+  };
+  $("photo-submit").addEventListener('click', function() {
+    if (pState.submitting) return;  // 二重送信防止
+    if (!pState.dataUrl) { pStatus('先に写真を撮ってください。', true); return; }
+    if (!APP.qsBase || !APP.userId) { pStatus('準備中です。数秒待ってからもう一度お試しください。', true); return; }
+    pState.submitting = true;
+    var btn = $("photo-submit");
+    btn.disabled = true;
+    pStatus('🔍 解析しています…（30秒ほどかかることがあります）');
+    fetch(APP.deployUrl + '?page=meal_photo_save', {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
+      body: JSON.stringify({
+        userId: APP.userId, sig: APP.sig,
+        mealType: APP.mealType,
+        imageBase64: pState.dataUrl.split(',')[1],
+      }),
+      redirect: 'follow',
+    }).then(function(r) { return r.json(); }).then(function(data) {
+      pState.submitting = false;
+      btn.disabled = false;
+      if (data && data.ok) {
+        pStatus(null);
+        $("photo-done-body").textContent =
+          (MEAL_LABELS[data.mealType] || '') + '：' + (data.label || '食事') +
+          (data.kcal ? '　約' + data.kcal + 'kcal' : '');
+        pShow('done');
+        return;
+      }
+      var errCode = data && data.error;
+      if (errCode && typeof isAuthError === 'function' && isAuthError(errCode)) { handleSigInvalidated(); return; }
+      pStatus(PHOTO_ERRORS[errCode] || '登録に失敗しました。もう一度お試しください。', true);
+    }).catch(function() {
+      pState.submitting = false;
+      btn.disabled = false;
+      pStatus('通信に失敗しました。電波状況を確認して再度お試しください。', true);
+    });
+  });
+})();
 
 // v3.19.0: build表示（版マーカーと同一の単一定数。HTML/APIどちらが古いかの切り分け用）
 try {
