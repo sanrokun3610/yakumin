@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>やくみる｜百年記念病院</title>
+<style>
+  :root{
+    --accent:#1c64d9; --accent-d:#1550b5; --ok:#15803d;
+    --bg:#eef2f7; --surface:#fff; --text:#1a202c; --sub:#5a6472; --border:#e2e8f0;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center;
+    font-family:"Hiragino Sans","Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif;
+    background:var(--bg); color:var(--text); padding:20px; line-height:1.7;
+  }
+  .card{
+    background:var(--surface); width:100%; max-width:460px; border-radius:16px;
+    border:1px solid var(--border); padding:28px 24px 24px; text-align:center;
+    box-shadow:0 6px 24px rgba(20,40,80,.06);
+  }
+  .logo{font-size:26px; font-weight:800; color:var(--accent); letter-spacing:.02em;}
+  .facility{font-size:14px; color:var(--sub); margin-top:2px;}
+  .lead{font-size:14px; color:var(--sub); margin:16px 0 22px;}
+  .open-btn{
+    display:block; width:100%; background:var(--accent); color:#fff; text-decoration:none;
+    font-size:18px; font-weight:800; padding:16px; border-radius:12px; border:none; cursor:pointer;
+  }
+  .open-btn:hover{background:var(--accent-d);}
+  .open-sub{display:block; font-size:12px; font-weight:600; opacity:.92; margin-top:3px;}
+  .hint{
+    text-align:left; background:#f6f9fe; border:1px solid #d9e6fb; border-radius:12px;
+    padding:14px 16px; margin-top:18px; font-size:13px; color:#234;
+  }
+  .hint h2{font-size:13px; margin:0 0 8px; color:var(--accent);}
+  .hint ol{margin:0; padding-left:1.2em;}
+  .hint li{margin-bottom:6px;}
+  .hint .tip{background:#fff6e9; border:1px solid #f0d8a8; border-radius:8px; padding:8px 10px; margin-top:8px; color:#7a5}
+  .copy{
+    margin-top:12px; background:var(--surface); border:1px solid var(--accent); color:var(--accent);
+    font-size:12px; font-weight:600; padding:9px 14px; border-radius:8px; cursor:pointer; font-family:inherit;
+  }
+  .copy:hover{background:#eaf1fc;}
+  .copied{color:var(--ok); border-color:var(--ok);}
+  .foot{font-size:11px; color:var(--sub); margin-top:18px; border-top:1px solid var(--border); padding-top:12px;}
+</style>
+</head>
+<body>
+  <main class="card">
+    <div class="logo">やくみる</div>
+    <div class="facility">百年記念病院 ｜ 薬剤費の見える化</div>
+    <p class="lead">採用薬・購入金額ランキング・冷所品などを確認できます。<br>ご利用にはGoogleアカウントのログインが必要です。</p>
+
+    <a id="openBtn" class="open-btn" href="#" target="_blank" rel="noopener noreferrer">
+      ▶ やくみるを開く
+      <span class="open-sub">Googleログインが必要です</span>
+    </a>
+
+    <div class="hint">
+      <h2>開き方</h2>
+      <ol>
+        <li>上のボタンを押す</li>
+        <li>Googleアカウントでログイン</li>
+        <li>やくみるの画面が表示されます</li>
+      </ol>
+      <div class="tip">⚠ 「ファイルを開けません」と出る場合は、複数のGoogleアカウントでログインしているのが原因です。<b>シークレット／プライベートウィンドウ</b>で開く（見たいアカウントだけでログイン）と確実です。</div>
+    </div>
+
+    <button id="copyBtn" class="copy" type="button">🔗 URLをコピー（別の端末・アカウントで開く用）</button>
+
+    <p class="foot">院内利用専用 ／ 外部送信なし。URLは関係者にのみ共有してください。</p>
+  </main>
+
+  <script>
+    // 本番やくみる(GAS)のURL。入口ページからここへ送る。
+    var APP_URL = "https://script.google.com/macros/s/AKfycbwczweFM3oLkAkC4I9H9ayfYYXHMp_ReXBIKLe6x_iSxLX3ABo-qqABNbLpPfFHphPjsA/exec";
+    document.getElementById("openBtn").setAttribute("href", APP_URL);
+    document.getElementById("copyBtn").addEventListener("click", function () {
+      var btn = this;
+      function done(){ btn.textContent = "✓ コピーしました"; btn.classList.add("copied");
+        setTimeout(function(){ btn.textContent = "🔗 URLをコピー（別の端末・アカウントで開く用）"; btn.classList.remove("copied"); }, 2000); }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(APP_URL).then(done, function(){ window.prompt("このURLをコピーしてください", APP_URL); });
+      } else { window.prompt("このURLをコピーしてください", APP_URL); }
+    });
+  </script>
+</body>
+</html>
