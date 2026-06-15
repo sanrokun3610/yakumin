@@ -18,7 +18,7 @@ try {
 if (window.__PHOTO_MODE) document.documentElement.className += ' photo-mode';
 // v3.18.0: LIFF 内ブラウザ強キャッシュ対策 - バージョン違いで強制リロード
 (function() {
-  var CURRENT_VERSION = 'v3.21.0';
+  var CURRENT_VERSION = 'v3.23.0';
   window.__APP_BUILD = CURRENT_VERSION;  // build表示用（版マーカーと同一の単一定数）
   // 古い sig キャッシュも強制削除 (くまさんFB対応)
   try {
@@ -63,18 +63,18 @@ body{padding-bottom:140px}
 .chip-row{display:flex;gap:5px;flex-wrap:wrap;margin-top:4px}
 .chip-label{font-size:11px;color:#92400e;font-weight:600;margin-right:4px;align-self:center}
 
-/* 食事区分チップ (v3.17.0 コンパクト化) */
-.mt-chip{min-height:34px;padding:5px 10px;font-size:13px;font-weight:600;border:1px solid #d4d4d4;border-radius:999px;background:#fff;color:#525252;cursor:pointer}
+/* 食事区分チップ (v3.22.0 タップ領域を44pxに拡大) */
+.mt-chip{min-height:44px;padding:8px 14px;font-size:14px;font-weight:600;border:1px solid #d4d4d4;border-radius:999px;background:#fff;color:#525252;cursor:pointer}
 .mt-chip.selected{background:#f59e0b;color:#fff;border-color:#d97706}
 .mt-chip:active{transform:scale(0.96)}
 
-/* 検索モードチップ (v3.17.0 コンパクト化) */
-.mode-chip{min-height:34px;padding:5px 10px;font-size:13px;font-weight:600;border:1px solid #d4d4d4;border-radius:999px;background:#fff;color:#525252;cursor:pointer}
+/* 検索モードチップ (v3.22.0 タップ領域を44pxに拡大) */
+.mode-chip{min-height:44px;padding:8px 14px;font-size:14px;font-weight:600;border:1px solid #d4d4d4;border-radius:999px;background:#fff;color:#525252;cursor:pointer}
 .mode-chip.selected{background:#2563eb;color:#fff;border-color:#1d4ed8}
 .mode-chip:active{transform:scale(0.96)}
 
 @media (max-width: 390px) {
-  .mt-chip, .mode-chip { min-height: 32px; padding: 5px 8px; font-size: 12px; }
+  .mt-chip, .mode-chip { min-height: 44px; padding: 7px 11px; font-size: 13px; }
   .header-title { font-size: 16px; }
 }
 
@@ -142,7 +142,7 @@ body.q-has-text .home-meals-section{display:none}
 .today-meal-meta{font-size:13px;color:#666;margin-top:2px}
 .today-meal-kcal{font-size:15px;color:#92400e;font-weight:700;white-space:nowrap}
 .today-meal-actions{display:flex;gap:4px;margin-left:6px}
-.today-meal-btn{min-width:40px;min-height:36px;padding:6px 8px;font-size:12px;font-weight:600;border:1px solid #d4d4d4;border-radius:6px;background:#fff;cursor:pointer}
+.today-meal-btn{min-width:44px;min-height:44px;padding:8px 10px;font-size:13px;font-weight:600;border:1px solid #d4d4d4;border-radius:6px;background:#fff;cursor:pointer}
 .today-meal-btn.edit{color:#1D4ED8;border-color:#BFDBFE;background:#EFF6FF}
 .today-meal-btn.del{color:#b91c1c;border-color:#fecaca;background:#fef2f2}
 .today-meal-btn:active{transform:scale(0.95)}
@@ -232,6 +232,10 @@ body.q-has-text .clear-input-btn{display:flex;align-items:center;justify-content
 .pc-items{border-top:1px dashed #fcd34d;padding-top:8px}
 .pc-item{display:flex;justify-content:space-between;font-size:14px;color:#444;padding:2px 0}
 .pc-item.pc-hidden-item{color:#999;font-size:13px}
+/* v3.23.0: 栄養素サマリー（絵文字＋日本語で統一表記） */
+.pc-nutri{display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;border-top:1px dashed #fcd34d;padding-top:8px;margin-top:8px}
+.pc-nutri-row{display:flex;justify-content:space-between;font-size:14px;color:#555}
+.pc-nutri-row .v{font-weight:700;color:#78350f}
 .pc-note{font-size:12px;color:#999;margin-top:8px}
 .pc-q-block{margin-bottom:12px}
 .pc-q{font-size:15px;font-weight:600;color:#444;margin-bottom:6px}
@@ -334,10 +338,12 @@ body.q-has-text .clear-input-btn{display:flex;align-items:center;justify-content
       <div class="pc-name" id="pc-name"></div>
       <div class="pc-kcal" id="pc-kcal"></div>
       <div class="pc-items" id="pc-items"></div>
+      <div class="pc-nutri" id="pc-nutri"></div>
       <div class="pc-note">AIの推定値です。「直す」から修正できます。</div>
     </div>
     <div id="pc-alts" class="pc-q-block hidden">
       <div class="pc-q">🤖 もしかして、どれに近いですか？</div>
+      <div class="pc-note" style="margin:0 0 6px;">近いものがあればタップ。無ければ下の「✏️ 直す」で手入力できます。</div>
       <div class="pc-chips" id="pc-alt-chips"></div>
     </div>
     <div id="pc-count" class="pc-q-block hidden">
@@ -2021,6 +2027,30 @@ if (window.__PHOTO_MODE) (function() {
     pState.sel.name = name;
     $("pc-name").textContent = name || (pState.ana && pState.ana.label) || '食事';
   }
+  // v3.23.0: 栄養素サマリーを絵文字＋日本語で描画（アプリ内表記を統一）
+  function pRenderNutri(a) {
+    var wrap = $("pc-nutri");
+    if (!wrap) return;
+    var rows = [
+      { icon: '🥩', label: 'たんぱく質', v: a.protein_g },
+      { icon: '🧈', label: '脂質', v: a.fat_g },
+      { icon: '🍚', label: '炭水化物', v: a.carbs_g },
+      { icon: '🧂', label: '塩分', v: a.salt_g }
+    ];
+    wrap.innerHTML = '';
+    rows.forEach(function(r) {
+      var row = document.createElement('div');
+      row.className = 'pc-nutri-row';
+      var lab = document.createElement('span');
+      lab.textContent = r.icon + ' ' + r.label;
+      var val = document.createElement('span');
+      val.className = 'v';
+      val.textContent = (r.v != null ? r.v : 0) + 'g';
+      row.appendChild(lab); row.appendChild(val);
+      wrap.appendChild(row);
+    });
+  }
+
   function pRenderConfirm(a) {
     pConfirmReset();
     pState.ana = a;
@@ -2040,6 +2070,9 @@ if (window.__PHOTO_MODE) (function() {
       itemsWrap.appendChild(row);
     });
 
+    // v3.23.0: 栄養素サマリー（🥩たんぱく質 / 🧈脂質 / 🍚炭水化物 / 🧂塩分）
+    pRenderNutri(a);
+
     // 低confidence かつ 代替候補あり のときだけ候補質問を表示
     var altsWrap = $("pc-alts"), altChips = $("pc-alt-chips");
     altChips.innerHTML = '';
@@ -2053,6 +2086,7 @@ if (window.__PHOTO_MODE) (function() {
       altChips.appendChild(pChip('どれでもない', false, true, function() {
         $("pc-edit").classList.remove('hidden');
         pMarkSel(altChips, null);
+        try { $("pc-edit").scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (e) {}
         try { $("pc-name-input").focus(); } catch (e) {}
       }));
       altChips.appendChild(pChip('わからない', false, true, function() { pSetName(null); pMarkSel(altChips, firstChip); }));
@@ -2177,7 +2211,12 @@ if (window.__PHOTO_MODE) (function() {
 
   // 「直す」パネル開閉
   $("pc-edit-btn").addEventListener('click', function() {
-    $("pc-edit").classList.toggle('hidden');
+    var ed = $("pc-edit");
+    ed.classList.toggle('hidden');
+    if (!ed.classList.contains('hidden')) {
+      try { ed.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (e) {}
+      try { $("pc-name-input").focus(); } catch (e) {}
+    }
   });
 
   // 取り消し（登録せず終了。学習保存もされない）
