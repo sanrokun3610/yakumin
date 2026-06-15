@@ -3,18 +3,25 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>血圧手帳 - サンロくんのほけんしつ</title>
+<title>検査値 - サンロくんのほけんしつ</title>
 <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <link rel="stylesheet" href="/common/common.css">
 </head>
 <body>
 <div class="sanro-header">
-  <div class="sanro-header-title">🩺 血圧手帳</div>
+  <div class="sanro-header-title">🩺 検査値</div>
   <div class="sanro-username"></div>
 </div>
 <div id="sanro-status" class="sanro-status"></div>
 
 <div id="content" class="hidden">
+  <!-- v3.24.0: 検査値タブ（血圧 ⇔ HbA1c） -->
+  <div class="sanro-chip-row cols-2" id="exam-tabs" style="margin-bottom:12px">
+    <button class="sanro-chip selected" data-exam="bp">血圧</button>
+    <button class="sanro-chip" data-exam="hba1c">HbA1c</button>
+  </div>
+
+  <div id="sec-bp">
   <div class="sanro-section">
     <div class="sanro-section-title">📝 今の血圧</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
@@ -46,6 +53,28 @@
     <div id="recent-list">読込中…</div>
     <div style="height:8px"></div>
     <button class="sanro-btn outline" id="btn-graph">📈 グラフを見る</button>
+  </div>
+  </div><!-- /#sec-bp -->
+
+  <!-- v3.24.0: HbA1c（ユーザー自己記録・無料） -->
+  <div id="sec-hba1c" class="hidden">
+    <div class="sanro-section">
+      <div class="sanro-section-title">📝 今のHbA1c</div>
+      <div>
+        <div style="font-size:14px;color:#555;font-weight:600;margin-bottom:4px">HbA1c (%)</div>
+        <input type="text" id="hba1c-val" class="sanro-input" placeholder="例: 6.2" inputmode="decimal" enterkeyhint="done">
+      </div>
+      <div style="height:8px"></div>
+      <div style="font-size:14px;color:#555;font-weight:600;margin-bottom:4px">メモ (任意)</div>
+      <input type="text" id="hba1c-memo" class="sanro-input" placeholder="例: 病院で測定" maxlength="100">
+      <div style="height:8px"></div>
+      <button id="btn-hba1c-save" class="sanro-btn primary">記録する</button>
+    </div>
+
+    <div class="sanro-section">
+      <div class="sanro-section-title">📊 直近の記録</div>
+      <div id="hba1c-recent-list">読込中…</div>
+    </div>
   </div>
 
   <!-- v3.17.9 くまさんFB: 「完了してLINEに戻る」廃止 → ヘッダー左上の共通 ← 戻るに統一 -->
@@ -131,6 +160,57 @@ document.getElementById('btn-save').addEventListener('click', function() {
 document.getElementById('btn-graph').addEventListener('click', function() {
   var APP = SanroBoot.getApp();
   window.location.href = APP.deployUrl + '?page=blood_pressure_graph&userId=' + encodeURIComponent(APP.userId) + '&sig=' + encodeURIComponent(APP.sig);
+});
+
+// ====== v3.24.0: 検査値タブ切替（血圧 ⇔ HbA1c）======
+var hba1cLoaded = false;
+Array.prototype.forEach.call(document.querySelectorAll('#exam-tabs [data-exam]'), function(tab) {
+  tab.addEventListener('click', function() {
+    Array.prototype.forEach.call(document.querySelectorAll('#exam-tabs [data-exam]'), function(b) {
+      b.classList.remove('selected');
+    });
+    this.classList.add('selected');
+    var exam = this.getAttribute('data-exam');
+    document.getElementById('sec-bp').classList.toggle('hidden', exam !== 'bp');
+    document.getElementById('sec-hba1c').classList.toggle('hidden', exam !== 'hba1c');
+    if (exam === 'hba1c' && !hba1cLoaded) { hba1cLoaded = true; loadHba1cRecent(); }
+  });
+});
+
+function loadHba1cRecent() {
+  SanroBoot.apiGet('hba1c_recent').then(function(data) {
+    var box = document.getElementById('hba1c-recent-list');
+    if (!data || !data.ok || !data.items || data.items.length === 0) {
+      box.innerHTML = '<div style="padding:12px;color:#888;font-size:12px;text-align:center">記録がまだありません</div>';
+      return;
+    }
+    box.innerHTML = '';
+    data.items.forEach(function(item) {
+      var row = document.createElement('div');
+      row.className = 'sanro-list-item';
+      var zone = item.zone ? '　' + SanroBoot.esc(item.zone) : '';
+      row.innerHTML = '<span><span class="date">' + SanroBoot.esc(item.date || '') + '</span>' + zone + '</span><span class="value">' + (item.value || 0) + '%</span>';
+      box.appendChild(row);
+    });
+  }).catch(function() {
+    document.getElementById('hba1c-recent-list').innerHTML = '<div style="color:#dc2626">読込失敗</div>';
+  });
+}
+
+document.getElementById('btn-hba1c-save').addEventListener('click', function() {
+  var val = normalizeNum(document.getElementById('hba1c-val').value);
+  if (!(val >= 3.0 && val <= 20.0)) { SanroBoot.toast('HbA1cを正しく入力してください (3.0〜20.0)', 'error'); return; }
+  var memo = document.getElementById('hba1c-memo').value || '';
+  SanroBoot.apiPost('hba1c_save', { value: val, memo: memo }).then(function(data) {
+    if (data && data.ok) {
+      SanroBoot.toast('✅ HbA1c ' + data.value + '% を記録しました', 'success');
+      document.getElementById('hba1c-val').value = '';
+      document.getElementById('hba1c-memo').value = '';
+      loadHba1cRecent();
+    } else {
+      SanroBoot.toast('記録失敗: ' + (data && data.error ? data.error : 'unknown'), 'error');
+    }
+  });
 });
 
 // v3.17.9: btn-close 廃止 (共通 sanro-back-btn が SanroBoot.close を呼ぶ)
