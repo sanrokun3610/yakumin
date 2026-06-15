@@ -9,7 +9,7 @@
 <script>
 // v3.25.0: LIFF内ブラウザ強キャッシュ対策 - バージョン違いで強制リロード（meal_input式）
 (function() {
-  var CURRENT_VERSION = 'v3.26.0';
+  var CURRENT_VERSION = 'v3.27.0';
   window.__APP_BUILD = CURRENT_VERSION;
   try {
     var stored = localStorage.getItem('blood_pressure_version');
@@ -25,7 +25,7 @@
 </head>
 <body>
 <div class="sanro-header">
-  <div class="sanro-header-title">🩺 検査値</div>
+  <div class="sanro-header-title" id="exam-header-title">🩺 血圧</div>
   <div class="sanro-username"></div>
 </div>
 <div id="sanro-status" class="sanro-status"></div>
@@ -231,6 +231,9 @@ Array.prototype.forEach.call(document.querySelectorAll('#exam-tabs [data-exam]')
     var exam = this.getAttribute('data-exam');
     document.getElementById('sec-bp').classList.toggle('hidden', exam !== 'bp');
     document.getElementById('sec-hba1c').classList.toggle('hidden', exam !== 'hba1c');
+    // v3.27.0: ヘッダーをアクティブなタブに連動（「検査値」中間ラベルを廃止）
+    var ht = document.getElementById('exam-header-title');
+    if (ht) ht.textContent = (exam === 'bp') ? '🩺 血圧' : '🩸 HbA1c';
     if (exam === 'hba1c' && !hba1cLoaded) { hba1cLoaded = true; loadHba1cRecent(); }
   });
 });
