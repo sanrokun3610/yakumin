@@ -9,7 +9,7 @@
 <script>
 // v3.25.0: LIFF内ブラウザ強キャッシュ対策 - バージョン違いで強制リロード（meal_input式）
 (function() {
-  var CURRENT_VERSION = 'v3.27.0';
+  var CURRENT_VERSION = 'v3.28.0';
   window.__APP_BUILD = CURRENT_VERSION;
   try {
     var stored = localStorage.getItem('blood_pressure_version');
@@ -25,18 +25,17 @@
 </head>
 <body>
 <div class="sanro-header">
-  <div class="sanro-header-title" id="exam-header-title">🩺 血圧</div>
+  <!-- v3.28.0: 戻る・血圧・HbA1c をヘッダーに横並び（右上タイトル廃止） -->
+  <div class="sanro-header-title" id="exam-header" style="justify-content:flex-start;gap:8px;flex-wrap:wrap">
+    <button class="sanro-back-btn" type="button" onclick="SanroBoot.close()">← 戻る</button>
+    <button class="sanro-chip selected" data-exam="bp" type="button" style="padding:8px 18px;flex:none">血圧</button>
+    <button class="sanro-chip" data-exam="hba1c" type="button" style="padding:8px 18px;flex:none">HbA1c</button>
+  </div>
   <div class="sanro-username"></div>
 </div>
 <div id="sanro-status" class="sanro-status"></div>
 
 <div id="content" class="hidden">
-  <!-- v3.24.0: 検査値タブ（血圧 ⇔ HbA1c） -->
-  <div class="sanro-chip-row cols-2" id="exam-tabs" style="margin-bottom:12px">
-    <button class="sanro-chip selected" data-exam="bp">血圧</button>
-    <button class="sanro-chip" data-exam="hba1c">HbA1c</button>
-  </div>
-
   <div id="sec-bp">
   <div class="sanro-section">
     <div class="sanro-section-title">📝 今の血圧</div>
@@ -222,18 +221,15 @@ document.getElementById('btn-hba1c-graph').addEventListener('click', function() 
 
 // ====== v3.24.0: 検査値タブ切替（血圧 ⇔ HbA1c）======
 var hba1cLoaded = false;
-Array.prototype.forEach.call(document.querySelectorAll('#exam-tabs [data-exam]'), function(tab) {
+Array.prototype.forEach.call(document.querySelectorAll('#exam-header [data-exam]'), function(tab) {
   tab.addEventListener('click', function() {
-    Array.prototype.forEach.call(document.querySelectorAll('#exam-tabs [data-exam]'), function(b) {
+    Array.prototype.forEach.call(document.querySelectorAll('#exam-header [data-exam]'), function(b) {
       b.classList.remove('selected');
     });
     this.classList.add('selected');
     var exam = this.getAttribute('data-exam');
     document.getElementById('sec-bp').classList.toggle('hidden', exam !== 'bp');
     document.getElementById('sec-hba1c').classList.toggle('hidden', exam !== 'hba1c');
-    // v3.27.0: ヘッダーをアクティブなタブに連動（「検査値」中間ラベルを廃止）
-    var ht = document.getElementById('exam-header-title');
-    if (ht) ht.textContent = (exam === 'bp') ? '🩺 血圧' : '🩸 HbA1c';
     if (exam === 'hba1c' && !hba1cLoaded) { hba1cLoaded = true; loadHba1cRecent(); }
   });
 });
