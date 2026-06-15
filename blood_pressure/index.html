@@ -6,6 +6,22 @@
 <title>検査値 - サンロくんのほけんしつ</title>
 <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <link rel="stylesheet" href="/common/common.css">
+<script>
+// v3.25.0: LIFF内ブラウザ強キャッシュ対策 - バージョン違いで強制リロード（meal_input式）
+(function() {
+  var CURRENT_VERSION = 'v3.25.0';
+  window.__APP_BUILD = CURRENT_VERSION;
+  try {
+    var stored = localStorage.getItem('blood_pressure_version');
+    if (stored && stored !== CURRENT_VERSION) {
+      localStorage.setItem('blood_pressure_version', CURRENT_VERSION);
+      location.replace(location.pathname + '?v=' + CURRENT_VERSION + '&t=' + Date.now());
+      return;
+    }
+    localStorage.setItem('blood_pressure_version', CURRENT_VERSION);
+  } catch (e) {}
+})();
+</script>
 </head>
 <body>
 <div class="sanro-header">
@@ -144,6 +160,8 @@ document.getElementById('btn-save').addEventListener('click', function() {
   var pulse = normalizeNum(document.getElementById('pulse').value);
   if (!sbp || sbp < 60 || sbp > 250) { SanroBoot.toast('上の血圧を正しく入力してください (60〜250)', 'error'); return; }
   if (!dbp || dbp < 30 || dbp > 200) { SanroBoot.toast('下の血圧を正しく入力してください (30〜200)', 'error'); return; }
+  var btn = this;
+  setBusy(btn, true);
   SanroBoot.apiPost('bp_save', { sbp: sbp, dbp: dbp, pulse: pulse || 0, timing: selectedTiming }).then(function(data) {
     if (data && data.ok) {
       SanroBoot.toast('✅ ' + sbp + '/' + dbp + ' を記録しました', 'success');
@@ -154,8 +172,21 @@ document.getElementById('btn-save').addEventListener('click', function() {
     } else {
       SanroBoot.toast('記録失敗: ' + (data && data.error ? data.error : 'unknown'), 'error');
     }
-  });
+  }).then(function(){ setBusy(btn, false); }, function(){ setBusy(btn, false); });
 });
+
+// v3.25.0: 記録中のローディング表示（ボタン無効化＋ラベル切替）
+function setBusy(btn, busy) {
+  if (!btn) return;
+  if (busy) {
+    if (!btn.dataset.label) btn.dataset.label = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = '記録中…';
+  } else {
+    btn.disabled = false;
+    if (btn.dataset.label) btn.textContent = btn.dataset.label;
+  }
+}
 
 document.getElementById('btn-graph').addEventListener('click', function() {
   var APP = SanroBoot.getApp();
@@ -189,7 +220,26 @@ function loadHba1cRecent() {
       var row = document.createElement('div');
       row.className = 'sanro-list-item';
       var zone = item.zone ? '　' + SanroBoot.esc(item.zone) : '';
-      row.innerHTML = '<span><span class="date">' + SanroBoot.esc(item.date || '') + '</span>' + zone + '</span><span class="value">' + (item.value || 0) + '%</span>';
+      var left = document.createElement('span');
+      left.innerHTML = '<span class="date">' + SanroBoot.esc(item.date || '') + '</span>' + zone;
+      var right = document.createElement('span');
+      right.style.cssText = 'display:flex;align-items:center;gap:10px';
+      right.innerHTML = '<span class="value">' + (item.value || 0) + '%</span>';
+      // v3.25.0: 削除ボタン
+      var del = document.createElement('button');
+      del.type = 'button';
+      del.textContent = '削除';
+      del.style.cssText = 'min-height:36px;padding:6px 12px;font-size:13px;font-weight:600;border:1px solid #fecaca;border-radius:8px;background:#fef2f2;color:#b91c1c;cursor:pointer';
+      del.addEventListener('click', function() {
+        if (!confirm('この記録（' + (item.date || '') + '  ' + (item.value || 0) + '%）を削除しますか？')) return;
+        del.disabled = true; del.textContent = '削除中…';
+        SanroBoot.apiPost('hba1c_delete', { ts: item.ts }).then(function(d) {
+          if (d && d.ok) { SanroBoot.toast('🗑 削除しました', 'success'); loadHba1cRecent(); }
+          else { SanroBoot.toast('削除失敗: ' + (d && d.error ? d.error : 'unknown'), 'error'); del.disabled = false; del.textContent = '削除'; }
+        }).catch(function(){ SanroBoot.toast('削除失敗', 'error'); del.disabled = false; del.textContent = '削除'; });
+      });
+      right.appendChild(del);
+      row.appendChild(left); row.appendChild(right);
       box.appendChild(row);
     });
   }).catch(function() {
@@ -201,6 +251,8 @@ document.getElementById('btn-hba1c-save').addEventListener('click', function() {
   var val = normalizeNum(document.getElementById('hba1c-val').value);
   if (!(val >= 3.0 && val <= 20.0)) { SanroBoot.toast('HbA1cを正しく入力してください (3.0〜20.0)', 'error'); return; }
   var memo = document.getElementById('hba1c-memo').value || '';
+  var btn = this;
+  setBusy(btn, true);
   SanroBoot.apiPost('hba1c_save', { value: val, memo: memo }).then(function(data) {
     if (data && data.ok) {
       SanroBoot.toast('✅ HbA1c ' + data.value + '% を記録しました', 'success');
@@ -210,7 +262,7 @@ document.getElementById('btn-hba1c-save').addEventListener('click', function() {
     } else {
       SanroBoot.toast('記録失敗: ' + (data && data.error ? data.error : 'unknown'), 'error');
     }
-  });
+  }).then(function(){ setBusy(btn, false); }, function(){ setBusy(btn, false); });
 });
 
 // v3.17.9: btn-close 廃止 (共通 sanro-back-btn が SanroBoot.close を呼ぶ)
