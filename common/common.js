@@ -19,7 +19,7 @@ window.SanroBoot = (function() {
   function showLoading(container, msg) {
     if (!container) return;
     /* v3.17.12: 認証中表示を控えめに (画面が真っ白に見える違和感を軽減) */
-    container.innerHTML = '<div class="sanro-loading" style="background:transparent;border:none;color:#999;font-weight:normal">読込中…</div>';
+    container.innerHTML = '<div class="sanro-loading" style="background:transparent;border:none;color:#999;font-weight:normal;font-size:21px">読み込み中…</div>';
   }
   function showError(container, msg) {
     if (!container) return;
