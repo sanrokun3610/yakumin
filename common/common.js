@@ -131,7 +131,22 @@ window.SanroBoot = (function() {
         body: JSON.stringify({ userId: profile.userId, accessToken: accessToken, displayName: profile.displayName || '' }),
       }).then(function(data) {
         if (!data || !data.ok) {
-          if (!isBackground) showError($('sanro-status'), '認証失敗: ' + (data && data.error ? data.error : 'unknown'));
+          if (!isBackground) {
+            if (data && data.error === 'not_member') {
+              // 会員ハードゲート: 非会員(会員番号未登録)は sig を取得できない。
+              // 「会員登録してください」+ LINEトークへ戻る導線を表示する。
+              var stEl = $('sanro-status');
+              if (stEl) stEl.innerHTML =
+                '<div style="margin:24px 12px;padding:22px 18px;border:1px solid #f0d39a;background:#fffdf4;border-radius:14px;text-align:center;line-height:1.8;">' +
+                '<div style="font-size:34px;">💳</div>' +
+                '<div style="font-weight:bold;font-size:16px;color:#b45309;margin:4px 0 8px;">会員登録が必要です</div>' +
+                '<div style="font-size:13px;color:#555;">この機能を使うには会員番号の登録が必要です。<br>LINEのトーク画面に戻って、サンロくんの案内から<br><b>会員番号を登録</b>してね。</div>' +
+                '<button onclick="try{liff.closeWindow()}catch(e){}" style="margin-top:16px;padding:11px 26px;border:none;border-radius:10px;background:#22c55e;color:#fff;font-weight:bold;font-size:15px;cursor:pointer;">LINEのトークに戻る</button>' +
+                '</div>';
+            } else {
+              showError($('sanro-status'), '認証失敗: ' + (data && data.error ? data.error : 'unknown'));
+            }
+          }
           return;
         }
         APP.userId = data.userId;
