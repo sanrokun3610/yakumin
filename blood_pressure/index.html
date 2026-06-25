@@ -115,7 +115,7 @@
 <script>
 // v3.25.0: LIFF内ブラウザ強キャッシュ対策 - バージョン違いで強制リロード（meal_input式）
 (function() {
-  var CURRENT_VERSION = 'v3.28.0';
+  var CURRENT_VERSION = 'v3.28.1';
   window.__APP_BUILD = CURRENT_VERSION;
   try {
     var stored = localStorage.getItem('blood_pressure_version');
@@ -158,7 +158,7 @@
     </div>
     <div style="margin-bottom:14px;">
       <div style="font-size:15px;color:#555;font-weight:600;margin-bottom:8px;">脈拍 (任意)</div>
-      <input type="text" id="pulse" class="sanro-input" placeholder="例: 72" inputmode="numeric" enterkeyhint="done" style="font-size:18px;text-align:center;">
+      <input type="text" id="pulse" class="sanro-input" placeholder="" inputmode="numeric" enterkeyhint="done" style="font-size:18px;text-align:center;">
     </div>
     <div style="margin-bottom:16px;">
       <div style="font-size:15px;color:#555;font-weight:600;margin-bottom:8px;">いつ測ったか</div>
@@ -185,11 +185,11 @@
       <div class="sanro-section-title" style="font-size:16px;margin-bottom:14px;">📝 今のHbA1cを記録</div>
       <div style="margin-bottom:14px;">
         <div style="font-size:15px;color:#555;font-weight:600;margin-bottom:8px;">HbA1c (%)</div>
-        <input type="text" id="hba1c-val" class="sanro-input" placeholder="例: 6.2" inputmode="decimal" enterkeyhint="done" style="font-size:22px;font-weight:bold;text-align:center;">
+        <input type="text" id="hba1c-val" class="sanro-input" placeholder="" inputmode="decimal" enterkeyhint="done" style="font-size:22px;font-weight:bold;text-align:center;">
       </div>
       <div style="margin-bottom:16px;">
         <div style="font-size:15px;color:#555;font-weight:600;margin-bottom:8px;">メモ (任意)</div>
-        <input type="text" id="hba1c-memo" class="sanro-input" placeholder="例: 病院で測定" maxlength="100">
+        <input type="text" id="hba1c-memo" class="sanro-input" placeholder="" maxlength="100">
       </div>
       <button id="btn-hba1c-save" class="sanro-btn primary" style="font-size:17px;padding:16px;border-radius:12px;">記録する</button>
     </div>

@@ -9,7 +9,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 // LIFF内ブラウザ強キャッシュ対策（検査値と同方式）: バージョン違いで強制リロード
-(function(){var V='v3.28.0';try{var s=localStorage.getItem('weight_version');if(s&&s!==V){localStorage.setItem('weight_version',V);location.replace(location.pathname+'?v='+V+'&t='+Date.now());return;}localStorage.setItem('weight_version',V);}catch(e){}})();
+(function(){var V='v3.28.2';try{var s=localStorage.getItem('weight_version');if(s&&s!==V){localStorage.setItem('weight_version',V);location.replace(location.pathname+'?v='+V+'&t='+Date.now());return;}localStorage.setItem('weight_version',V);}catch(e){}})();
 </script>
 </head>
 <body>
@@ -25,7 +25,7 @@
     <div class="sanro-section-title" style="font-size:16px;margin-bottom:14px;">📝 今日の体重を記録</div>
     <div style="font-size:14px;color:#555;font-weight:600;margin-bottom:8px;">体重 (kg)</div>
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
-      <input type="text" id="weight-input" class="sanro-input" placeholder="例: 55.5" inputmode="decimal" autocomplete="off" autofocus enterkeyhint="done" style="font-size:22px;font-weight:bold;text-align:center;letter-spacing:0.5px;">
+      <input type="text" id="weight-input" class="sanro-input" placeholder="" inputmode="decimal" autocomplete="off" autofocus enterkeyhint="done" style="font-size:22px;font-weight:bold;text-align:center;letter-spacing:0.5px;">
       <span style="font-size:20px;font-weight:bold;color:#78350f;white-space:nowrap;">kg</span>
     </div>
     <button id="btn-save" class="sanro-btn primary" style="font-size:17px;padding:16px;border-radius:12px;">記録する</button>

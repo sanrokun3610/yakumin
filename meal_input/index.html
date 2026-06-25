@@ -18,7 +18,7 @@ try {
 if (window.__PHOTO_MODE) document.documentElement.className += ' photo-mode';
 // v3.18.0: LIFF 内ブラウザ強キャッシュ対策 - バージョン違いで強制リロード
 (function() {
-  var CURRENT_VERSION = 'v3.23.0';
+  var CURRENT_VERSION = 'v3.23.1';
   window.__APP_BUILD = CURRENT_VERSION;  // build表示用（版マーカーと同一の単一定数）
   // 古い sig キャッシュも強制削除 (くまさんFB対応)
   try {
@@ -288,7 +288,7 @@ body.q-has-text .clear-input-btn{display:flex;align-items:center;justify-content
 <!-- v3.17.3 くまさんFB: 入力欄右端に × クリアボタン -->
 <div class="search-box">
   <div class="search-input-wrap">
-    <input type="text" id="q" placeholder="例：納豆ごはん / すき家 牛丼 / セブン おにぎり" autocomplete="off" inputmode="text" enterkeyhint="search">
+    <input type="text" id="q" placeholder="" autocomplete="off" inputmode="text" enterkeyhint="search">
     <button class="clear-input-btn" id="clear-input-btn" type="button" aria-label="入力をクリア">×</button>
   </div>
   <div class="hint">2文字以上で候補が出ます（検索キーで閉じる）</div>
@@ -356,7 +356,7 @@ body.q-has-text .clear-input-btn{display:flex;align-items:center;justify-content
     </div>
     <div id="pc-edit" class="pc-q-block hidden">
       <div class="pc-q">料理名:</div>
-      <input id="pc-name-input" type="text" maxlength="60" placeholder="例: カツ丼" autocomplete="off">
+      <input id="pc-name-input" type="text" maxlength="60" placeholder="" autocomplete="off">
       <div class="pc-q">量:</div>
       <div class="pc-chips" id="pc-portion-chips"></div>
     </div>
@@ -445,16 +445,16 @@ body.q-has-text .clear-input-btn{display:flex;align-items:center;justify-content
     </div>
     <div class="modal-title" id="hm-edit-title">自炊メニューを編集</div>
     <div style="font-size:13px;color:#666;margin-bottom:6px;font-weight:600">名前 (30文字まで)</div>
-    <input type="text" id="hm-edit-label" placeholder="例: 納豆ごはん" maxlength="30" style="width:100%;padding:12px;font-size:16px;border:1.5px solid #d4d4d4;border-radius:8px;margin-bottom:10px">
+    <input type="text" id="hm-edit-label" placeholder="" maxlength="30" style="width:100%;padding:12px;font-size:16px;border:1.5px solid #d4d4d4;border-radius:8px;margin-bottom:10px">
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:10px">
       <div>
         <div style="font-size:13px;color:#666;margin-bottom:4px;font-weight:600">カロリー</div>
-        <input type="text" id="hm-edit-kcal" placeholder="350" inputmode="numeric" style="width:100%;padding:10px;font-size:15px;border:1.5px solid #d4d4d4;border-radius:8px">
+        <input type="text" id="hm-edit-kcal" placeholder="" inputmode="numeric" style="width:100%;padding:10px;font-size:15px;border:1.5px solid #d4d4d4;border-radius:8px">
         <div style="font-size:11px;color:#999;margin-top:2px">kcal</div>
       </div>
       <div>
         <div style="font-size:13px;color:#666;margin-bottom:4px;font-weight:600">量</div>
-        <input type="text" id="hm-edit-amount" placeholder="1" inputmode="decimal" style="width:100%;padding:10px;font-size:15px;border:1.5px solid #d4d4d4;border-radius:8px">
+        <input type="text" id="hm-edit-amount" placeholder="" inputmode="decimal" style="width:100%;padding:10px;font-size:15px;border:1.5px solid #d4d4d4;border-radius:8px">
       </div>
       <div>
         <div style="font-size:13px;color:#666;margin-bottom:4px;font-weight:600">単位</div>
@@ -477,7 +477,7 @@ body.q-has-text .clear-input-btn{display:flex;align-items:center;justify-content
       <button class="mt-chip" data-hm-mt="snack">間食</button>
     </div>
     <div style="font-size:13px;color:#666;margin-bottom:6px;font-weight:600">メモ (100文字まで)</div>
-    <textarea id="hm-edit-memo" maxlength="100" rows="2" placeholder="例: ごはん150g + 納豆1パック" style="width:100%;padding:10px;font-size:14px;border:1.5px solid #d4d4d4;border-radius:8px;margin-bottom:8px;font-family:inherit"></textarea>
+    <textarea id="hm-edit-memo" maxlength="100" rows="2" placeholder="" style="width:100%;padding:10px;font-size:14px;border:1.5px solid #d4d4d4;border-radius:8px;margin-bottom:8px;font-family:inherit"></textarea>
     <div style="font-size:11px;color:#9ca3af;margin-bottom:10px">※ あとから変更できます</div>
     <button id="hm-edit-save" class="manual-confirm">保存</button>
     <button id="hm-edit-delete" class="modal-close" style="color:#dc2626;border-color:#fecaca;background:#fef2f2">このメニューを削除</button>
@@ -520,7 +520,7 @@ body.q-has-text .clear-input-btn{display:flex;align-items:center;justify-content
       <button class="mt-chip" data-edit-mt="midnight" style="min-height:40px;font-size:13px">夜食</button>
     </div>
     <div style="font-size:13px;color:#666;margin-bottom:6px;font-weight:600">kcal を直接修正 (任意)</div>
-    <input type="text" id="edit-kcal" placeholder="例: 500" inputmode="numeric" style="width:100%;padding:12px;font-size:16px;border:2px solid #fcd34d;border-radius:8px;margin-bottom:12px">
+    <input type="text" id="edit-kcal" placeholder="" inputmode="numeric" style="width:100%;padding:12px;font-size:16px;border:2px solid #fcd34d;border-radius:8px;margin-bottom:12px">
     <button id="edit-save" class="manual-confirm">修正を保存</button>
     <button id="edit-cancel" class="modal-close">やめる</button>
   </div>
@@ -533,7 +533,7 @@ body.q-has-text .clear-input-btn{display:flex;align-items:center;justify-content
     </div>
     <div class="modal-title" id="amount-title">量を選んでください</div>
     <div id="amount-buttons" class="amount-buttons"></div>
-    <input type="text" id="amount-manual" placeholder="0.5〜10 で入力（例: 1.5）" inputmode="decimal" class="hidden">
+    <input type="text" id="amount-manual" placeholder="0.5〜10 で入力" inputmode="decimal" class="hidden">
     <button id="amount-manual-confirm" class="manual-confirm hidden">この量で記録</button>
     <button id="amount-close" class="modal-close">やめる</button>
   </div>
@@ -1779,7 +1779,7 @@ function showAmountModal(c, _) {
   });
   $("amount-manual").classList.remove("hidden");
   $("amount-manual").value = "";
-  $("amount-manual").placeholder = "0.5〜10 で入力（例: 1.5）";
+  $("amount-manual").placeholder = "0.5〜10 で入力";
   $("amount-manual-confirm").classList.remove("hidden");
   $("amount-manual-confirm").onclick = function() {
     var raw = $("amount-manual").value.trim()

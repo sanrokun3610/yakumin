@@ -12,7 +12,7 @@
 <script>
 // LIFF内ブラウザ強キャッシュ対策（weight/records と同方式）: バージョン違いで強制リロード。
 // 旧「設定→再登録フォームへ即転送」版がキャッシュに残るのを防ぐため導入（設定だけ未導入だった）。
-(function(){var V='v3.28.1';try{var s=localStorage.getItem('settings_version');if(s&&s!==V){localStorage.setItem('settings_version',V);location.replace(location.pathname+'?v='+V+'&t='+Date.now());return;}localStorage.setItem('settings_version',V);}catch(e){}})();
+(function(){var V='v3.28.2';try{var s=localStorage.getItem('settings_version');if(s&&s!==V){localStorage.setItem('settings_version',V);location.replace(location.pathname+'?v='+V+'&t='+Date.now());return;}localStorage.setItem('settings_version',V);}catch(e){}})();
 </script>
 <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <link rel="stylesheet" href="/common/common.css">
@@ -104,17 +104,17 @@
     <div style="font-size:16px;font-weight:700;color:#166534;margin-bottom:10px" id="hm-edit-title">自炊メニューを登録</div>
 
     <div style="font-size:13px;color:#666;margin-bottom:6px;font-weight:600">名前 (30文字まで)</div>
-    <input type="text" id="hm-edit-label" placeholder="例: 納豆ごはん" maxlength="30" style="width:100%;padding:12px;font-size:16px;border:1.5px solid #d4d4d4;border-radius:8px;margin-bottom:10px;box-sizing:border-box">
+    <input type="text" id="hm-edit-label" placeholder="" maxlength="30" style="width:100%;padding:12px;font-size:16px;border:1.5px solid #d4d4d4;border-radius:8px;margin-bottom:10px;box-sizing:border-box">
 
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:10px">
       <div>
         <div style="font-size:13px;color:#666;margin-bottom:4px;font-weight:600">カロリー</div>
-        <input type="text" id="hm-edit-kcal" placeholder="350" inputmode="numeric" style="width:100%;padding:10px;font-size:15px;border:1.5px solid #d4d4d4;border-radius:8px;box-sizing:border-box">
+        <input type="text" id="hm-edit-kcal" placeholder="" inputmode="numeric" style="width:100%;padding:10px;font-size:15px;border:1.5px solid #d4d4d4;border-radius:8px;box-sizing:border-box">
         <div style="font-size:11px;color:#999;margin-top:2px">kcal</div>
       </div>
       <div>
         <div style="font-size:13px;color:#666;margin-bottom:4px;font-weight:600">量</div>
-        <input type="text" id="hm-edit-amount" placeholder="1" inputmode="decimal" style="width:100%;padding:10px;font-size:15px;border:1.5px solid #d4d4d4;border-radius:8px;box-sizing:border-box">
+        <input type="text" id="hm-edit-amount" placeholder="" inputmode="decimal" style="width:100%;padding:10px;font-size:15px;border:1.5px solid #d4d4d4;border-radius:8px;box-sizing:border-box">
       </div>
       <div>
         <div style="font-size:13px;color:#666;margin-bottom:4px;font-weight:600">単位</div>
@@ -139,7 +139,7 @@
     </div>
 
     <div style="font-size:13px;color:#666;margin-bottom:6px;font-weight:600">メモ (100文字まで)</div>
-    <textarea id="hm-edit-memo" maxlength="100" rows="2" placeholder="例: ごはん150g + 納豆1パック" style="width:100%;padding:10px;font-size:14px;border:1.5px solid #d4d4d4;border-radius:8px;margin-bottom:8px;font-family:inherit;box-sizing:border-box"></textarea>
+    <textarea id="hm-edit-memo" maxlength="100" rows="2" placeholder="" style="width:100%;padding:10px;font-size:14px;border:1.5px solid #d4d4d4;border-radius:8px;margin-bottom:8px;font-family:inherit;box-sizing:border-box"></textarea>
 
     <div style="font-size:11px;color:#9ca3af;margin-bottom:10px">※ あとから変更できます</div>
 
