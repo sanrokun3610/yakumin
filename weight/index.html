@@ -20,20 +20,22 @@
 <div id="sanro-status" class="sanro-status"></div>
 
 <div id="content" class="hidden">
-  <div class="sanro-section">
-    <div class="sanro-section-title">📝 今日の体重</div>
-    <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:12px">
-      <input type="text" id="weight-input" class="sanro-input" placeholder="例: 55.5" inputmode="decimal" autocomplete="off" autofocus enterkeyhint="done">
-      <span style="font-size:18px;font-weight:bold;color:#78350f">kg</span>
+  <!-- #2 レイアウト美化: 入力カードに視覚的まとまり・ラベル16px・余白を整備 -->
+  <div class="sanro-section" style="margin-bottom:0;padding-bottom:20px;">
+    <div class="sanro-section-title" style="font-size:16px;margin-bottom:14px;">📝 今日の体重を記録</div>
+    <div style="font-size:14px;color:#555;font-weight:600;margin-bottom:8px;">体重 (kg)</div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+      <input type="text" id="weight-input" class="sanro-input" placeholder="例: 55.5" inputmode="decimal" autocomplete="off" autofocus enterkeyhint="done" style="font-size:22px;font-weight:bold;text-align:center;letter-spacing:0.5px;">
+      <span style="font-size:20px;font-weight:bold;color:#78350f;white-space:nowrap;">kg</span>
     </div>
-    <button id="btn-save" class="sanro-btn primary">記録する</button>
+    <button id="btn-save" class="sanro-btn primary" style="font-size:17px;padding:16px;border-radius:12px;">記録する</button>
   </div>
 
-  <div class="sanro-section">
-    <div class="sanro-section-title">📊 直近の記録</div>
+  <div class="sanro-section" style="padding-top:20px;">
+    <div class="sanro-section-title" style="font-size:16px;margin-bottom:14px;">📊 直近の記録</div>
     <div id="recent-list">読込中…</div>
-    <div style="height:8px"></div>
-    <button class="sanro-btn outline" id="btn-graph">📈 グラフを見る</button>
+    <div style="height:12px"></div>
+    <button class="sanro-btn outline" id="btn-graph" style="font-size:16px;padding:14px;border-radius:12px;">📈 グラフを見る</button>
   </div>
 
   <!-- v3.17.9 くまさんFB: 「完了してLINEに戻る」廃止 → ヘッダー左上の共通 ← 戻るに統一 -->
@@ -56,14 +58,17 @@
   border-bottom:1px solid #fcd34d;
   padding-top:calc(env(safe-area-inset-top,0px) + 14px);
   padding-bottom:14px;
+  padding-left:16px;padding-right:16px;
   display:flex;align-items:center;gap:10px;
   position:sticky;top:0;z-index:10;
 }
-.wg-modal-title{font-size:17px;font-weight:bold;color:#78350f;flex:1;}
+/* #1 閉じるを左上に統一: ボタン先・タイトルflex:1で右へ押し出し */
+.wg-modal-title{font-size:17px;font-weight:bold;color:#78350f;flex:1;text-align:right;}
 .wg-modal-close{
   background:#6b7280;border:none;color:#fff;
   font-size:14px;font-weight:600;padding:7px 16px;border-radius:8px;
   cursor:pointer;min-height:40px;min-width:72px;
+  flex-shrink:0;
 }
 .wg-modal-close:active{background:#4b5563;}
 .wg-section{background:#fff;border-radius:12px;margin:10px 12px 0;padding:14px;}
@@ -88,8 +93,8 @@
 <div id="graph-modal" class="wg-modal-overlay" role="dialog" aria-modal="true" aria-label="体重グラフ">
   <div class="wg-modal">
     <div class="wg-modal-header">
+      <button class="wg-modal-close" id="graph-close" type="button">← 閉じる</button>
       <div class="wg-modal-title">⚖️ 体重推移</div>
-      <button class="wg-modal-close" id="graph-close" type="button">× 閉じる</button>
     </div>
     <div id="wg-content">
       <div class="wg-loading" id="graph-status">読み込み中…</div>

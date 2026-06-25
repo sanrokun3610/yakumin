@@ -30,15 +30,17 @@
   display:flex;align-items:center;gap:10px;
   position:sticky;top:0;z-index:10;
 }
-.bp-modal-header .bp-modal-title{
-  font-size:17px;font-weight:bold;color:#78350f;flex:1;
-}
+/* #1 閉じるを左上に統一: ボタン先・タイトルflex:1で右へ */
 .bp-modal-close{
   background:#6b7280;border:none;color:#fff;
   font-size:14px;font-weight:600;padding:7px 16px;border-radius:8px;
   cursor:pointer;min-height:40px;min-width:72px;
+  flex-shrink:0;
 }
 .bp-modal-close:active{background:#4b5563;}
+.bp-modal-header .bp-modal-title{
+  font-size:17px;font-weight:bold;color:#78350f;flex:1;text-align:right;
+}
 
 /* ===== 共通カード ===== */
 .g-section{background:#fff;border-radius:12px;margin:10px 12px 0;padding:14px;}
@@ -141,60 +143,62 @@
 
 <div id="content" class="hidden">
   <div id="sec-bp">
-  <div class="sanro-section">
-    <div class="sanro-section-title">📝 今の血圧</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+  <!-- #2 レイアウト美化: ラベル16px・グリッド入力・余白整備 -->
+  <div class="sanro-section" style="margin-bottom:0;padding-bottom:20px;">
+    <div class="sanro-section-title" style="font-size:16px;margin-bottom:14px;">📝 今の血圧を記録</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
       <div>
-        <div style="font-size:14px;color:#555;font-weight:600;margin-bottom:4px">上 (mmHg)</div>
-        <input type="text" id="sbp" class="sanro-input" placeholder="例: 128" inputmode="numeric" autofocus enterkeyhint="next">
+        <div style="font-size:15px;color:#555;font-weight:600;margin-bottom:8px;">上 (mmHg)</div>
+        <input type="text" id="sbp" class="sanro-input" placeholder="128" inputmode="numeric" autofocus enterkeyhint="next" style="font-size:22px;font-weight:bold;text-align:center;">
       </div>
       <div>
-        <div style="font-size:14px;color:#555;font-weight:600;margin-bottom:4px">下 (mmHg)</div>
-        <input type="text" id="dbp" class="sanro-input" placeholder="例: 82" inputmode="numeric" enterkeyhint="next">
+        <div style="font-size:15px;color:#555;font-weight:600;margin-bottom:8px;">下 (mmHg)</div>
+        <input type="text" id="dbp" class="sanro-input" placeholder="82" inputmode="numeric" enterkeyhint="next" style="font-size:22px;font-weight:bold;text-align:center;">
       </div>
     </div>
-    <div>
-      <div style="font-size:14px;color:#555;font-weight:600;margin-bottom:4px">脈拍 (任意)</div>
-      <input type="text" id="pulse" class="sanro-input" placeholder="例: 72" inputmode="numeric" enterkeyhint="done">
+    <div style="margin-bottom:14px;">
+      <div style="font-size:15px;color:#555;font-weight:600;margin-bottom:8px;">脈拍 (任意)</div>
+      <input type="text" id="pulse" class="sanro-input" placeholder="例: 72" inputmode="numeric" enterkeyhint="done" style="font-size:18px;text-align:center;">
     </div>
-    <div style="height:8px"></div>
-    <div style="font-size:14px;color:#555;font-weight:600;margin-bottom:4px">いつ測ったか</div>
-    <div class="sanro-chip-row cols-2">
-      <button class="sanro-chip" data-timing="朝">朝</button>
-      <button class="sanro-chip" data-timing="夜">夜</button>
+    <div style="margin-bottom:16px;">
+      <div style="font-size:15px;color:#555;font-weight:600;margin-bottom:8px;">いつ測ったか</div>
+      <div class="sanro-chip-row cols-2">
+        <button class="sanro-chip" data-timing="朝" style="font-size:16px;padding:14px;">朝</button>
+        <button class="sanro-chip" data-timing="夜" style="font-size:16px;padding:14px;">夜</button>
+      </div>
     </div>
-    <div style="height:8px"></div>
-    <button id="btn-save" class="sanro-btn primary">記録する</button>
+    <button id="btn-save" class="sanro-btn primary" style="font-size:17px;padding:16px;border-radius:12px;">記録する</button>
   </div>
 
-  <div class="sanro-section">
-    <div class="sanro-section-title">📊 直近の記録</div>
+  <div class="sanro-section" style="padding-top:20px;">
+    <div class="sanro-section-title" style="font-size:16px;margin-bottom:14px;">📊 直近の記録</div>
     <div id="recent-list">読込中…</div>
-    <div style="height:8px"></div>
-    <button class="sanro-btn outline" id="btn-graph">📈 グラフを見る</button>
+    <div style="height:12px"></div>
+    <button class="sanro-btn outline" id="btn-graph" style="font-size:16px;padding:14px;border-radius:12px;">📈 グラフを見る</button>
   </div>
   </div><!-- /#sec-bp -->
 
   <!-- v3.24.0: HbA1c（ユーザー自己記録・無料） -->
   <div id="sec-hba1c" class="hidden">
-    <div class="sanro-section">
-      <div class="sanro-section-title">📝 今のHbA1c</div>
-      <div>
-        <div style="font-size:14px;color:#555;font-weight:600;margin-bottom:4px">HbA1c (%)</div>
-        <input type="text" id="hba1c-val" class="sanro-input" placeholder="例: 6.2" inputmode="decimal" enterkeyhint="done">
+    <!-- #2 レイアウト美化 -->
+    <div class="sanro-section" style="margin-bottom:0;padding-bottom:20px;">
+      <div class="sanro-section-title" style="font-size:16px;margin-bottom:14px;">📝 今のHbA1cを記録</div>
+      <div style="margin-bottom:14px;">
+        <div style="font-size:15px;color:#555;font-weight:600;margin-bottom:8px;">HbA1c (%)</div>
+        <input type="text" id="hba1c-val" class="sanro-input" placeholder="例: 6.2" inputmode="decimal" enterkeyhint="done" style="font-size:22px;font-weight:bold;text-align:center;">
       </div>
-      <div style="height:8px"></div>
-      <div style="font-size:14px;color:#555;font-weight:600;margin-bottom:4px">メモ (任意)</div>
-      <input type="text" id="hba1c-memo" class="sanro-input" placeholder="例: 病院で測定" maxlength="100">
-      <div style="height:8px"></div>
-      <button id="btn-hba1c-save" class="sanro-btn primary">記録する</button>
+      <div style="margin-bottom:16px;">
+        <div style="font-size:15px;color:#555;font-weight:600;margin-bottom:8px;">メモ (任意)</div>
+        <input type="text" id="hba1c-memo" class="sanro-input" placeholder="例: 病院で測定" maxlength="100">
+      </div>
+      <button id="btn-hba1c-save" class="sanro-btn primary" style="font-size:17px;padding:16px;border-radius:12px;">記録する</button>
     </div>
 
-    <div class="sanro-section">
-      <div class="sanro-section-title">📊 直近の記録</div>
+    <div class="sanro-section" style="padding-top:20px;">
+      <div class="sanro-section-title" style="font-size:16px;margin-bottom:14px;">📊 直近の記録</div>
       <div id="hba1c-recent-list">読込中…</div>
-      <div style="height:8px"></div>
-      <button class="sanro-btn outline" id="btn-hba1c-graph">📈 グラフを見る</button>
+      <div style="height:12px"></div>
+      <button class="sanro-btn outline" id="btn-hba1c-graph" style="font-size:16px;padding:14px;border-radius:12px;">📈 グラフを見る</button>
     </div>
   </div>
 
@@ -205,8 +209,8 @@
 <div id="bp-graph-modal" class="bp-modal-overlay" role="dialog" aria-modal="true" aria-label="血圧グラフ">
   <div class="bp-modal">
     <div class="bp-modal-header">
+      <button class="bp-modal-close" id="bp-modal-close-btn" type="button">← 閉じる</button>
       <div class="bp-modal-title">🩺 血圧手帳</div>
-      <button class="bp-modal-close" id="bp-modal-close-btn" type="button">× 閉じる</button>
     </div>
     <div id="bp-graph-content">
       <div class="g-loading" id="bp-graph-loading">読み込み中…</div>
@@ -218,8 +222,8 @@
 <div id="ha-graph-modal" class="bp-modal-overlay" role="dialog" aria-modal="true" aria-label="HbA1c推移グラフ">
   <div class="bp-modal">
     <div class="bp-modal-header">
+      <button class="bp-modal-close" id="ha-modal-close-btn" type="button">← 閉じる</button>
       <div class="bp-modal-title">🩸 HbA1c 推移</div>
-      <button class="bp-modal-close" id="ha-modal-close-btn" type="button">× 閉じる</button>
     </div>
     <div id="ha-graph-content">
       <div class="g-loading" id="ha-graph-loading">読み込み中…</div>

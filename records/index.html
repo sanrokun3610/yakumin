@@ -34,11 +34,13 @@
   display:flex;align-items:center;gap:10px;
   position:sticky;top:0;z-index:10;
 }
-.rc-modal-title{font-size:17px;font-weight:bold;color:#78350f;flex:1;}
+/* #1 閉じるを左上に統一: ボタン先・タイトルflex:1で右へ */
+.rc-modal-title{font-size:17px;font-weight:bold;color:#78350f;flex:1;text-align:right;}
 .rc-modal-close{
   background:#6b7280;border:none;color:#fff;
   font-size:14px;font-weight:600;padding:7px 16px;border-radius:8px;
   cursor:pointer;min-height:40px;min-width:72px;
+  flex-shrink:0;order:-1;
 }
 .rc-modal-close:active{background:#4b5563;}
 
@@ -175,21 +177,22 @@
 <div id="sanro-status" class="sanro-status"></div>
 
 <div id="content" class="hidden">
-  <div class="sanro-section">
-    <div class="sanro-section-title">🍱 今日の食事</div>
+  <!-- #2 レイアウト美化: セクションタイトル16px・ボタン余白・間隔を統一 -->
+  <div class="sanro-section" style="margin-bottom:0;padding-bottom:20px;">
+    <div class="sanro-section-title" style="font-size:16px;margin-bottom:14px;">🍱 今日の食事</div>
     <div id="today-meals">読込中…</div>
   </div>
 
-  <div class="sanro-section">
-    <div class="sanro-section-title">📅 カレンダーで見る</div>
-    <button class="sanro-btn primary" id="btn-calendar">今月のカレンダー</button>
+  <div class="sanro-section" style="margin-bottom:0;padding-top:20px;padding-bottom:20px;">
+    <div class="sanro-section-title" style="font-size:16px;margin-bottom:14px;">📅 カレンダーで見る</div>
+    <button class="sanro-btn primary" id="btn-calendar" style="font-size:17px;padding:16px;border-radius:12px;">今月のカレンダー</button>
   </div>
 
-  <div class="sanro-section">
-    <div class="sanro-section-title">📊 グラフ</div>
-    <button class="sanro-btn outline" id="btn-weight-graph">⚖️ 体重グラフ</button>
-    <button class="sanro-btn outline" id="btn-bp-graph">🩺 血圧グラフ</button>
-    <button class="sanro-btn outline" id="btn-hba1c-graph">🩸 HbA1cグラフ</button>
+  <div class="sanro-section" style="padding-top:20px;">
+    <div class="sanro-section-title" style="font-size:16px;margin-bottom:14px;">📊 グラフで見る</div>
+    <button class="sanro-btn outline" id="btn-weight-graph" style="font-size:16px;padding:14px;border-radius:12px;">⚖️ 体重グラフ</button>
+    <button class="sanro-btn outline" id="btn-bp-graph" style="font-size:16px;padding:14px;border-radius:12px;">🩺 血圧グラフ</button>
+    <button class="sanro-btn outline" id="btn-hba1c-graph" style="font-size:16px;padding:14px;border-radius:12px;">🩸 HbA1cグラフ</button>
   </div>
 </div>
 
@@ -197,8 +200,8 @@
 <div id="rc-weight-modal" class="rc-modal-overlay" role="dialog" aria-modal="true" aria-label="体重グラフ">
   <div class="rc-modal">
     <div class="rc-modal-header">
+      <button class="rc-modal-close" id="rc-weight-close" type="button">← 閉じる</button>
       <div class="rc-modal-title">⚖️ 体重推移</div>
-      <button class="rc-modal-close" id="rc-weight-close" type="button">× 閉じる</button>
     </div>
     <div id="rc-weight-content">
       <div class="g-loading">読み込み中…</div>
@@ -210,8 +213,8 @@
 <div id="rc-bp-modal" class="rc-modal-overlay" role="dialog" aria-modal="true" aria-label="血圧グラフ">
   <div class="rc-modal">
     <div class="rc-modal-header">
+      <button class="rc-modal-close" id="rc-bp-close" type="button">← 閉じる</button>
       <div class="rc-modal-title">🩺 血圧手帳</div>
-      <button class="rc-modal-close" id="rc-bp-close" type="button">× 閉じる</button>
     </div>
     <div id="rc-bp-content">
       <div class="g-loading">読み込み中…</div>
@@ -223,8 +226,8 @@
 <div id="rc-ha-modal" class="rc-modal-overlay" role="dialog" aria-modal="true" aria-label="HbA1c推移グラフ">
   <div class="rc-modal">
     <div class="rc-modal-header">
+      <button class="rc-modal-close" id="rc-ha-close" type="button">← 閉じる</button>
       <div class="rc-modal-title">🩸 HbA1c 推移</div>
-      <button class="rc-modal-close" id="rc-ha-close" type="button">× 閉じる</button>
     </div>
     <div id="rc-ha-content">
       <div class="g-loading">読み込み中…</div>
@@ -236,8 +239,8 @@
 <div id="rc-cal-modal" class="rc-modal-overlay" role="dialog" aria-modal="true" aria-label="月間カレンダー">
   <div class="rc-modal">
     <div class="rc-modal-header">
+      <button class="rc-modal-close" id="rc-cal-close" type="button">← 閉じる</button>
       <div class="rc-modal-title">📅 月間カレンダー</div>
-      <button class="rc-modal-close" id="rc-cal-close" type="button">× 閉じる</button>
     </div>
     <div id="rc-cal-content">
       <div class="g-loading">読み込み中…</div>
@@ -774,20 +777,22 @@ function loadCalendar(month) {
   var content = document.getElementById('rc-cal-content');
   content.innerHTML = '<div class="g-loading">読み込み中…</div>';
 
-  var p1 = SanroBoot.apiGet('meals_api', { action: 'getMonthly', month: month });
-  var p2 = SanroBoot.apiGet('meals_api', { action: 'getSummary', month: month });
-  var p3 = SanroBoot.apiGet('blood_pressure_data', { days: 90 });
-  var p4 = SanroBoot.apiGet('weight_data');
+  // 各APIを個別にcatch（1つ失敗しても他のマーカー/カレンダーは表示する＝全滅させない）
+  function softGet(p) { return p.catch(function() { return null; }); }
+  var p1 = softGet(SanroBoot.apiGet('meals_api', { action: 'getMonthly', month: month }));
+  var p2 = softGet(SanroBoot.apiGet('meals_api', { action: 'getSummary', month: month }));
+  var p3 = softGet(SanroBoot.apiGet('blood_pressure_data', { days: 90 }));
+  var p4 = softGet(SanroBoot.apiGet('weight_data'));
 
   Promise.all([p1, p2, p3, p4]).then(function(results) {
-    calMealData = results[0] || {};
-    calSummary  = results[1] || {};
+    var r0 = results[0];
+    calMealData = (r0 && !r0.error) ? r0 : {};
+    var r1 = results[1];
+    calSummary  = (r1 && !r1.error) ? r1 : {};
     calBpData   = (results[2] && results[2].history) ? results[2].history : [];
     calWgData   = (results[3] && results[3].data) ? results[3].data : [];
     calMonth    = month;
     renderCalendar(month, null);
-  }).catch(function() {
-    content.innerHTML = '<div class="g-error">データの取得に失敗しました。<br>もう一度お試しください。</div>';
   });
 }
 
