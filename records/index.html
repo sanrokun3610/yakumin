@@ -11,7 +11,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js"></script>
 <script>
 // LIFF内ブラウザ強キャッシュ対策: バージョン違いで強制リロード
-(function(){var V='v3.30.3';try{var s=localStorage.getItem('records_version');if(s&&s!==V){localStorage.setItem('records_version',V);location.replace(location.pathname+'?v='+V+'&t='+Date.now());return;}localStorage.setItem('records_version',V);}catch(e){}})();
+(function(){var V='v3.30.4';try{var s=localStorage.getItem('records_version');if(s&&s!==V){localStorage.setItem('records_version',V);location.replace(location.pathname+'?v='+V+'&t='+Date.now());return;}localStorage.setItem('records_version',V);}catch(e){}})();
 </script>
 <script>
 // padStart polyfill: 古いLINE内WebViewで String.padStart 未対応だとカレンダー描画が例外で落ちる対策
@@ -883,8 +883,13 @@ function renderCalendar(month, selectedDate) {
 
   // 血圧マーカー
   calBpData.forEach(function(r) {
-    var ds = (r.dateStr || (r.date ? r.date.substring(0, 10) : ''));
-    if (!ds || !ds.startsWith(month)) return;
+    // dateStr がシート由来で数値になっているケースがあるため必ず文字列化。
+    // 文字列でなければ r.date(ISO文字列)から導出する。
+    var ds = (typeof r.dateStr === 'string' && r.dateStr)
+      ? r.dateStr
+      : (r.date ? String(r.date).substring(0, 10) : '');
+    ds = String(ds);
+    if (!ds || ds.indexOf(month) !== 0) return;
     if (!byDay[ds]) byDay[ds] = {};
     byDay[ds].hasBp = true;
   });
