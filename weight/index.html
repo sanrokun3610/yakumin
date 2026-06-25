@@ -6,6 +6,7 @@
 <title>体重を記録 - サンロくんのほけんしつ</title>
 <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <link rel="stylesheet" href="/common/common.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 // LIFF内ブラウザ強キャッシュ対策（検査値と同方式）: バージョン違いで強制リロード
 (function(){var V='v3.28.0';try{var s=localStorage.getItem('weight_version');if(s&&s!==V){localStorage.setItem('weight_version',V);location.replace(location.pathname+'?v='+V+'&t='+Date.now());return;}localStorage.setItem('weight_version',V);}catch(e){}})();
@@ -36,6 +37,18 @@
   </div>
 
   <!-- v3.17.9 くまさんFB: 「完了してLINEに戻る」廃止 → ヘッダー左上の共通 ← 戻るに統一 -->
+</div>
+
+<!-- 2026-06-25: 体重推移グラフを yakusokuai.jp 内で描画（旧: script.google.com へ遷移→Google警告画面が出る問題を解消） -->
+<div id="graph-modal" class="hidden" style="position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:100;display:flex;align-items:center;justify-content:center;padding:16px">
+  <div style="background:#fff;border-radius:16px;padding:16px;width:100%;max-width:560px;max-height:90vh;overflow-y:auto">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <div style="font-size:16px;font-weight:700;color:#78350f">⚖️ 体重推移</div>
+      <button id="graph-close" style="background:#f0f0f0;border:none;padding:6px 14px;border-radius:8px;cursor:pointer;font-size:13px">✕ 閉じる</button>
+    </div>
+    <div id="graph-status" style="font-size:13px;color:#888;text-align:center;padding:24px 0">読込中…</div>
+    <canvas id="weight-chart" style="display:none"></canvas>
+  </div>
 </div>
 
 <script src="/common/common.js"></script>
@@ -92,9 +105,46 @@ document.getElementById('btn-save').addEventListener('click', function() {
   });
 });
 
-document.getElementById('btn-graph').addEventListener('click', function() {
-  var APP = SanroBoot.getApp();
-  window.location.href = APP.deployUrl + '?page=weight_graph&userId=' + encodeURIComponent(APP.userId) + '&sig=' + encodeURIComponent(APP.sig);
+var weightChart = null;
+function openGraph() {
+  var modal = document.getElementById('graph-modal');
+  var status = document.getElementById('graph-status');
+  var canvas = document.getElementById('weight-chart');
+  modal.classList.remove('hidden');
+  status.style.display = 'block';
+  status.textContent = '読込中…';
+  canvas.style.display = 'none';
+  // weight_data API（GAS: handleWeightGraphData_）で6ヶ月分を取得し、その場で Chart.js 描画
+  SanroBoot.apiGet('weight_data').then(function(res) {
+    var data = (res && res.data) || [];
+    if (!data.length) { status.textContent = 'まだ記録がありません'; return; }
+    data.sort(function(a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; });
+    var labels = data.map(function(d) { var p = String(d.date).split('-'); return p.length === 3 ? (p[1] + '/' + p[2]) : d.date; });
+    var values = data.map(function(d) { return d.weight; });
+    status.style.display = 'none';
+    canvas.style.display = 'block';
+    if (weightChart) weightChart.destroy();
+    weightChart = new Chart(canvas.getContext('2d'), {
+      type: 'line',
+      data: { labels: labels, datasets: [{
+        label: '体重(kg)', data: values,
+        borderColor: '#22c55e', backgroundColor: 'rgba(34,197,94,0.12)',
+        fill: true, tension: 0.3, pointRadius: 4, pointBackgroundColor: '#22c55e',
+      }] },
+      options: { responsive: true, plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: false, title: { display: true, text: 'kg' } },
+                  x: { title: { display: true, text: '日付' } } } },
+    });
+  }).catch(function(err) {
+    status.textContent = '読込失敗: ' + (err && err.message ? err.message : err);
+  });
+}
+document.getElementById('btn-graph').addEventListener('click', openGraph);
+document.getElementById('graph-close').addEventListener('click', function() {
+  document.getElementById('graph-modal').classList.add('hidden');
+});
+document.getElementById('graph-modal').addEventListener('click', function(e) {
+  if (e.target === this) this.classList.add('hidden');
 });
 
 // v3.17.9: btn-close 廃止 (共通 sanro-back-btn が SanroBoot.close を呼ぶ)
