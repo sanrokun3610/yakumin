@@ -6,13 +6,18 @@
   2026-06-25: 「設定→再登録フォーム(github)へ即転送」を廃止。
   体重/記録と同様に yakusokuai.jp の本来の設定画面（活動量/目的/身長体重/自炊メニュー）を表示する。
   リッチメニュー「設定」は LIFF 1EPIatV3 (=このページ) を指す。
+  2026-06-25 v3.28.3: 設定画面リニューアル（全項目集約）
+  - 生年月日（案B: 年/月/日 3ドロップダウン）＋年齢自動計算を追加
+  - 性別チップ（男性/女性）を追加
+  - 食事時間（朝/昼/夜 ドロップダウン）を追加
+  - API: settings_save { field:'birthdate' } / { field:'gender' } / { field:'meal' }
 -->
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>設定 - サンロくんのほけんしつ</title>
 <script>
 // LIFF内ブラウザ強キャッシュ対策（weight/records と同方式）: バージョン違いで強制リロード。
 // 旧「設定→再登録フォームへ即転送」版がキャッシュに残るのを防ぐため導入（設定だけ未導入だった）。
-(function(){var V='v3.28.2';try{var s=localStorage.getItem('settings_version');if(s&&s!==V){localStorage.setItem('settings_version',V);location.replace(location.pathname+'?v='+V+'&t='+Date.now());return;}localStorage.setItem('settings_version',V);}catch(e){}})();
+(function(){var V='v3.28.3';try{var s=localStorage.getItem('settings_version');if(s&&s!==V){localStorage.setItem('settings_version',V);location.replace(location.pathname+'?v='+V+'&t='+Date.now());return;}localStorage.setItem('settings_version',V);}catch(e){}})();
 </script>
 <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <link rel="stylesheet" href="/common/common.css">
@@ -25,6 +30,60 @@
 <div id="sanro-status" class="sanro-status"></div>
 
 <div id="content" class="hidden">
+
+  <!-- ===== 1. 生年月日 ===== -->
+  <div class="sanro-section">
+    <div class="sanro-section-title">🎂 生年月日</div>
+    <div class="sanro-info-row">
+      <span class="label">現在の設定</span>
+      <span class="value" id="info-birthdate">未設定</span>
+    </div>
+    <div class="sanro-info-row" style="margin-bottom:12px">
+      <span class="label">年齢（自動計算）</span>
+      <span class="value green" id="info-age-calc">—</span>
+    </div>
+    <div style="font-size:12px;color:#666;line-height:1.6;margin-bottom:10px">年・月・日をそれぞれ選んでください</div>
+    <div id="dob-triple" style="display:flex;gap:8px;align-items:flex-end;margin-bottom:12px">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+        <select id="dob-year" style="padding:12px 6px;font-size:16px;border:2px solid #fcd34d;border-radius:8px;background:#fffbeb;color:#1f2937;min-height:52px;width:110px;text-align:center"></select>
+        <span style="font-size:12px;color:#666;font-weight:600">年</span>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+        <select id="dob-month" style="padding:12px 6px;font-size:16px;border:2px solid #fcd34d;border-radius:8px;background:#fffbeb;color:#1f2937;min-height:52px;width:76px;text-align:center"></select>
+        <span style="font-size:12px;color:#666;font-weight:600">月</span>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+        <select id="dob-day" style="padding:12px 6px;font-size:16px;border:2px solid #fcd34d;border-radius:8px;background:#fffbeb;color:#1f2937;min-height:52px;width:76px;text-align:center"></select>
+        <span style="font-size:12px;color:#666;font-weight:600">日</span>
+      </div>
+    </div>
+    <div id="dob-age-preview" style="margin-bottom:12px;padding:10px 12px;background:#fff;border-left:4px solid #16a34a;border-radius:0 8px 8px 0;font-size:14px;color:#166534;font-weight:600;display:none"></div>
+    <button class="sanro-btn primary" id="btn-save-birthdate">生年月日を保存する</button>
+  </div>
+
+  <!-- ===== 2. 性別 ===== -->
+  <div class="sanro-section">
+    <div class="sanro-section-title">🧑 性別</div>
+    <div class="sanro-info-row" style="margin-bottom:12px">
+      <span class="label">現在</span>
+      <span class="value" id="info-gender-disp">—</span>
+    </div>
+    <div class="sanro-chip-row cols-2">
+      <button class="sanro-chip" data-gender="男性">男性</button>
+      <button class="sanro-chip" data-gender="女性">女性</button>
+    </div>
+  </div>
+
+  <!-- ===== 3. 身長・体重 ===== -->
+  <div class="sanro-section">
+    <div class="sanro-section-title">🏃 身長・体重</div>
+    <div class="sanro-info-row"><span class="label">身長</span><span class="value" id="info-height">— cm</span></div>
+    <div class="sanro-info-row"><span class="label">体重</span><span class="value" id="info-weight">— kg</span></div>
+    <div style="height:8px"></div>
+    <button class="sanro-btn secondary" id="btn-edit-body">身長・体重を変える</button>
+  </div>
+
+  <!-- ===== 4. 活動量 ===== -->
   <div class="sanro-section">
     <div class="sanro-section-title">🚶 活動量</div>
     <div id="activity-current" class="sanro-info-row">
@@ -49,14 +108,6 @@
   </div>
 
   <div class="sanro-section">
-    <div class="sanro-section-title">🏃 身長・体重</div>
-    <div class="sanro-info-row"><span class="label">身長</span><span class="value" id="info-height">— cm</span></div>
-    <div class="sanro-info-row"><span class="label">体重</span><span class="value" id="info-weight">— kg</span></div>
-    <div style="height:8px"></div>
-    <button class="sanro-btn secondary" id="btn-edit-body">身長・体重を変える</button>
-  </div>
-
-  <div class="sanro-section">
     <div class="sanro-section-title">🎯 健康目的</div>
     <div class="sanro-info-row"><span class="label">現在</span><span class="value" id="info-goal">—</span></div>
     <div style="height:8px"></div>
@@ -68,6 +119,50 @@
     </div>
   </div>
 
+  <!-- ===== 6. 食事時間 ===== -->
+  <div class="sanro-section">
+    <div class="sanro-section-title">⏰ 食事時間</div>
+    <div style="font-size:12px;color:#666;line-height:1.6;margin-bottom:12px">AIアドバイスの精度に使います</div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+      <span style="font-size:15px;width:44px;flex-shrink:0">🌅 朝</span>
+      <select id="meal-breakfast" style="flex:1;padding:12px;font-size:16px;border:2px solid #fcd34d;border-radius:8px;background:#fffbeb;color:#1f2937;min-height:48px">
+        <option value="4時台">4時台</option>
+        <option value="5時台">5時台</option>
+        <option value="6時台">6時台</option>
+        <option value="7時台">7時台</option>
+        <option value="8時台">8時台</option>
+        <option value="9時台">9時台</option>
+        <option value="10時台">10時台</option>
+        <option value="なし（食べない）">なし（食べない）</option>
+      </select>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+      <span style="font-size:15px;width:44px;flex-shrink:0">☀️ 昼</span>
+      <select id="meal-lunch" style="flex:1;padding:12px;font-size:16px;border:2px solid #fcd34d;border-radius:8px;background:#fffbeb;color:#1f2937;min-height:48px">
+        <option value="10時台">10時台</option>
+        <option value="11時台">11時台</option>
+        <option value="12時台">12時台</option>
+        <option value="13時台">13時台</option>
+        <option value="14時台">14時台</option>
+        <option value="なし（食べない）">なし（食べない）</option>
+      </select>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+      <span style="font-size:15px;width:44px;flex-shrink:0">🌙 夜</span>
+      <select id="meal-dinner" style="flex:1;padding:12px;font-size:16px;border:2px solid #fcd34d;border-radius:8px;background:#fffbeb;color:#1f2937;min-height:48px">
+        <option value="17時台">17時台</option>
+        <option value="18時台">18時台</option>
+        <option value="19時台">19時台</option>
+        <option value="20時台">20時台</option>
+        <option value="21時台">21時台</option>
+        <option value="22時台">22時台</option>
+        <option value="なし（食べない）">なし（食べない）</option>
+      </select>
+    </div>
+    <button class="sanro-btn primary" id="btn-save-meal">食事時間を保存する</button>
+  </div>
+
+  <!-- 基本情報（読み取り専用・参照表示） -->
   <div class="sanro-section">
     <div class="sanro-section-title">📝 基本情報</div>
     <div class="sanro-info-row"><span class="label">呼び名</span><span class="value" id="info-nickname">—</span></div>
@@ -196,6 +291,47 @@ function loadUserInfo() {
     document.getElementById('info-nickname').textContent = u.nickname || u.name || '—';
     document.getElementById('info-age').textContent = (u.age || '—') + ' 歳';
     document.getElementById('info-gender').textContent = u.gender || '—';
+
+    // 生年月日 表示更新
+    var bdEl = document.getElementById('info-birthdate');
+    if (u.birthdate) {
+      var bdParts = u.birthdate.split('-');
+      if (bdParts.length === 3) {
+        bdEl.textContent = parseInt(bdParts[0], 10) + '年' + parseInt(bdParts[1], 10) + '月' + parseInt(bdParts[2], 10) + '日';
+      } else {
+        bdEl.textContent = u.birthdate;
+      }
+      // ドロップダウンに現在値を反映
+      var yr = document.getElementById('dob-year');
+      var mo = document.getElementById('dob-month');
+      var dy = document.getElementById('dob-day');
+      if (yr) yr.value = bdParts[0];
+      if (mo) mo.value = String(parseInt(bdParts[1], 10));
+      if (dy) dy.value = String(parseInt(bdParts[2], 10));
+      dobUpdatePreview();
+    } else {
+      bdEl.textContent = '未設定（入力してください）';
+    }
+    // 年齢自動計算表示
+    var ageCalcEl = document.getElementById('info-age-calc');
+    if (u.age != null) {
+      var decade = Math.floor(u.age / 10) * 10;
+      ageCalcEl.textContent = u.age + '歳（' + decade + '代）';
+    } else {
+      ageCalcEl.textContent = '—';
+    }
+
+    // 性別チップ 強調
+    Array.prototype.forEach.call(document.querySelectorAll('[data-gender]'), function(btn) {
+      btn.classList.toggle('selected', btn.getAttribute('data-gender') === u.gender);
+    });
+    document.getElementById('info-gender-disp').textContent = u.gender || '—';
+
+    // 食事時間 ドロップダウンに現在値を反映
+    if (u.mb) { var mbEl = document.getElementById('meal-breakfast'); if (mbEl) mbEl.value = u.mb; }
+    if (u.ml) { var mlEl = document.getElementById('meal-lunch');     if (mlEl) mlEl.value = u.ml; }
+    if (u.md) { var mdEl = document.getElementById('meal-dinner');    if (mdEl) mdEl.value = u.md; }
+
     // 選択中チップを強調
     Array.prototype.forEach.call(document.querySelectorAll('[data-level]'), function(btn) {
       btn.classList.toggle('selected', btn.getAttribute('data-level') === u.activityLevel);
@@ -248,6 +384,129 @@ document.getElementById('btn-edit-body').addEventListener('click', function() {
     } else {
       SanroBoot.toast('変更失敗: ' + (data && data.error ? data.error : 'unknown'), 'error');
     }
+  });
+});
+
+// ====================================================================
+// 生年月日 3ドロップダウン 初期化
+// ====================================================================
+(function initDobSelects() {
+  var yearSel  = document.getElementById('dob-year');
+  var monthSel = document.getElementById('dob-month');
+  var daySel   = document.getElementById('dob-day');
+  if (!yearSel || !monthSel || !daySel) return;
+
+  // 年: 1930〜今年
+  var thisYear = new Date().getFullYear();
+  for (var y = thisYear; y >= 1930; y--) {
+    var opt = document.createElement('option');
+    opt.value = String(y);
+    opt.textContent = y + '年';
+    yearSel.appendChild(opt);
+  }
+  // 月: 1〜12
+  for (var m = 1; m <= 12; m++) {
+    var opt2 = document.createElement('option');
+    opt2.value = String(m);
+    opt2.textContent = m + '月';
+    monthSel.appendChild(opt2);
+  }
+  // 日: 1〜31
+  for (var d = 1; d <= 31; d++) {
+    var opt3 = document.createElement('option');
+    opt3.value = String(d);
+    opt3.textContent = d + '日';
+    daySel.appendChild(opt3);
+  }
+
+  // 変更時にプレビュー更新
+  yearSel.addEventListener('change', dobUpdatePreview);
+  monthSel.addEventListener('change', dobUpdatePreview);
+  daySel.addEventListener('change', dobUpdatePreview);
+})();
+
+// 3ドロップダウン → 年齢プレビュー表示
+function dobUpdatePreview() {
+  var yr = document.getElementById('dob-year');
+  var mo = document.getElementById('dob-month');
+  var dy = document.getElementById('dob-day');
+  var prev = document.getElementById('dob-age-preview');
+  if (!yr || !mo || !dy || !prev) return;
+  var yv = parseInt(yr.value, 10);
+  var mv = parseInt(mo.value, 10);
+  var dv = parseInt(dy.value, 10);
+  if (!yv || !mv || !dv) { prev.style.display = 'none'; return; }
+  var today = new Date();
+  var age = today.getFullYear() - yv;
+  var bdThisYear = new Date(today.getFullYear(), mv - 1, dv);
+  if (today < bdThisYear) age--;
+  var decade = Math.floor(age / 10) * 10;
+  prev.textContent = yv + '年' + mv + '月' + dv + '日 → ' + age + '歳（' + decade + '代）';
+  prev.style.display = '';
+}
+
+// 3ドロップダウン → YYYY-MM-DD 文字列に組み立て
+function dobBuildValue() {
+  var yr = document.getElementById('dob-year');
+  var mo = document.getElementById('dob-month');
+  var dy = document.getElementById('dob-day');
+  if (!yr || !mo || !dy) return null;
+  var yv = yr.value;
+  var mvNum = parseInt(mo.value, 10);
+  var dvNum = parseInt(dy.value, 10);
+  var mv = mvNum < 10 ? '0' + mvNum : String(mvNum);
+  var dv = dvNum < 10 ? '0' + dvNum : String(dvNum);
+  if (!yv || !mv || !dv) return null;
+  return yv + '-' + mv + '-' + dv;
+}
+
+// 生年月日 保存
+document.getElementById('btn-save-birthdate').addEventListener('click', function() {
+  var val = dobBuildValue();
+  if (!val) { SanroBoot.toast('年・月・日をすべて選んでください', 'error'); return; }
+  SanroBoot.apiPost('settings_save', { field: 'birthdate', value: val }).then(function(data) {
+    if (data && data.ok) {
+      SanroBoot.toast('✅ 生年月日を保存しました', 'success');
+      loadUserInfo();
+    } else {
+      SanroBoot.toast('保存失敗: ' + (data && data.error ? data.error : 'unknown'), 'error');
+    }
+  }).catch(function(err) {
+    SanroBoot.toast('通信失敗: ' + err.message, 'error');
+  });
+});
+
+// 性別 チップ保存
+Array.prototype.forEach.call(document.querySelectorAll('[data-gender]'), function(btn) {
+  btn.addEventListener('click', function() {
+    var gender = this.getAttribute('data-gender');
+    SanroBoot.apiPost('settings_save', { field: 'gender', value: gender }).then(function(data) {
+      if (data && data.ok) {
+        SanroBoot.toast('✅ 性別を「' + gender + '」に変更しました', 'success');
+        loadUserInfo();
+      } else {
+        SanroBoot.toast('変更失敗: ' + (data && data.error ? data.error : 'unknown'), 'error');
+      }
+    }).catch(function(err) {
+      SanroBoot.toast('通信失敗: ' + err.message, 'error');
+    });
+  });
+});
+
+// 食事時間 保存
+document.getElementById('btn-save-meal').addEventListener('click', function() {
+  var mb = document.getElementById('meal-breakfast').value;
+  var ml = document.getElementById('meal-lunch').value;
+  var md = document.getElementById('meal-dinner').value;
+  SanroBoot.apiPost('settings_save', { field: 'meal', mb: mb, ml: ml, md: md }).then(function(data) {
+    if (data && data.ok) {
+      SanroBoot.toast('✅ 食事時間を保存しました', 'success');
+      loadUserInfo();
+    } else {
+      SanroBoot.toast('保存失敗: ' + (data && data.error ? data.error : 'unknown'), 'error');
+    }
+  }).catch(function(err) {
+    SanroBoot.toast('通信失敗: ' + err.message, 'error');
   });
 });
 
