@@ -11,7 +11,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js"></script>
 <script>
 // LIFF内ブラウザ強キャッシュ対策: バージョン違いで強制リロード
-(function(){var V='v3.30.4';try{var s=localStorage.getItem('records_version');if(s&&s!==V){localStorage.setItem('records_version',V);location.replace(location.pathname+'?v='+V+'&t='+Date.now());return;}localStorage.setItem('records_version',V);}catch(e){}})();
+(function(){var V='v3.30.5';try{var s=localStorage.getItem('records_version');if(s&&s!==V){localStorage.setItem('records_version',V);location.replace(location.pathname+'?v='+V+'&t='+Date.now());return;}localStorage.setItem('records_version',V);}catch(e){}})();
 </script>
 <script>
 // padStart polyfill: 古いLINE内WebViewで String.padStart 未対応だとカレンダー描画が例外で落ちる対策
@@ -873,7 +873,7 @@ function renderCalendar(month, selectedDate) {
 
   // 食事マーカー
   Object.keys(calMealData).forEach(function(dateStr) {
-    if (dateStr.startsWith(month)) {
+    if (String(dateStr).indexOf(month) === 0) {
       if (!byDay[dateStr]) byDay[dateStr] = {};
       byDay[dateStr].hasMeal = true;
       byDay[dateStr].mealCount = calMealData[dateStr].count || 0;
@@ -897,7 +897,7 @@ function renderCalendar(month, selectedDate) {
   // 体重マーカー
   calWgData.forEach(function(r) {
     var ds = r.date ? String(r.date).substring(0, 10) : '';
-    if (!ds || !ds.startsWith(month)) return;
+    if (!ds || String(ds).indexOf(month) !== 0) return;
     if (!byDay[ds]) byDay[ds] = {};
     byDay[ds].hasWeight = true;
   });
