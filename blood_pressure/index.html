@@ -115,7 +115,7 @@
 <script>
 // v3.25.0: LIFF内ブラウザ強キャッシュ対策 - バージョン違いで強制リロード（meal_input式）
 (function() {
-  var CURRENT_VERSION = 'v3.28.1';
+  var CURRENT_VERSION = 'v3.28.2';
   window.__APP_BUILD = CURRENT_VERSION;
   try {
     var stored = localStorage.getItem('blood_pressure_version');
@@ -149,11 +149,11 @@
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
       <div>
         <div style="font-size:15px;color:#555;font-weight:600;margin-bottom:8px;">上 (mmHg)</div>
-        <input type="text" id="sbp" class="sanro-input" placeholder="128" inputmode="numeric" autofocus enterkeyhint="next" style="font-size:22px;font-weight:bold;text-align:center;">
+        <input type="text" id="sbp" class="sanro-input" placeholder="" inputmode="numeric" autofocus enterkeyhint="next" style="font-size:22px;font-weight:bold;text-align:center;">
       </div>
       <div>
         <div style="font-size:15px;color:#555;font-weight:600;margin-bottom:8px;">下 (mmHg)</div>
-        <input type="text" id="dbp" class="sanro-input" placeholder="82" inputmode="numeric" enterkeyhint="next" style="font-size:22px;font-weight:bold;text-align:center;">
+        <input type="text" id="dbp" class="sanro-input" placeholder="" inputmode="numeric" enterkeyhint="next" style="font-size:22px;font-weight:bold;text-align:center;">
       </div>
     </div>
     <div style="margin-bottom:14px;">
@@ -172,7 +172,7 @@
 
   <div class="sanro-section" style="padding-top:20px;">
     <div class="sanro-section-title" style="font-size:16px;margin-bottom:14px;">📊 直近の記録</div>
-    <div id="recent-list">読込中…</div>
+    <div id="recent-list"><div class="g-loading">読み込み中…</div></div>
     <div style="height:12px"></div>
     <button class="sanro-btn outline" id="btn-graph" style="font-size:16px;padding:14px;border-radius:12px;">📈 グラフを見る</button>
   </div>
@@ -196,7 +196,7 @@
 
     <div class="sanro-section" style="padding-top:20px;">
       <div class="sanro-section-title" style="font-size:16px;margin-bottom:14px;">📊 直近の記録</div>
-      <div id="hba1c-recent-list">読込中…</div>
+      <div id="hba1c-recent-list"><div class="g-loading">読み込み中…</div></div>
       <div style="height:12px"></div>
       <button class="sanro-btn outline" id="btn-hba1c-graph" style="font-size:16px;padding:14px;border-radius:12px;">📈 グラフを見る</button>
     </div>

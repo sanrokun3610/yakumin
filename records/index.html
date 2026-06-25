@@ -11,7 +11,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js"></script>
 <script>
 // LIFF内ブラウザ強キャッシュ対策: バージョン違いで強制リロード
-(function(){var V='v3.30.5';try{var s=localStorage.getItem('records_version');if(s&&s!==V){localStorage.setItem('records_version',V);location.replace(location.pathname+'?v='+V+'&t='+Date.now());return;}localStorage.setItem('records_version',V);}catch(e){}})();
+(function(){var V='v3.30.6';try{var s=localStorage.getItem('records_version');if(s&&s!==V){localStorage.setItem('records_version',V);location.replace(location.pathname+'?v='+V+'&t='+Date.now());return;}localStorage.setItem('records_version',V);}catch(e){}})();
 </script>
 <script>
 // padStart polyfill: 古いLINE内WebViewで String.padStart 未対応だとカレンダー描画が例外で落ちる対策
@@ -155,10 +155,12 @@ if (!Array.prototype.find) {
 .rc-cal-day:active{background:#fef9c3;}
 .rc-cal-day.empty{background:#f5f5f4;border-color:#eee;cursor:default;}
 .rc-cal-day.future{background:#f9f9f9;color:#ccc;cursor:default;}
-.rc-cal-day.today{background:#fef3c7;border-color:#fcd34d;}
-.rc-cal-day.today .rc-cal-num{color:#92400e;font-weight:bold;}
+/* 本日はハイライトしない（色不要）。番号だけ太字で控えめに示す */
+.rc-cal-day.today .rc-cal-num{font-weight:bold;}
 .rc-cal-day.has-record{background:#ecfdf5;border-color:#bbf7d0;}
-.rc-cal-day.has-record.today{background:#fef3c7;border-color:#fcd34d;}
+/* 選択中の日だけ色をつける（どこを選んでいるか分かるように） */
+.rc-cal-day.selected{background:#fde68a;border:2px solid #f59e0b;}
+.rc-cal-day.selected .rc-cal-num{color:#78350f;font-weight:bold;}
 .rc-cal-num{font-size:13px;font-weight:600;color:#333;line-height:1.2;}
 .rc-cal-dots{display:flex;justify-content:center;gap:2px;margin-top:auto;padding-bottom:1px;flex-wrap:wrap;}
 .rc-cal-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
@@ -208,7 +210,7 @@ if (!Array.prototype.find) {
   <!-- #2 レイアウト美化: セクションタイトル16px・ボタン余白・間隔を統一 -->
   <div class="sanro-section" style="margin-bottom:0;padding-bottom:20px;">
     <div class="sanro-section-title" style="font-size:16px;margin-bottom:14px;">🍱 今日の食事</div>
-    <div id="today-meals">読込中…</div>
+    <div id="today-meals"><div class="g-loading">読み込み中…</div></div>
   </div>
 
   <div class="sanro-section" style="margin-bottom:0;padding-top:20px;padding-bottom:20px;">
