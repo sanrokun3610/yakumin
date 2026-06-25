@@ -21,16 +21,18 @@
 }
 .rc-modal-overlay.active{display:block;}
 .rc-modal{
-  background:#f5f5f4;border-radius:16px 16px 0 0;
-  margin-top:48px;min-height:calc(100vh - 48px);
+  background:#f5f5f4;
+  min-height:100%;
   padding:0 0 env(safe-area-inset-bottom,24px);
 }
 .rc-modal-header{
   background:linear-gradient(135deg,#fef9c3,#fde68a);
   border-bottom:1px solid #fcd34d;
-  padding:14px 16px;
+  padding-top:calc(env(safe-area-inset-top,0px) + 14px);
+  padding-bottom:14px;
+  padding-left:16px;padding-right:16px;
   display:flex;align-items:center;gap:10px;
-  position:sticky;top:0;z-index:10;border-radius:16px 16px 0 0;
+  position:sticky;top:0;z-index:10;
 }
 .rc-modal-title{font-size:17px;font-weight:bold;color:#78350f;flex:1;}
 .rc-modal-close{
@@ -69,7 +71,7 @@
 .g-table th:first-child,.g-table td:first-child{text-align:left;color:#666;}
 .g-table th{background:#fafafa;color:#666;font-size:11px;font-weight:600;}
 .g-no-data{text-align:center;padding:20px;color:#888;font-size:13px;}
-.g-loading{text-align:center;padding:32px 16px;color:#92400e;font-size:14px;animation:sanro-pulse 1.2s infinite;}
+.g-loading{text-align:center;padding:32px 16px;color:#78350f;font-size:16px;font-weight:600;animation:sanro-pulse 1.2s infinite;}
 .g-error{text-align:center;padding:20px;color:#dc2626;font-size:13px;}
 .ha-latest-card{
   background:#fff;border-radius:12px;margin:10px 12px 0;padding:16px;
@@ -251,6 +253,39 @@ SanroBoot.init({
   onReady: function(APP) {
     document.getElementById('content').classList.remove('hidden');
     loadTodayMeals();
+    // #3 プリフェッチ: 画面描画後にバックグラウンドでグラフ・カレンダーデータを先読み
+    setTimeout(function() {
+      // 体重
+      if (!rcWeightCache) {
+        SanroBoot.apiGet('weight_data').then(function(res) {
+          var data = (res && res.data) || [];
+          data.sort(function(a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; });
+          rcWeightCache = data;
+        }).catch(function() {});
+      }
+      // 血圧（90日分 = カレンダーとグラフ両方をカバー）
+      if (!rcBpCache) {
+        SanroBoot.apiGet('blood_pressure_data', { days: 90 }).then(function(data) {
+          rcBpCache = (data && data.history) ? data.history : [];
+          // カレンダー用にも共有
+          if (!calBpData.length) calBpData = rcBpCache;
+        }).catch(function() {});
+      }
+      // HbA1c
+      if (!rcHaCache) {
+        SanroBoot.apiGet('hba1c_data').then(function(data) {
+          rcHaCache = (data && data.history)
+            ? data.history.slice().sort(function(a, b) { return new Date(a.date) - new Date(b.date); })
+            : [];
+        }).catch(function() {});
+      }
+      // カレンダー用: 今月の食事データ
+      var now = new Date();
+      var currentMonth = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+      SanroBoot.apiGet('meals_api', { action: 'getMonthly', month: currentMonth }).then(function(res) {
+        if (!Object.keys(calMealData).length) calMealData = res || {};
+      }).catch(function() {});
+    }, 800);
   }
 });
 
@@ -334,7 +369,11 @@ var rcWeightCache = null;
 
 document.getElementById('btn-weight-graph').addEventListener('click', function() {
   openModal('rc-weight-modal');
-  if (!rcWeightCache) { loadRcWeightGraph(); }
+  if (rcWeightCache) {
+    renderRcWeightGraph();
+  } else {
+    loadRcWeightGraph();
+  }
 });
 
 function fmtDateWg(s) {
@@ -422,7 +461,11 @@ var rcBpCache = null;
 
 document.getElementById('btn-bp-graph').addEventListener('click', function() {
   openModal('rc-bp-modal');
-  if (!rcBpCache) { loadRcBpGraph(7); }
+  if (rcBpCache) {
+    renderRcBpGraph(7);
+  } else {
+    loadRcBpGraph(7);
+  }
 });
 
 function fmtDateBp(s) {
@@ -587,7 +630,11 @@ var rcHaCache = null;
 
 document.getElementById('btn-hba1c-graph').addEventListener('click', function() {
   openModal('rc-ha-modal');
-  if (!rcHaCache) { loadRcHaGraph(); }
+  if (rcHaCache) {
+    renderRcHaGraph();
+  } else {
+    loadRcHaGraph();
+  }
 });
 
 function fmtDateHa(s) {

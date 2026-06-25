@@ -17,16 +17,18 @@
 }
 .bp-modal-overlay.active{display:block;}
 .bp-modal{
-  background:#f5f5f4;border-radius:16px 16px 0 0;
-  margin-top:48px;min-height:calc(100vh - 48px);
+  background:#f5f5f4;
+  min-height:100%;
   padding:0 0 env(safe-area-inset-bottom,24px);
 }
 .bp-modal-header{
   background:linear-gradient(135deg,#fef9c3,#fde68a);
   border-bottom:1px solid #fcd34d;
-  padding:14px 16px;
+  padding-top:calc(env(safe-area-inset-top,0px) + 14px);
+  padding-bottom:14px;
+  padding-left:16px;padding-right:16px;
   display:flex;align-items:center;gap:10px;
-  position:sticky;top:0;z-index:10;border-radius:16px 16px 0 0;
+  position:sticky;top:0;z-index:10;
 }
 .bp-modal-header .bp-modal-title{
   font-size:17px;font-weight:bold;color:#78350f;flex:1;
@@ -103,8 +105,8 @@
 
 /* ===== グラフ内ローディング ===== */
 .g-loading{
-  text-align:center;padding:32px 16px;color:#92400e;
-  font-size:14px;animation:sanro-pulse 1.2s infinite;
+  text-align:center;padding:32px 16px;color:#78350f;
+  font-size:16px;font-weight:600;animation:sanro-pulse 1.2s infinite;
 }
 .g-error{text-align:center;padding:20px;color:#dc2626;font-size:13px;}
 </style>
@@ -245,6 +247,21 @@ SanroBoot.init({
     Array.prototype.forEach.call(document.querySelectorAll('[data-timing]'), function(btn) {
       btn.classList.toggle('selected', btn.getAttribute('data-timing') === defaultTiming);
     });
+    // #3 プリフェッチ: 画面描画後にバックグラウンドでグラフデータを先読み
+    setTimeout(function() {
+      if (!bpDataCache) {
+        SanroBoot.apiGet('blood_pressure_data', { days: 90 }).then(function(data) {
+          bpDataCache = (data && data.history) ? data.history : [];
+        }).catch(function() { /* プリフェッチ失敗は無視 */ });
+      }
+      if (!haDataCache) {
+        SanroBoot.apiGet('hba1c_data').then(function(data) {
+          haDataCache = (data && data.history)
+            ? data.history.slice().sort(function(a, b) { return new Date(a.date) - new Date(b.date); })
+            : [];
+        }).catch(function() { /* プリフェッチ失敗は無視 */ });
+      }
+    }, 800);
   }
 });
 
@@ -376,7 +393,10 @@ var bpDataCache = null;
 
 document.getElementById('btn-graph').addEventListener('click', function() {
   openModal('bp-graph-modal');
-  if (!bpDataCache) {
+  if (bpDataCache) {
+    // プリフェッチ済み → 即描画
+    renderBpGraph(7);
+  } else {
     loadBpGraph(7);
   }
 });
@@ -590,7 +610,10 @@ var haDataCache = null;
 // v3.26.0: HbA1c推移グラフへ（モーダルへ変更）
 document.getElementById('btn-hba1c-graph').addEventListener('click', function() {
   openModal('ha-graph-modal');
-  if (!haDataCache) {
+  if (haDataCache) {
+    // プリフェッチ済み → 即描画
+    renderHaGraph();
+  } else {
     loadHaGraph();
   }
 });
