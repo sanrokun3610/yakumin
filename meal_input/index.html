@@ -18,7 +18,7 @@ try {
 if (window.__PHOTO_MODE) document.documentElement.className += ' photo-mode';
 // v3.18.0: LIFF 内ブラウザ強キャッシュ対策 - バージョン違いで強制リロード
 (function() {
-  var CURRENT_VERSION = 'v3.23.1';
+  var CURRENT_VERSION = 'v3.23.2';
   window.__APP_BUILD = CURRENT_VERSION;  // build表示用（版マーカーと同一の単一定数）
   // 古い sig キャッシュも強制削除 (くまさんFB対応)
   try {
@@ -1400,7 +1400,7 @@ var pendingHomeMealEdit = null;
 var pendingHomeMealEditMt = '';
 function openHomeMealEdit(item) {
   pendingHomeMealEdit = item;
-  pendingHomeMealEditMt = item.mealTypeDefault || '';
+  pendingHomeMealEditMt = (item && item.mealTypeDefault) || '';  // 追加時 item=null でも落ちないよう null安全に
   $("hm-edit-title").textContent = item ? '自炊メニューを編集' : '自炊メニューを追加';
   $("hm-edit-label").value = item ? item.label : '';
   $("hm-edit-kcal").value = item ? item.kcal : '';
