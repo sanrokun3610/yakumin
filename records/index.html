@@ -11,7 +11,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js"></script>
 <script>
 // LIFF内ブラウザ強キャッシュ対策: バージョン違いで強制リロード
-(function(){var V='v3.30.2';try{var s=localStorage.getItem('records_version');if(s&&s!==V){localStorage.setItem('records_version',V);location.replace(location.pathname+'?v='+V+'&t='+Date.now());return;}localStorage.setItem('records_version',V);}catch(e){}})();
+(function(){var V='v3.30.3';try{var s=localStorage.getItem('records_version');if(s&&s!==V){localStorage.setItem('records_version',V);location.replace(location.pathname+'?v='+V+'&t='+Date.now());return;}localStorage.setItem('records_version',V);}catch(e){}})();
 </script>
 <script>
 // padStart polyfill: 古いLINE内WebViewで String.padStart 未対応だとカレンダー描画が例外で落ちる対策
@@ -24,6 +24,20 @@ if (!String.prototype.padStart) {
     var pad = '';
     while (pad.length < targetLength - s.length) pad += padString;
     return pad.slice(0, targetLength - s.length) + s;
+  };
+}
+if (!String.prototype.startsWith) {
+  String.prototype.startsWith = function(search, pos) {
+    pos = pos > 0 ? (pos | 0) : 0;
+    return String(this).substring(pos, pos + String(search).length) === String(search);
+  };
+}
+if (!Array.prototype.find) {
+  Array.prototype.find = function(predicate, thisArg) {
+    for (var i = 0; i < this.length; i++) {
+      if (predicate.call(thisArg, this[i], i, this)) return this[i];
+    }
+    return undefined;
   };
 }
 </script>
