@@ -180,6 +180,7 @@ body.q-has-text .clear-input-btn{display:flex;align-items:center;justify-content
 .result-item.history{border-left:4px solid #10b981}
 .result-item.restaurant{border-left:4px solid #f59e0b}
 .result-item.food{border-left:4px solid #6b7280}
+.result-item.long-pressing{background:#fef2f2;border-color:#fecaca}
 .empty{padding:24px 16px;text-align:center;color:#666;font-size:15px;line-height:1.6}
 /* v3.15.5: 検索中表示を青系に統一 (くまさん指示) */
 .searching{padding:24px 16px;text-align:center;color:#1D4ED8;font-size:15px;font-weight:600;background:#EFF6FF;border:1px dashed #BFDBFE;border-radius:8px;margin:8px 0}
@@ -1247,8 +1248,18 @@ var pendingFrequentDelete = null;
 function openFrequentDeleteConfirm(item) {
   if (!item) return;
   pendingFrequentDelete = item;
+  $("frequent-delete-modal").querySelector(".modal-title").textContent = "よく使うものから削除しますか？";
   $("frequent-delete-info").innerHTML = esc(item.displayName) +
     '<br><span style="color:#92400e;font-weight:600">' + (item.kcal || 0) + ' kcal ・ ' + (item.count || 1) + '回使用</span>';
+  $("frequent-delete-modal").classList.remove("hidden");
+}
+// 検索結果の履歴候補(履歴｜)を長押し → 同じ削除モーダルを流用して該当記録を一括削除
+function openHistoryDeleteConfirm(c, el) {
+  if (!c || !c.key) return;
+  pendingFrequentDelete = { key: c.key, el: el || null };
+  $("frequent-delete-modal").querySelector(".modal-title").textContent = "この食品を履歴から削除しますか？";
+  $("frequent-delete-info").innerHTML = esc(c.name || c.label || "") +
+    '<br><span style="color:#92400e;font-weight:600">' + (c.kcal || 0) + ' kcal</span>';
   $("frequent-delete-modal").classList.remove("hidden");
 }
 $("frequent-delete-cancel").addEventListener('click', function() {
@@ -1258,6 +1269,7 @@ $("frequent-delete-cancel").addEventListener('click', function() {
 $("frequent-delete-confirm").addEventListener('click', function() {
   if (!pendingFrequentDelete) { $("frequent-delete-modal").classList.add("hidden"); return; }
   var key = pendingFrequentDelete.key;
+  var delEl = pendingFrequentDelete.el || null;
   pendingFrequentDelete = null;
   $("frequent-delete-modal").classList.add("hidden");
   showToast("🗑 削除中...", "info");
@@ -1269,6 +1281,7 @@ $("frequent-delete-confirm").addEventListener('click', function() {
   }).then(function(r){return r.json();}).then(function(data) {
     if (data && data.ok) {
       showToast("✅ 削除しました（" + (data.deletedCount || 0) + "件）", "success");
+      if (delEl && delEl.parentNode) delEl.parentNode.removeChild(delEl);
       loadFrequent();
       loadTodayMeals();
     } else {
@@ -1715,7 +1728,36 @@ function appendCandidateCard(box, c) {
   div.className = cls;
   div.innerHTML = "<div class=\"label\">" + esc(c.label || "") + "</div>" +
     "<div class=\"kcal\">" + (c.kcal != null ? c.kcal + "kcal" : "") + "</div>";
-  div.addEventListener("click", function() {
+  // 履歴候補(履歴｜)は長押し(500ms)で履歴から削除(該当の過去記録を一括論理削除)
+  var longPressed = false;
+  if (c.source === "history" && c.key) {
+    var pressTimer = null;
+    var startPress = function() {
+      longPressed = false;
+      div.classList.add("long-pressing");
+      pressTimer = setTimeout(function() {
+        longPressed = true;
+        div.classList.remove("long-pressing");
+        if (navigator.vibrate) try { navigator.vibrate(40); } catch (e) {}
+        openHistoryDeleteConfirm(c, div);
+      }, 500);
+    };
+    var cancelPress = function() {
+      div.classList.remove("long-pressing");
+      if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; }
+    };
+    div.addEventListener("touchstart", startPress, { passive: true });
+    div.addEventListener("touchend", cancelPress);
+    div.addEventListener("touchmove", cancelPress);
+    div.addEventListener("touchcancel", cancelPress);
+    div.addEventListener("mousedown", startPress);
+    div.addEventListener("mouseup", cancelPress);
+    div.addEventListener("mouseleave", cancelPress);
+    div.addEventListener("contextmenu", function(e) { e.preventDefault(); });
+  }
+
+  div.addEventListener("click", function(e) {
+    if (longPressed) { e.preventDefault(); e.stopPropagation(); longPressed = false; return; }
     if (div.classList.contains("selecting")) return;
     Array.prototype.forEach.call(document.querySelectorAll(".result-item"), function(el) {
       el.classList.remove("selecting");
@@ -1764,7 +1806,7 @@ function showAmountModal(c, _) {
   var unit = c.unit || "人前";
   var choices;
   if (unit === "g" || unit === "ml") choices = [100, 150, 200, 300];
-  else if (unit === "個" || unit === "枚" || unit === "貫") choices = [1, 2, 3, 4];
+  else if (unit === "個" || unit === "枚" || unit === "貫" || unit === "本" || unit === "切れ") choices = [1, 2, 3, 4];
   else choices = [0.5, 1, 1.5, 2, 3];
   var btnBox = $("amount-buttons");
   btnBox.innerHTML = "";
@@ -1787,7 +1829,7 @@ function showAmountModal(c, _) {
     var raw = $("amount-manual").value.trim()
       .replace(/[０-９]/g, function(ch){return String.fromCharCode(ch.charCodeAt(0)-0xFEE0);})
       .replace(/．/g, ".")
-      .replace(/[人前杯個皿枚gml\s]/g, "");
+      .replace(/[人前杯個皿枚本切れ貫gml\s]/g, "");
     var n = Number(raw);
     if (isNaN(n) || n < 0.5 || n > 10) { alert("0.5〜10 の範囲で入力してください"); return; }
     var rounded = Math.round(n * 2) / 2;
