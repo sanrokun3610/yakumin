@@ -6,10 +6,164 @@
 <title>記録をみる - サンロくんのほけんしつ</title>
 <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <link rel="stylesheet" href="/common/common.css">
+<!-- v3.30.0: グラフ・カレンダーをページ内native描画に変更 -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js"></script>
 <script>
-// LIFF内ブラウザ強キャッシュ対策（検査値と同方式）: バージョン違いで強制リロード
-(function(){var V='v3.28.0';try{var s=localStorage.getItem('records_version');if(s&&s!==V){localStorage.setItem('records_version',V);location.replace(location.pathname+'?v='+V+'&t='+Date.now());return;}localStorage.setItem('records_version',V);}catch(e){}})();
+// LIFF内ブラウザ強キャッシュ対策: バージョン違いで強制リロード
+(function(){var V='v3.30.0';try{var s=localStorage.getItem('records_version');if(s&&s!==V){localStorage.setItem('records_version',V);location.replace(location.pathname+'?v='+V+'&t='+Date.now());return;}localStorage.setItem('records_version',V);}catch(e){}})();
 </script>
+<style>
+/* ===== 共通モーダル基盤 ===== */
+.rc-modal-overlay{
+  display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:100;
+  overflow-y:auto;-webkit-overflow-scrolling:touch;
+}
+.rc-modal-overlay.active{display:block;}
+.rc-modal{
+  background:#f5f5f4;border-radius:16px 16px 0 0;
+  margin-top:48px;min-height:calc(100vh - 48px);
+  padding:0 0 env(safe-area-inset-bottom,24px);
+}
+.rc-modal-header{
+  background:linear-gradient(135deg,#fef9c3,#fde68a);
+  border-bottom:1px solid #fcd34d;
+  padding:14px 16px;
+  display:flex;align-items:center;gap:10px;
+  position:sticky;top:0;z-index:10;border-radius:16px 16px 0 0;
+}
+.rc-modal-title{font-size:17px;font-weight:bold;color:#78350f;flex:1;}
+.rc-modal-close{
+  background:#6b7280;border:none;color:#fff;
+  font-size:14px;font-weight:600;padding:7px 16px;border-radius:8px;
+  cursor:pointer;min-height:40px;min-width:72px;
+}
+.rc-modal-close:active{background:#4b5563;}
+
+/* ===== 共通グラフ部品（blood_pressureページ踏襲） ===== */
+.g-section{background:#fff;border-radius:12px;margin:10px 12px 0;padding:14px;}
+.g-section-title{font-size:13px;color:#78350f;font-weight:bold;margin-bottom:10px;display:flex;align-items:center;gap:5px;}
+.g-chart-wrap{background:#fff;border:1px solid #e5e5e5;border-radius:12px;margin:10px 12px 0;padding:10px 8px 6px;}
+.g-chart-canvas{position:relative;width:100%;height:220px;}
+.g-legend{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;font-size:12px;color:#555;padding:0 2px;}
+.g-legend span{display:flex;align-items:center;gap:4px;}
+.g-dot{display:inline-block;width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.g-tabs{display:flex;gap:6px;margin:10px 12px 0;}
+.g-tabs button{
+  flex:1;padding:12px 4px;font-size:13px;font-weight:600;
+  border:2px solid #fcd34d;background:#fffbeb;color:#78350f;
+  border-radius:8px;min-height:44px;cursor:pointer;
+}
+.g-tabs button.active{background:#f59e0b;color:#fff;border-color:#d97706;}
+.g-tabs button:active{transform:scale(0.97);}
+.bp-summary{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 12px 0;}
+.bp-card{background:#fff;border-radius:12px;padding:14px;box-shadow:0 1px 3px rgba(0,0,0,0.07);}
+.bp-card .g-label{font-size:12px;color:#666;font-weight:600;}
+.bp-card .g-value{font-size:26px;font-weight:bold;margin-top:4px;color:#78350f;letter-spacing:-0.5px;}
+.bp-card .g-sub{font-size:11px;color:#888;margin-top:2px;}
+.g-zone-list{list-style:none;}
+.g-zone-item{display:flex;align-items:center;gap:8px;padding:4px 0;}
+.g-zone-chip{width:14px;height:14px;border-radius:3px;flex-shrink:0;}
+.g-table{width:100%;border-collapse:collapse;font-size:13px;}
+.g-table th,.g-table td{padding:7px 4px;border-bottom:1px solid #f0f0f0;text-align:right;}
+.g-table th:first-child,.g-table td:first-child{text-align:left;color:#666;}
+.g-table th{background:#fafafa;color:#666;font-size:11px;font-weight:600;}
+.g-no-data{text-align:center;padding:20px;color:#888;font-size:13px;}
+.g-loading{text-align:center;padding:32px 16px;color:#92400e;font-size:14px;animation:sanro-pulse 1.2s infinite;}
+.g-error{text-align:center;padding:20px;color:#dc2626;font-size:13px;}
+.ha-latest-card{
+  background:#fff;border-radius:12px;margin:10px 12px 0;padding:16px;
+  box-shadow:0 1px 3px rgba(0,0,0,0.07);
+}
+.ha-latest-card .g-label{font-size:12px;color:#666;font-weight:600;}
+.ha-latest-card .g-value{font-size:32px;font-weight:bold;margin-top:6px;color:#78350f;}
+.ha-latest-card .g-sub{font-size:12px;color:#888;margin-top:4px;}
+.wg-latest-card{
+  background:#fff;border-radius:12px;margin:10px 12px 0;padding:16px;
+  box-shadow:0 1px 3px rgba(0,0,0,0.07);
+}
+.wg-latest-card .g-label{font-size:12px;color:#666;font-weight:600;}
+.wg-latest-card .g-value{font-size:32px;font-weight:bold;margin-top:6px;color:#16a34a;}
+.wg-latest-card .g-sub{font-size:12px;color:#888;margin-top:4px;}
+
+/* ===== カレンダー ===== */
+.rc-cal-nav{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:14px 16px 0;
+}
+.rc-cal-nav-btn{
+  background:#fff;border:1px solid #d1d5db;border-radius:8px;
+  padding:8px 16px;font-size:14px;font-weight:600;color:#444;cursor:pointer;
+  min-height:44px;min-width:56px;
+}
+.rc-cal-nav-btn:active{background:#f3f4f6;}
+.rc-cal-month{font-size:18px;font-weight:bold;color:#78350f;}
+.rc-cal-today-btn{
+  background:#f59e0b;border:none;border-radius:8px;
+  padding:8px 14px;font-size:13px;font-weight:600;color:#fff;cursor:pointer;
+  min-height:44px;
+}
+.rc-cal-today-btn:active{background:#d97706;}
+.rc-cal-grid-wrap{padding:10px 12px 0;}
+.rc-cal-headers{
+  display:grid;grid-template-columns:repeat(7,1fr);
+  gap:3px;margin-bottom:3px;
+}
+.rc-cal-header{font-size:11px;color:#888;text-align:center;padding:4px 0;font-weight:600;}
+.rc-cal-header.sun{color:#dc2626;}
+.rc-cal-header.sat{color:#2563eb;}
+.rc-cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;}
+.rc-cal-day{
+  aspect-ratio:1;border:1px solid #e5e5e5;border-radius:6px;
+  padding:3px;font-size:11px;position:relative;
+  display:flex;flex-direction:column;align-items:center;
+  cursor:pointer;background:#fff;
+  transition:background 0.1s;
+}
+.rc-cal-day:active{background:#fef9c3;}
+.rc-cal-day.empty{background:#f5f5f4;border-color:#eee;cursor:default;}
+.rc-cal-day.future{background:#f9f9f9;color:#ccc;cursor:default;}
+.rc-cal-day.today{background:#fef3c7;border-color:#fcd34d;}
+.rc-cal-day.today .rc-cal-num{color:#92400e;font-weight:bold;}
+.rc-cal-day.has-record{background:#ecfdf5;border-color:#bbf7d0;}
+.rc-cal-day.has-record.today{background:#fef3c7;border-color:#fcd34d;}
+.rc-cal-num{font-size:13px;font-weight:600;color:#333;line-height:1.2;}
+.rc-cal-dots{display:flex;justify-content:center;gap:2px;margin-top:auto;padding-bottom:1px;flex-wrap:wrap;}
+.rc-cal-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+.rc-cal-legend{
+  display:flex;gap:10px;flex-wrap:wrap;
+  margin:8px 12px 0;font-size:11px;color:#666;
+  padding:8px 12px;background:#fff;border-radius:8px;
+}
+.rc-cal-legend span{display:flex;align-items:center;gap:4px;}
+
+/* サマリーカード */
+.rc-summary{padding:10px 12px 0;}
+.rc-summary-card{
+  background:#fff;border-radius:12px;padding:14px;
+  box-shadow:0 1px 3px rgba(0,0,0,0.07);
+}
+.rc-summary-title{font-size:13px;color:#78350f;font-weight:bold;margin-bottom:10px;}
+.rc-summary-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.rc-summary-item{background:#fffbeb;border-radius:8px;padding:10px;text-align:center;}
+.rc-summary-item .s-label{font-size:11px;color:#92400e;font-weight:600;}
+.rc-summary-item .s-value{font-size:22px;font-weight:bold;color:#78350f;margin-top:2px;}
+.rc-summary-item .s-sub{font-size:10px;color:#888;margin-top:1px;}
+
+/* 日タップ詳細パネル */
+.rc-day-detail{
+  margin:10px 12px 0;background:#fff;border-radius:12px;
+  border:2px solid #fcd34d;padding:14px;
+}
+.rc-day-detail-title{font-size:14px;font-weight:bold;color:#78350f;margin-bottom:8px;}
+.rc-day-detail-row{
+  display:flex;justify-content:space-between;align-items:baseline;
+  padding:6px 0;border-bottom:1px dashed #eee;font-size:13px;color:#444;
+}
+.rc-day-detail-row:last-child{border-bottom:none;}
+.rc-day-detail-val{font-weight:700;color:#78350f;}
+.rc-day-detail-none{font-size:13px;color:#888;text-align:center;padding:12px 0;}
+</style>
 </head>
 <body>
 <div class="sanro-header">
@@ -33,9 +187,60 @@
     <div class="sanro-section-title">📊 グラフ</div>
     <button class="sanro-btn outline" id="btn-weight-graph">⚖️ 体重グラフ</button>
     <button class="sanro-btn outline" id="btn-bp-graph">🩺 血圧グラフ</button>
+    <button class="sanro-btn outline" id="btn-hba1c-graph">🩸 HbA1cグラフ</button>
   </div>
+</div>
 
-  <!-- v3.17.9 くまさんFB: 「完了してLINEに戻る」廃止 → ヘッダー左上の共通 ← 戻るに統一 -->
+<!-- ===== 体重グラフ モーダル ===== -->
+<div id="rc-weight-modal" class="rc-modal-overlay" role="dialog" aria-modal="true" aria-label="体重グラフ">
+  <div class="rc-modal">
+    <div class="rc-modal-header">
+      <div class="rc-modal-title">⚖️ 体重推移</div>
+      <button class="rc-modal-close" id="rc-weight-close" type="button">× 閉じる</button>
+    </div>
+    <div id="rc-weight-content">
+      <div class="g-loading">読み込み中…</div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 血圧グラフ モーダル ===== -->
+<div id="rc-bp-modal" class="rc-modal-overlay" role="dialog" aria-modal="true" aria-label="血圧グラフ">
+  <div class="rc-modal">
+    <div class="rc-modal-header">
+      <div class="rc-modal-title">🩺 血圧手帳</div>
+      <button class="rc-modal-close" id="rc-bp-close" type="button">× 閉じる</button>
+    </div>
+    <div id="rc-bp-content">
+      <div class="g-loading">読み込み中…</div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== HbA1c グラフ モーダル ===== -->
+<div id="rc-ha-modal" class="rc-modal-overlay" role="dialog" aria-modal="true" aria-label="HbA1c推移グラフ">
+  <div class="rc-modal">
+    <div class="rc-modal-header">
+      <div class="rc-modal-title">🩸 HbA1c 推移</div>
+      <button class="rc-modal-close" id="rc-ha-close" type="button">× 閉じる</button>
+    </div>
+    <div id="rc-ha-content">
+      <div class="g-loading">読み込み中…</div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== カレンダー モーダル ===== -->
+<div id="rc-cal-modal" class="rc-modal-overlay" role="dialog" aria-modal="true" aria-label="月間カレンダー">
+  <div class="rc-modal">
+    <div class="rc-modal-header">
+      <div class="rc-modal-title">📅 月間カレンダー</div>
+      <button class="rc-modal-close" id="rc-cal-close" type="button">× 閉じる</button>
+    </div>
+    <div id="rc-cal-content">
+      <div class="g-loading">読み込み中…</div>
+    </div>
+  </div>
 </div>
 
 <script src="/common/common.js"></script>
@@ -49,6 +254,9 @@ SanroBoot.init({
   }
 });
 
+// ================================================================
+// 今日の食事（既存ロジック流用）
+// ================================================================
 function loadTodayMeals() {
   SanroBoot.apiGet('records_today').then(function(data) {
     var box = document.getElementById('today-meals');
@@ -70,7 +278,6 @@ function loadTodayMeals() {
     total.innerHTML = '<span>合計</span><span>' + totalKcal + ' kcal</span>';
     box.appendChild(total);
 
-    // v3.23.0: 日次の栄養素合計（🥩たんぱく質 / 🧈脂質 / 🍚炭水化物 / 🧂塩分）
     var t = data.totals || { protein_g: 0, fat_g: 0, carbs_g: 0, salt_g: 0 };
     var nutri = document.createElement('div');
     nutri.style.cssText = 'padding:10px 12px;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;margin-top:8px;display:grid;grid-template-columns:1fr 1fr;gap:6px 14px';
@@ -90,13 +297,658 @@ function loadTodayMeals() {
   });
 }
 
-function openWithSig(page) {
-  var APP = SanroBoot.getApp();
-  window.location.href = APP.deployUrl + '?page=' + page + '&userId=' + encodeURIComponent(APP.userId) + '&sig=' + encodeURIComponent(APP.sig);
+// ================================================================
+// モーダル共通ユーティリティ
+// ================================================================
+function openModal(id) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  el.classList.add('active');
+  document.body.style.overflow = 'hidden';
 }
-document.getElementById('btn-calendar').addEventListener('click', function() { openWithSig('calendar'); });
-document.getElementById('btn-weight-graph').addEventListener('click', function() { openWithSig('weight_graph'); });
-document.getElementById('btn-bp-graph').addEventListener('click', function() { openWithSig('blood_pressure_graph'); });
+function closeModal(id) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  el.classList.remove('active');
+  document.body.style.overflow = '';
+}
+
+// 閉じるボタン + 背景タップ
+['rc-weight-modal','rc-bp-modal','rc-ha-modal','rc-cal-modal'].forEach(function(id) {
+  var overlay = document.getElementById(id);
+  if (!overlay) return;
+  overlay.addEventListener('click', function(e) {
+    if (e.target === this) closeModal(id);
+  });
+});
+document.getElementById('rc-weight-close').addEventListener('click', function() { closeModal('rc-weight-modal'); });
+document.getElementById('rc-bp-close').addEventListener('click', function() { closeModal('rc-bp-modal'); });
+document.getElementById('rc-ha-close').addEventListener('click', function() { closeModal('rc-ha-modal'); });
+document.getElementById('rc-cal-close').addEventListener('click', function() { closeModal('rc-cal-modal'); });
+
+// ================================================================
+// 体重グラフ（blood_pressureページのwg-modalを踏襲）
+// ================================================================
+var rcWeightChart = null;
+var rcWeightCache = null;
+
+document.getElementById('btn-weight-graph').addEventListener('click', function() {
+  openModal('rc-weight-modal');
+  if (!rcWeightCache) { loadRcWeightGraph(); }
+});
+
+function fmtDateWg(s) {
+  var p = String(s).split('-');
+  return p.length === 3 ? (p[1] + '/' + p[2]) : s;
+}
+
+function loadRcWeightGraph() {
+  document.getElementById('rc-weight-content').innerHTML = '<div class="g-loading">読み込み中…</div>';
+  SanroBoot.apiGet('weight_data').then(function(res) {
+    var data = (res && res.data) || [];
+    data.sort(function(a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; });
+    rcWeightCache = data;
+    renderRcWeightGraph();
+  }).catch(function() {
+    document.getElementById('rc-weight-content').innerHTML =
+      '<div class="g-error">データの取得に失敗しました。<br>もう一度お試しください。</div>';
+  });
+}
+
+function renderRcWeightGraph() {
+  var content = document.getElementById('rc-weight-content');
+  var allData = rcWeightCache || [];
+  if (!allData.length) {
+    content.innerHTML = '<div class="g-no-data" style="padding:40px 16px">まだ記録がありません</div>';
+    return;
+  }
+  var latest = allData[allData.length - 1];
+  var latestVal = latest ? Number(latest.weight) : null;
+  var recent30 = allData.slice(-30);
+  var labels = recent30.map(function(d) { return fmtDateWg(d.date); });
+  var values = recent30.map(function(d) { return d.weight; });
+  var tableRows = allData.slice().reverse().slice(0, 30).map(function(r) {
+    return '<tr><td>' + fmtDateWg(r.date) + '</td><td>' + r.weight + ' kg</td></tr>';
+  }).join('');
+
+  content.innerHTML =
+    '<div class="wg-latest-card">' +
+      '<div class="g-label">最新の体重</div>' +
+      '<div class="g-value">' + (latestVal !== null ? latestVal + ' kg' : '--') + '</div>' +
+      '<div class="g-sub">' + (latest ? fmtDateWg(latest.date) + ' 時点' : '') + '</div>' +
+    '</div>' +
+    '<div class="g-chart-wrap">' +
+      '<div class="g-chart-canvas"><canvas id="rcWeightCanvas"></canvas></div>' +
+    '</div>' +
+    '<div class="g-section">' +
+      '<div class="g-section-title">直近の記録</div>' +
+      (tableRows
+        ? '<table class="g-table"><thead><tr><th>日付</th><th>体重</th></tr></thead><tbody>' + tableRows + '</tbody></table>'
+        : '<div class="g-no-data">まだ記録がありません</div>') +
+    '</div>';
+
+  if (rcWeightChart) { rcWeightChart.destroy(); rcWeightChart = null; }
+  var ctx = document.getElementById('rcWeightCanvas');
+  if (ctx) {
+    rcWeightChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: '体重(kg)', data: values,
+          borderColor: '#22c55e', backgroundColor: 'rgba(34,197,94,0.12)',
+          fill: true, tension: 0.3, pointRadius: 4, pointHoverRadius: 6,
+          pointBackgroundColor: '#22c55e', spanGaps: true,
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        interaction: { intersect: false, mode: 'index' },
+        plugins: { legend: { display: false } },
+        scales: {
+          y: { beginAtZero: false, ticks: { callback: function(v) { return v + 'kg'; } } },
+          x: { ticks: { maxRotation: 0, autoSkip: true, maxTicksLimit: 8, font: { size: 11 } } }
+        }
+      }
+    });
+  }
+}
+
+// ================================================================
+// 血圧グラフ（blood_pressureページの実装を完全流用）
+// ================================================================
+var rcBpChart = null;
+var rcBpCache = null;
+
+document.getElementById('btn-bp-graph').addEventListener('click', function() {
+  openModal('rc-bp-modal');
+  if (!rcBpCache) { loadRcBpGraph(7); }
+});
+
+function fmtDateBp(s) {
+  var d = new Date(s);
+  var days = ['日','月','火','水','木','金','土'];
+  return (d.getMonth()+1) + '/' + d.getDate() + '(' + days[d.getDay()] + ')';
+}
+function zoneColorBp(sbp, dbp) {
+  if (sbp >= 160 || dbp >= 100) return '#B71C1C';
+  if (sbp >= 145 || dbp >= 90)  return '#F44336';
+  if (sbp >= 135 || dbp >= 85)  return '#FF9800';
+  if (sbp >= 125 || dbp >= 75)  return '#FFC107';
+  if (sbp >= 115)                return '#9CCC65';
+  return '#4CAF50';
+}
+
+function loadRcBpGraph(days) {
+  document.getElementById('rc-bp-content').innerHTML = '<div class="g-loading">読み込み中…</div>';
+  SanroBoot.apiGet('blood_pressure_data', { days: Math.max(days, 30) }).then(function(data) {
+    rcBpCache = (data && data.history) ? data.history : [];
+    renderRcBpGraph(days);
+  }).catch(function() {
+    document.getElementById('rc-bp-content').innerHTML =
+      '<div class="g-error">データの取得に失敗しました。<br>もう一度お試しください。</div>';
+  });
+}
+
+function renderRcBpGraph(days) {
+  var content = document.getElementById('rc-bp-content');
+  var allData = rcBpCache || [];
+  var now = Date.now();
+  var d7 = now - 7 * 24 * 3600 * 1000;
+  var morning7 = allData.filter(function(r) { return r.timeOfDay === '朝' && new Date(r.date).getTime() >= d7; });
+  var evening7 = allData.filter(function(r) { return r.timeOfDay === '夜' && new Date(r.date).getTime() >= d7; });
+  function avg(arr, k) {
+    if (!arr.length) return null;
+    var s = 0; arr.forEach(function(r) { s += Number(r[k]) || 0; }); return Math.round(s / arr.length);
+  }
+  var mS7 = avg(morning7, 'sbp'), mD7 = avg(morning7, 'dbp');
+  var eS7 = avg(evening7, 'sbp'), eD7 = avg(evening7, 'dbp');
+  var cutoff = now - days * 24 * 3600 * 1000;
+  var filtered = allData.filter(function(r) { return new Date(r.date).getTime() >= cutoff; });
+  var byDate = {};
+  filtered.slice().sort(function(a, b) { return new Date(a.date) - new Date(b.date); }).forEach(function(r) {
+    var k = (r.dateStr || r.date.substring(0, 10));
+    if (!byDate[k]) byDate[k] = {};
+    if (r.timeOfDay === '朝') { byDate[k].mSBP = r.sbp; byDate[k].mDBP = r.dbp; }
+    else if (r.timeOfDay === '夜') { byDate[k].eSBP = r.sbp; byDate[k].eDBP = r.dbp; }
+  });
+  var keys = Object.keys(byDate).sort();
+  var labels = [], mSBP = [], mDBP = [], eSBP = [], eDBP = [];
+  keys.forEach(function(k) {
+    labels.push(fmtDateBp(k));
+    mSBP.push(byDate[k].mSBP || null);
+    mDBP.push(byDate[k].mDBP || null);
+    eSBP.push(byDate[k].eSBP || null);
+    eDBP.push(byDate[k].eDBP || null);
+  });
+  var tableRows = allData.slice().sort(function(a, b) { return new Date(b.date) - new Date(a.date); }).slice(0, 30).map(function(r) {
+    var c = zoneColorBp(r.sbp, r.dbp);
+    return '<tr><td>' + fmtDateBp(r.date) + '</td><td>' + (r.timeOfDay || '') +
+      '</td><td style="color:' + c + ';font-weight:bold">' + r.sbp +
+      '</td><td style="color:' + c + '">' + r.dbp +
+      '</td><td>' + (r.pulse || '-') + '</td></tr>';
+  }).join('');
+
+  content.innerHTML =
+    '<div class="bp-summary">' +
+      '<div class="bp-card"><div class="g-label">朝の平均（7日）</div>' +
+        '<div class="g-value">' + (mS7 ? mS7 + '/' + mD7 : '--/--') + '</div>' +
+        '<div class="g-sub">' + (morning7.length ? morning7.length + '回計測' : '記録なし') + '</div></div>' +
+      '<div class="bp-card"><div class="g-label">夜の平均（7日）</div>' +
+        '<div class="g-value">' + (eS7 ? eS7 + '/' + eD7 : '--/--') + '</div>' +
+        '<div class="g-sub">' + (evening7.length ? evening7.length + '回計測' : '記録なし') + '</div></div>' +
+    '</div>' +
+    '<div class="g-tabs" id="rc-bp-tabs">' +
+      '<button class="' + (days===7?'active':'') + '" data-days="7">7日</button>' +
+      '<button class="' + (days===14?'active':'') + '" data-days="14">14日</button>' +
+      '<button class="' + (days===30?'active':'') + '" data-days="30">1ヶ月</button>' +
+      '<button class="' + (days===90?'active':'') + '" data-days="90">3ヶ月</button>' +
+    '</div>' +
+    '<div class="g-chart-wrap">' +
+      '<div class="g-chart-canvas"><canvas id="rcBpCanvas"></canvas></div>' +
+      '<div class="g-legend">' +
+        '<span><i class="g-dot" style="background:#D32F2F"></i>朝・上</span>' +
+        '<span><i class="g-dot" style="background:#1976D2"></i>朝・下</span>' +
+        '<span><i class="g-dot" style="background:#D32F2F;opacity:.5"></i>夜・上</span>' +
+        '<span><i class="g-dot" style="background:#1976D2;opacity:.5"></i>夜・下</span>' +
+      '</div>' +
+    '</div>' +
+    '<div class="g-section">' +
+      '<div class="g-section-title">家庭血圧の目安（JSH）</div>' +
+      '<ul class="g-zone-list">' +
+        '<li class="g-zone-item"><div class="g-zone-chip" style="background:#4CAF50"></div>正常（上&lt;115・下&lt;75）</li>' +
+        '<li class="g-zone-item"><div class="g-zone-chip" style="background:#9CCC65"></div>正常高値（115〜124）</li>' +
+        '<li class="g-zone-item"><div class="g-zone-chip" style="background:#FFC107"></div>高値（125〜134）</li>' +
+        '<li class="g-zone-item"><div class="g-zone-chip" style="background:#FF9800"></div>I度高血圧（135〜144）</li>' +
+        '<li class="g-zone-item"><div class="g-zone-chip" style="background:#F44336"></div>II度高血圧（145〜159）</li>' +
+        '<li class="g-zone-item"><div class="g-zone-chip" style="background:#B71C1C"></div>III度高血圧（≥160）※医師相談を</li>' +
+      '</ul>' +
+      '<div style="font-size:11px;color:#888;margin-top:8px">※数値はあくまで目安です。判断は医師にご相談ください。</div>' +
+    '</div>' +
+    '<div class="g-section">' +
+      '<div class="g-section-title">直近の記録</div>' +
+      (tableRows
+        ? '<table class="g-table"><thead><tr><th>日付</th><th>朝夜</th><th>上</th><th>下</th><th>脈</th></tr></thead><tbody>' + tableRows + '</tbody></table>'
+        : '<div class="g-no-data">まだ記録がありません</div>') +
+    '</div>';
+
+  Array.prototype.forEach.call(document.querySelectorAll('#rc-bp-tabs button'), function(btn) {
+    btn.addEventListener('click', function() {
+      Array.prototype.forEach.call(document.querySelectorAll('#rc-bp-tabs button'), function(b) { b.classList.remove('active'); });
+      this.classList.add('active');
+      renderRcBpGraph(parseInt(this.getAttribute('data-days')));
+    });
+  });
+
+  if (rcBpChart) { rcBpChart.destroy(); rcBpChart = null; }
+  var ctx = document.getElementById('rcBpCanvas');
+  if (ctx) {
+    rcBpChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [
+          { label:'朝の上', data:mSBP, borderColor:'#D32F2F', backgroundColor:'#D32F2F', tension:0, pointRadius:4, pointHoverRadius:6, spanGaps:true },
+          { label:'朝の下', data:mDBP, borderColor:'#1976D2', backgroundColor:'#1976D2', tension:0, pointRadius:4, pointHoverRadius:6, spanGaps:true },
+          { label:'夜の上', data:eSBP, borderColor:'#D32F2F', backgroundColor:'rgba(211,47,47,0.45)', tension:0, pointRadius:3, pointStyle:'triangle', borderDash:[5,5], spanGaps:true },
+          { label:'夜の下', data:eDBP, borderColor:'#1976D2', backgroundColor:'rgba(25,118,210,0.45)', tension:0, pointRadius:3, pointStyle:'triangle', borderDash:[5,5], spanGaps:true }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        interaction: { intersect: false, mode: 'index' },
+        scales: {
+          y: { min:60, max:200, ticks:{ stepSize:20 } },
+          x: { ticks:{ maxRotation:0, autoSkip:true, maxTicksLimit:8, font:{ size:11 } } }
+        },
+        plugins: {
+          legend: { display: false },
+          annotation: { annotations: {
+            zNormal: { type:'box', yMin:60,  yMax:115, backgroundColor:'rgba(76,175,80,0.08)',   borderWidth:0 },
+            zHN:     { type:'box', yMin:115, yMax:125, backgroundColor:'rgba(156,204,101,0.08)', borderWidth:0 },
+            zHigh:   { type:'box', yMin:125, yMax:135, backgroundColor:'rgba(255,193,7,0.10)',   borderWidth:0 },
+            zHT1:    { type:'box', yMin:135, yMax:145, backgroundColor:'rgba(255,152,0,0.13)',   borderWidth:0 },
+            zHT2:    { type:'box', yMin:145, yMax:160, backgroundColor:'rgba(244,67,54,0.13)',   borderWidth:0 },
+            zHT3:    { type:'box', yMin:160, yMax:200, backgroundColor:'rgba(183,28,28,0.18)',   borderWidth:0 },
+            lineTarget: { type:'line', yMin:125, yMax:125, borderColor:'rgba(85,85,85,0.5)', borderWidth:1, borderDash:[3,3] },
+            lineHT:     { type:'line', yMin:135, yMax:135, borderColor:'#D32F2F', borderWidth:1.5 }
+          }}
+        }
+      }
+    });
+  }
+}
+
+// ================================================================
+// HbA1cグラフ（blood_pressureページの実装を完全流用）
+// ================================================================
+var rcHaChart = null;
+var rcHaCache = null;
+
+document.getElementById('btn-hba1c-graph').addEventListener('click', function() {
+  openModal('rc-ha-modal');
+  if (!rcHaCache) { loadRcHaGraph(); }
+});
+
+function fmtDateHa(s) {
+  var d = new Date(s);
+  return (d.getMonth()+1) + '/' + d.getDate();
+}
+function zoneColorHa(v) {
+  if (v >= 7.0) return '#dc2626';
+  if (v >= 6.5) return '#ea580c';
+  if (v >= 6.0) return '#ca8a04';
+  return '#16a34a';
+}
+function zoneNameHa(v) {
+  if (v >= 7.0) return '要管理';
+  if (v >= 6.5) return '高';
+  if (v >= 6.0) return '注意';
+  return '正常';
+}
+
+function loadRcHaGraph() {
+  document.getElementById('rc-ha-content').innerHTML = '<div class="g-loading">読み込み中…</div>';
+  SanroBoot.apiGet('hba1c_data').then(function(data) {
+    rcHaCache = (data && data.history)
+      ? data.history.slice().sort(function(a, b) { return new Date(a.date) - new Date(b.date); })
+      : [];
+    renderRcHaGraph();
+  }).catch(function() {
+    document.getElementById('rc-ha-content').innerHTML =
+      '<div class="g-error">データの取得に失敗しました。<br>もう一度お試しください。</div>';
+  });
+}
+
+function renderRcHaGraph() {
+  var content = document.getElementById('rc-ha-content');
+  var allData = rcHaCache || [];
+  var latest = allData.length ? allData[allData.length - 1] : null;
+  var latestVal = latest ? (Number(latest.value) || 0) : null;
+  var labels = allData.map(function(r) { return fmtDateHa(r.date); });
+  var vals   = allData.map(function(r) { return Number(r.value) || null; });
+  var tableRows = allData.slice().sort(function(a, b) { return new Date(b.date) - new Date(a.date); }).slice(0, 30).map(function(r) {
+    var v = Number(r.value) || 0;
+    var c = zoneColorHa(v);
+    return '<tr><td>' + fmtDateHa(r.date) +
+      '</td><td style="color:' + c + ';font-weight:bold">' + v + '%' +
+      '</td><td style="color:' + c + '">' + zoneNameHa(v) + '</td></tr>';
+  }).join('');
+
+  content.innerHTML =
+    '<div class="ha-latest-card">' +
+      '<div class="g-label">最新の値</div>' +
+      '<div class="g-value" style="color:' + (latestVal ? zoneColorHa(latestVal) : '#78350f') + '">' +
+        (latestVal ? latestVal + '%' : '--%') + '</div>' +
+      '<div class="g-sub">' +
+        (latest ? fmtDateHa(latest.date) + ' 時点 ・ ' + zoneNameHa(latestVal) : '記録なし') +
+      '</div>' +
+    '</div>' +
+    '<div class="g-chart-wrap">' +
+      '<div class="g-chart-canvas"><canvas id="rcHaCanvas"></canvas></div>' +
+    '</div>' +
+    '<div class="g-section">' +
+      '<div class="g-section-title">HbA1cの目安</div>' +
+      '<ul class="g-zone-list">' +
+        '<li class="g-zone-item"><div class="g-zone-chip" style="background:#16a34a"></div>正常（&lt;6.0%）</li>' +
+        '<li class="g-zone-item"><div class="g-zone-chip" style="background:#ca8a04"></div>注意（6.0〜6.4%）</li>' +
+        '<li class="g-zone-item"><div class="g-zone-chip" style="background:#ea580c"></div>高（6.5〜6.9%）</li>' +
+        '<li class="g-zone-item"><div class="g-zone-chip" style="background:#dc2626"></div>要管理（≥7.0%）※医師相談を</li>' +
+      '</ul>' +
+      '<div style="font-size:11px;color:#888;margin-top:8px">※数値はあくまで目安です。判断は医師にご相談ください。</div>' +
+    '</div>' +
+    '<div class="g-section">' +
+      '<div class="g-section-title">直近の記録</div>' +
+      (tableRows
+        ? '<table class="g-table"><thead><tr><th>日付</th><th>HbA1c</th><th>判定</th></tr></thead><tbody>' + tableRows + '</tbody></table>'
+        : '<div class="g-no-data">まだ記録がありません</div>') +
+    '</div>';
+
+  if (rcHaChart) { rcHaChart.destroy(); rcHaChart = null; }
+  var ctx = document.getElementById('rcHaCanvas');
+  if (ctx) {
+    rcHaChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'HbA1c', data: vals,
+          borderColor: '#7c3aed', backgroundColor: 'rgba(124,58,237,0.15)',
+          fill: true, tension: 0.2, pointRadius: 5, pointHoverRadius: 7, spanGaps: true,
+          pointBackgroundColor: vals.map(function(v) { return v ? zoneColorHa(v) : '#7c3aed'; })
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        interaction: { intersect: false, mode: 'index' },
+        scales: {
+          y: { min:4, max:11, ticks:{ stepSize:1, callback:function(v){ return v+'%'; } } },
+          x: { ticks:{ maxRotation:0, autoSkip:true, maxTicksLimit:8, font:{ size:11 } } }
+        },
+        plugins: {
+          legend: { display: false },
+          annotation: { annotations: {
+            zNormal: { type:'box', yMin:4,   yMax:6.0, backgroundColor:'rgba(22,163,74,0.08)',  borderWidth:0 },
+            zWatch:  { type:'box', yMin:6.0, yMax:6.5, backgroundColor:'rgba(202,138,4,0.10)', borderWidth:0 },
+            zHigh:   { type:'box', yMin:6.5, yMax:7.0, backgroundColor:'rgba(234,88,12,0.12)', borderWidth:0 },
+            zMng:    { type:'box', yMin:7.0, yMax:11,  backgroundColor:'rgba(220,38,38,0.14)', borderWidth:0 },
+            line65:  { type:'line', yMin:6.5, yMax:6.5, borderColor:'rgba(234,88,12,0.6)', borderWidth:1, borderDash:[3,3] },
+            line70:  { type:'line', yMin:7.0, yMax:7.0, borderColor:'#dc2626', borderWidth:1.5 }
+          }}
+        }
+      }
+    });
+  }
+}
+
+// ================================================================
+// カレンダー（native全画面）
+// buildCalendarData_ 相当のマーカーを3つのAPIを並行取得して合成
+// データ出所:
+//   食事マーカー : meals_api?action=getMonthly → monthlyData{date:{count,calories}}
+//   食事サマリー : meals_api?action=getSummary → {avgCalories,recordDays,totalDays,totalMeals,target,score}
+//   血圧マーカー : blood_pressure_data → {history:[{date,sbp,dbp,timeOfDay...}]}
+//   体重マーカー : weight_data → {data:[{date,weight}]}
+// ================================================================
+var calMonth = '';    // 'YYYY-MM'
+var calMealData = {}; // monthlyData
+var calSummary = {};
+var calBpData = [];
+var calWgData = [];
+
+document.getElementById('btn-calendar').addEventListener('click', function() {
+  openModal('rc-cal-modal');
+  var now = new Date();
+  calMonth = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+  loadCalendar(calMonth);
+});
+
+function loadCalendar(month) {
+  var content = document.getElementById('rc-cal-content');
+  content.innerHTML = '<div class="g-loading">読み込み中…</div>';
+
+  var p1 = SanroBoot.apiGet('meals_api', { action: 'getMonthly', month: month });
+  var p2 = SanroBoot.apiGet('meals_api', { action: 'getSummary', month: month });
+  var p3 = SanroBoot.apiGet('blood_pressure_data', { days: 90 });
+  var p4 = SanroBoot.apiGet('weight_data');
+
+  Promise.all([p1, p2, p3, p4]).then(function(results) {
+    calMealData = results[0] || {};
+    calSummary  = results[1] || {};
+    calBpData   = (results[2] && results[2].history) ? results[2].history : [];
+    calWgData   = (results[3] && results[3].data) ? results[3].data : [];
+    calMonth    = month;
+    renderCalendar(month, null);
+  }).catch(function() {
+    content.innerHTML = '<div class="g-error">データの取得に失敗しました。<br>もう一度お試しください。</div>';
+  });
+}
+
+function renderCalendar(month, selectedDate) {
+  var parts = month.split('-');
+  var year  = parseInt(parts[0]);
+  var mo    = parseInt(parts[1]);
+  var today = new Date();
+  var todayStr = today.getFullYear() + '-' + String(today.getMonth()+1).padStart(2,'0') + '-' + String(today.getDate()).padStart(2,'0');
+
+  // 前月/翌月
+  var prevDate = new Date(year, mo - 2, 1);
+  var nextDate = new Date(year, mo, 1);
+  var prevM = prevDate.getFullYear() + '-' + String(prevDate.getMonth()+1).padStart(2,'0');
+  var nextM = nextDate.getFullYear() + '-' + String(nextDate.getMonth()+1).padStart(2,'0');
+
+  // 月のデータ集約（calendar_webapp.gsのbuildCalendarData_相当）
+  var byDay = {};
+
+  // 食事マーカー
+  Object.keys(calMealData).forEach(function(dateStr) {
+    if (dateStr.startsWith(month)) {
+      if (!byDay[dateStr]) byDay[dateStr] = {};
+      byDay[dateStr].hasMeal = true;
+      byDay[dateStr].mealCount = calMealData[dateStr].count || 0;
+      byDay[dateStr].mealCal   = calMealData[dateStr].calories || 0;
+    }
+  });
+
+  // 血圧マーカー
+  calBpData.forEach(function(r) {
+    var ds = (r.dateStr || (r.date ? r.date.substring(0, 10) : ''));
+    if (!ds || !ds.startsWith(month)) return;
+    if (!byDay[ds]) byDay[ds] = {};
+    byDay[ds].hasBp = true;
+  });
+
+  // 体重マーカー
+  calWgData.forEach(function(r) {
+    var ds = r.date ? String(r.date).substring(0, 10) : '';
+    if (!ds || !ds.startsWith(month)) return;
+    if (!byDay[ds]) byDay[ds] = {};
+    byDay[ds].hasWeight = true;
+  });
+
+  // カレンダーグリッド生成
+  var firstWeekday = new Date(year, mo - 1, 1).getDay();
+  var daysInMonth  = new Date(year, mo, 0).getDate();
+
+  var headers = ['日','月','火','水','木','金','土'].map(function(h, i) {
+    var cls = i === 0 ? 'rc-cal-header sun' : (i === 6 ? 'rc-cal-header sat' : 'rc-cal-header');
+    return '<div class="' + cls + '">' + h + '</div>';
+  }).join('');
+
+  var cells = '';
+  for (var k = 0; k < firstWeekday; k++) {
+    cells += '<div class="rc-cal-day empty"></div>';
+  }
+  for (var dd = 1; dd <= daysInMonth; dd++) {
+    var ds = year + '-' + String(mo).padStart(2,'0') + '-' + String(dd).padStart(2,'0');
+    var info = byDay[ds] || {};
+    var isFuture = ds > todayStr;
+    var isToday  = ds === todayStr;
+    var isSel    = ds === selectedDate;
+    var cls = 'rc-cal-day';
+    if (isFuture) cls += ' future';
+    else if (isToday) cls += ' today';
+    if (!isFuture && (info.hasMeal || info.hasWeight || info.hasBp)) cls += ' has-record';
+    if (isSel) cls += ' selected';
+
+    var dots = '';
+    if (!isFuture) {
+      if (info.hasMeal)   dots += '<div class="rc-cal-dot" style="background:#16a34a" title="食事"></div>';
+      if (info.hasWeight) dots += '<div class="rc-cal-dot" style="background:#22c55e" title="体重"></div>';
+      if (info.hasBp)     dots += '<div class="rc-cal-dot" style="background:#1976D2" title="血圧"></div>';
+    }
+
+    cells += '<div class="' + cls + '" data-date="' + ds + '">' +
+      '<div class="rc-cal-num">' + dd + '</div>' +
+      '<div class="rc-cal-dots">' + dots + '</div>' +
+    '</div>';
+  }
+
+  // サマリー計算（calendar_webapp.gsのbuildCalendarHtml_サマリー部分踏襲）
+  var totalDays  = Object.keys(byDay).length;
+  var mealDays   = 0, weightDays = 0, bpDays = 0;
+  Object.keys(byDay).forEach(function(k) {
+    var v = byDay[k];
+    if (v.hasMeal)   mealDays++;
+    if (v.hasWeight) weightDays++;
+    if (v.hasBp)     bpDays++;
+  });
+  var avgCal = calSummary.avgCalories || 0;
+  var score  = calSummary.score || 0;
+
+  // 日タップ詳細HTML
+  var detailHtml = '';
+  if (selectedDate && byDay[selectedDate]) {
+    var info = byDay[selectedDate];
+    var selParts = selectedDate.split('-');
+    var selLabel = parseInt(selParts[1]) + '月' + parseInt(selParts[2]) + '日';
+    detailHtml =
+      '<div class="rc-day-detail">' +
+        '<div class="rc-day-detail-title">📆 ' + selLabel + ' の記録</div>';
+    if (info.hasMeal) {
+      detailHtml += '<div class="rc-day-detail-row"><span>🍱 食事</span><span class="rc-day-detail-val">' +
+        (info.mealCount || 0) + '回 / ' + (info.mealCal || 0) + ' kcal</span></div>';
+    }
+    if (info.hasWeight) {
+      var wRec = calWgData.find(function(r) { return String(r.date).substring(0, 10) === selectedDate; });
+      detailHtml += '<div class="rc-day-detail-row"><span>⚖️ 体重</span><span class="rc-day-detail-val">' +
+        (wRec ? wRec.weight + ' kg' : '記録あり') + '</span></div>';
+    }
+    if (info.hasBp) {
+      var bpRecs = calBpData.filter(function(r) {
+        return (r.dateStr || (r.date ? r.date.substring(0,10) : '')) === selectedDate;
+      });
+      bpRecs.forEach(function(r) {
+        detailHtml += '<div class="rc-day-detail-row"><span>🩺 血圧（' + (r.timeOfDay || '') + '）</span>' +
+          '<span class="rc-day-detail-val">' + r.sbp + '/' + r.dbp + '</span></div>';
+      });
+    }
+    if (!info.hasMeal && !info.hasWeight && !info.hasBp) {
+      detailHtml += '<div class="rc-day-detail-none">この日の記録はありません</div>';
+    }
+    detailHtml += '</div>';
+  }
+
+  var content = document.getElementById('rc-cal-content');
+  content.innerHTML =
+    // ナビゲーション
+    '<div class="rc-cal-nav">' +
+      '<button class="rc-cal-nav-btn" id="cal-prev">‹ 前月</button>' +
+      '<span class="rc-cal-month">' + year + '年' + mo + '月</span>' +
+      '<button class="rc-cal-nav-btn" id="cal-next">翌月 ›</button>' +
+    '</div>' +
+    // 今月ボタン
+    '<div style="text-align:center;padding:6px 16px 0">' +
+      '<button class="rc-cal-today-btn" id="cal-this">今月に戻る</button>' +
+    '</div>' +
+    // カレンダーグリッド
+    '<div class="rc-cal-grid-wrap">' +
+      '<div class="rc-cal-headers">' + headers + '</div>' +
+      '<div class="rc-cal-grid" id="rc-cal-grid">' + cells + '</div>' +
+    '</div>' +
+    // 凡例
+    '<div class="rc-cal-legend">' +
+      '<span><div class="rc-cal-dot" style="background:#16a34a;display:inline-block;width:10px;height:10px;border-radius:50%;"></div> 食事</span>' +
+      '<span><div class="rc-cal-dot" style="background:#22c55e;display:inline-block;width:10px;height:10px;border-radius:50%;"></div> 体重</span>' +
+      '<span><div class="rc-cal-dot" style="background:#1976D2;display:inline-block;width:10px;height:10px;border-radius:50%;"></div> 血圧</span>' +
+      '<span style="color:#ccc;">▪ 未来</span>' +
+    '</div>' +
+    // 日タップ詳細
+    detailHtml +
+    // 月サマリー（calendar_webapp.gsのサマリー部分踏襲）
+    '<div class="rc-summary">' +
+      '<div class="rc-summary-card">' +
+        '<div class="rc-summary-title">' + mo + '月のサマリー</div>' +
+        '<div class="rc-summary-grid">' +
+          '<div class="rc-summary-item">' +
+            '<div class="s-label">記録できた日</div>' +
+            '<div class="s-value">' + totalDays + '</div>' +
+            '<div class="s-sub">日</div>' +
+          '</div>' +
+          '<div class="rc-summary-item">' +
+            '<div class="s-label">平均カロリー</div>' +
+            '<div class="s-value">' + (avgCal || '--') + '</div>' +
+            '<div class="s-sub">kcal/日</div>' +
+          '</div>' +
+          '<div class="rc-summary-item">' +
+            '<div class="s-label">🍱 食事</div>' +
+            '<div class="s-value">' + mealDays + '</div>' +
+            '<div class="s-sub">日記録</div>' +
+          '</div>' +
+          '<div class="rc-summary-item">' +
+            '<div class="s-label">⚖️ 体重</div>' +
+            '<div class="s-value">' + weightDays + '</div>' +
+            '<div class="s-sub">日記録</div>' +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+
+  // 前月/翌月/今月ボタン
+  document.getElementById('cal-prev').addEventListener('click', function() {
+    loadCalendar(prevM);
+  });
+  document.getElementById('cal-next').addEventListener('click', function() {
+    loadCalendar(nextM);
+  });
+  document.getElementById('cal-this').addEventListener('click', function() {
+    var n = new Date();
+    var m = n.getFullYear() + '-' + String(n.getMonth()+1).padStart(2,'0');
+    loadCalendar(m);
+  });
+
+  // 日タップ
+  Array.prototype.forEach.call(document.querySelectorAll('.rc-cal-day[data-date]'), function(cell) {
+    cell.addEventListener('click', function() {
+      var ds = this.getAttribute('data-date');
+      if (!ds || ds > todayStr) return; // 未来タップ無効
+      renderCalendar(month, ds);
+      // タップした日が見えるようにスクロール
+      try { this.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); } catch(e) {}
+    });
+  });
+}
+
 // v3.17.9: btn-close 廃止 (共通 sanro-back-btn が SanroBoot.close を呼ぶ)
 </script>
 </body>

@@ -39,15 +39,60 @@
   <!-- v3.17.9 くまさんFB: 「完了してLINEに戻る」廃止 → ヘッダー左上の共通 ← 戻るに統一 -->
 </div>
 
-<!-- 2026-06-25: 体重推移グラフを yakusokuai.jp 内で描画（旧: script.google.com へ遷移→Google警告画面が出る問題を解消） -->
-<div id="graph-modal" class="hidden" style="position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:100;display:flex;align-items:center;justify-content:center;padding:16px">
-  <div style="background:#fff;border-radius:16px;padding:16px;width:100%;max-width:560px;max-height:90vh;overflow-y:auto">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-      <div style="font-size:16px;font-weight:700;color:#78350f">⚖️ 体重推移</div>
-      <button id="graph-close" style="background:#f0f0f0;border:none;padding:6px 14px;border-radius:8px;cursor:pointer;font-size:13px">✕ 閉じる</button>
+<!-- 2026-06-25: 体重推移グラフ モーダル（全画面シート型） -->
+<style>
+.wg-modal-overlay{
+  display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:100;
+  overflow-y:auto;-webkit-overflow-scrolling:touch;
+}
+.wg-modal-overlay.active{display:block;}
+.wg-modal{
+  background:#f5f5f4;border-radius:16px 16px 0 0;
+  margin-top:48px;min-height:calc(100vh - 48px);
+  padding:0 0 env(safe-area-inset-bottom,24px);
+}
+.wg-modal-header{
+  background:linear-gradient(135deg,#fef9c3,#fde68a);
+  border-bottom:1px solid #fcd34d;
+  padding:14px 16px;
+  display:flex;align-items:center;gap:10px;
+  position:sticky;top:0;z-index:10;border-radius:16px 16px 0 0;
+}
+.wg-modal-title{font-size:17px;font-weight:bold;color:#78350f;flex:1;}
+.wg-modal-close{
+  background:#6b7280;border:none;color:#fff;
+  font-size:14px;font-weight:600;padding:7px 16px;border-radius:8px;
+  cursor:pointer;min-height:40px;min-width:72px;
+}
+.wg-modal-close:active{background:#4b5563;}
+.wg-section{background:#fff;border-radius:12px;margin:10px 12px 0;padding:14px;}
+.wg-section-title{font-size:13px;color:#78350f;font-weight:bold;margin-bottom:10px;}
+.wg-chart-wrap{background:#fff;border:1px solid #e5e5e5;border-radius:12px;margin:10px 12px 0;padding:10px 8px 6px;}
+.wg-chart-canvas{position:relative;width:100%;height:240px;}
+.wg-loading{text-align:center;padding:32px 16px;color:#92400e;font-size:14px;animation:sanro-pulse 1.2s infinite;}
+.wg-error{text-align:center;padding:20px;color:#dc2626;font-size:13px;}
+.wg-latest-card{
+  background:#fff;border-radius:12px;margin:10px 12px 0;padding:16px;
+  box-shadow:0 1px 3px rgba(0,0,0,0.07);
+}
+.wg-latest-card .wg-label{font-size:12px;color:#666;font-weight:600;}
+.wg-latest-card .wg-value{font-size:32px;font-weight:bold;margin-top:6px;color:#16a34a;}
+.wg-latest-card .wg-sub{font-size:12px;color:#888;margin-top:4px;}
+.wg-table{width:100%;border-collapse:collapse;font-size:13px;}
+.wg-table th,.wg-table td{padding:7px 6px;border-bottom:1px solid #f0f0f0;text-align:right;}
+.wg-table th:first-child,.wg-table td:first-child{text-align:left;color:#666;}
+.wg-table th{background:#fafafa;color:#666;font-size:11px;font-weight:600;}
+.wg-no-data{text-align:center;padding:20px;color:#888;font-size:13px;}
+</style>
+<div id="graph-modal" class="wg-modal-overlay" role="dialog" aria-modal="true" aria-label="体重グラフ">
+  <div class="wg-modal">
+    <div class="wg-modal-header">
+      <div class="wg-modal-title">⚖️ 体重推移</div>
+      <button class="wg-modal-close" id="graph-close" type="button">× 閉じる</button>
     </div>
-    <div id="graph-status" style="font-size:13px;color:#888;text-align:center;padding:24px 0">読込中…</div>
-    <canvas id="weight-chart" style="display:none"></canvas>
+    <div id="wg-content">
+      <div class="wg-loading" id="graph-status">読み込み中…</div>
+    </div>
   </div>
 </div>
 
@@ -105,46 +150,129 @@ document.getElementById('btn-save').addEventListener('click', function() {
   });
 });
 
+// ================================================================
+// 体重グラフ モーダル（全画面シート型）
+// ================================================================
 var weightChart = null;
-function openGraph() {
+var wgDataCache = null;
+
+function openWeightModal() {
   var modal = document.getElementById('graph-modal');
-  var status = document.getElementById('graph-status');
-  var canvas = document.getElementById('weight-chart');
-  modal.classList.remove('hidden');
-  status.style.display = 'block';
-  status.textContent = '読込中…';
-  canvas.style.display = 'none';
-  // weight_data API（GAS: handleWeightGraphData_）で6ヶ月分を取得し、その場で Chart.js 描画
+  modal.classList.add('active');
+  document.body.style.overflow = 'hidden';
+  if (!wgDataCache) {
+    loadWeightGraph();
+  }
+}
+function closeWeightModal() {
+  document.getElementById('graph-modal').classList.remove('active');
+  document.body.style.overflow = '';
+}
+
+function fmtDateWg(s) {
+  var p = String(s).split('-');
+  return p.length === 3 ? (p[1] + '/' + p[2]) : s;
+}
+
+function loadWeightGraph() {
+  var content = document.getElementById('wg-content');
+  content.innerHTML = '<div class="wg-loading">読み込み中…</div>';
   SanroBoot.apiGet('weight_data').then(function(res) {
     var data = (res && res.data) || [];
-    if (!data.length) { status.textContent = 'まだ記録がありません'; return; }
     data.sort(function(a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; });
-    var labels = data.map(function(d) { var p = String(d.date).split('-'); return p.length === 3 ? (p[1] + '/' + p[2]) : d.date; });
-    var values = data.map(function(d) { return d.weight; });
-    status.style.display = 'none';
-    canvas.style.display = 'block';
-    if (weightChart) weightChart.destroy();
-    weightChart = new Chart(canvas.getContext('2d'), {
-      type: 'line',
-      data: { labels: labels, datasets: [{
-        label: '体重(kg)', data: values,
-        borderColor: '#22c55e', backgroundColor: 'rgba(34,197,94,0.12)',
-        fill: true, tension: 0.3, pointRadius: 4, pointBackgroundColor: '#22c55e',
-      }] },
-      options: { responsive: true, plugins: { legend: { display: false } },
-        scales: { y: { beginAtZero: false, title: { display: true, text: 'kg' } },
-                  x: { title: { display: true, text: '日付' } } } },
-    });
+    wgDataCache = data;
+    renderWeightGraph();
   }).catch(function(err) {
-    status.textContent = '読込失敗: ' + (err && err.message ? err.message : err);
+    document.getElementById('wg-content').innerHTML =
+      '<div class="wg-error">データの取得に失敗しました。<br>もう一度お試しください。</div>';
   });
 }
-document.getElementById('btn-graph').addEventListener('click', openGraph);
-document.getElementById('graph-close').addEventListener('click', function() {
-  document.getElementById('graph-modal').classList.add('hidden');
-});
+
+function renderWeightGraph() {
+  var content = document.getElementById('wg-content');
+  var allData = wgDataCache || [];
+
+  if (!allData.length) {
+    content.innerHTML = '<div class="wg-no-data" style="padding:40px 16px">まだ記録がありません</div>';
+    return;
+  }
+
+  // 最新値
+  var latest = allData[allData.length - 1];
+  var latestVal = latest ? Number(latest.weight) : null;
+  var latestDate = latest ? fmtDateWg(latest.date) : '';
+
+  // 直近30件
+  var recent30 = allData.slice(-30);
+  var labels = recent30.map(function(d) { return fmtDateWg(d.date); });
+  var values = recent30.map(function(d) { return d.weight; });
+
+  // テーブル（新しい順）
+  var tableRows = allData.slice().reverse().slice(0, 30).map(function(r) {
+    return '<tr><td>' + fmtDateWg(r.date) + '</td><td>' + r.weight + ' kg</td></tr>';
+  }).join('');
+
+  content.innerHTML =
+    // 最新値カード
+    '<div class="wg-latest-card">' +
+      '<div class="wg-label">最新の体重</div>' +
+      '<div class="wg-value">' + (latestVal !== null ? latestVal + ' kg' : '--') + '</div>' +
+      '<div class="wg-sub">' + (latestDate ? latestDate + ' 時点' : '') + '</div>' +
+    '</div>' +
+    // グラフ
+    '<div class="wg-chart-wrap">' +
+      '<div class="wg-chart-canvas"><canvas id="weightChartCanvas"></canvas></div>' +
+    '</div>' +
+    // テーブル
+    '<div class="wg-section">' +
+      '<div class="wg-section-title">直近の記録</div>' +
+      (tableRows
+        ? '<table class="wg-table"><thead><tr><th>日付</th><th>体重</th></tr></thead><tbody>' + tableRows + '</tbody></table>'
+        : '<div class="wg-no-data">まだ記録がありません</div>') +
+    '</div>';
+
+  // Chart.js 描画
+  if (weightChart) { weightChart.destroy(); weightChart = null; }
+  var ctx = document.getElementById('weightChartCanvas');
+  if (ctx) {
+    weightChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: '体重(kg)',
+          data: values,
+          borderColor: '#22c55e',
+          backgroundColor: 'rgba(34,197,94,0.12)',
+          fill: true,
+          tension: 0.3,
+          pointRadius: 4,
+          pointHoverRadius: 6,
+          pointBackgroundColor: '#22c55e',
+          spanGaps: true,
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { intersect: false, mode: 'index' },
+        plugins: { legend: { display: false } },
+        scales: {
+          y: {
+            beginAtZero: false,
+            ticks: { callback: function(v) { return v + 'kg'; } }
+          },
+          x: { ticks: { maxRotation: 0, autoSkip: true, maxTicksLimit: 8, font: { size: 11 } } }
+        }
+      }
+    });
+  }
+}
+
+document.getElementById('btn-graph').addEventListener('click', openWeightModal);
+document.getElementById('graph-close').addEventListener('click', closeWeightModal);
 document.getElementById('graph-modal').addEventListener('click', function(e) {
-  if (e.target === this) this.classList.add('hidden');
+  if (e.target === this) closeWeightModal();
 });
 
 // v3.17.9: btn-close 廃止 (共通 sanro-back-btn が SanroBoot.close を呼ぶ)
