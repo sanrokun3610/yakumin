@@ -166,8 +166,6 @@
   <div class="sanro-section">
     <div class="sanro-section-title">📝 基本情報</div>
     <div class="sanro-info-row"><span class="label">呼び名</span><span class="value" id="info-nickname">—</span></div>
-    <div class="sanro-info-row"><span class="label">年齢</span><span class="value" id="info-age">— 歳</span></div>
-    <div class="sanro-info-row"><span class="label">性別</span><span class="value" id="info-gender">—</span></div>
   </div>
 
   <!-- v3.18.0 Phase 7.1.D: 自炊メニュー管理 (HOME_MEAL_MASTER_PLAN.md Section 3) -->
@@ -289,8 +287,6 @@ function loadUserInfo() {
     document.getElementById('info-weight').textContent = (u.weight || '—') + ' kg';
     document.getElementById('info-goal').textContent = GOAL_LABELS[u.goalCode] || '—';
     document.getElementById('info-nickname').textContent = u.nickname || u.name || '—';
-    document.getElementById('info-age').textContent = (u.age || '—') + ' 歳';
-    document.getElementById('info-gender').textContent = u.gender || '—';
 
     // 生年月日 表示更新
     var bdEl = document.getElementById('info-birthdate');
