@@ -11,7 +11,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js"></script>
 <script>
 // LIFF内ブラウザ強キャッシュ対策: バージョン違いで強制リロード
-(function(){var V='v3.30.0';try{var s=localStorage.getItem('records_version');if(s&&s!==V){localStorage.setItem('records_version',V);location.replace(location.pathname+'?v='+V+'&t='+Date.now());return;}localStorage.setItem('records_version',V);}catch(e){}})();
+(function(){var V='v3.30.1';try{var s=localStorage.getItem('records_version');if(s&&s!==V){localStorage.setItem('records_version',V);location.replace(location.pathname+'?v='+V+'&t='+Date.now());return;}localStorage.setItem('records_version',V);}catch(e){}})();
 </script>
 <style>
 /* ===== 共通モーダル基盤 ===== */
@@ -200,7 +200,7 @@
 <div id="rc-weight-modal" class="rc-modal-overlay" role="dialog" aria-modal="true" aria-label="体重グラフ">
   <div class="rc-modal">
     <div class="rc-modal-header">
-      <button class="rc-modal-close" id="rc-weight-close" type="button">← 閉じる</button>
+      <button class="rc-modal-close" id="rc-weight-close" type="button">← 戻る</button>
       <div class="rc-modal-title">⚖️ 体重推移</div>
     </div>
     <div id="rc-weight-content">
@@ -213,7 +213,7 @@
 <div id="rc-bp-modal" class="rc-modal-overlay" role="dialog" aria-modal="true" aria-label="血圧グラフ">
   <div class="rc-modal">
     <div class="rc-modal-header">
-      <button class="rc-modal-close" id="rc-bp-close" type="button">← 閉じる</button>
+      <button class="rc-modal-close" id="rc-bp-close" type="button">← 戻る</button>
       <div class="rc-modal-title">🩺 血圧手帳</div>
     </div>
     <div id="rc-bp-content">
@@ -226,7 +226,7 @@
 <div id="rc-ha-modal" class="rc-modal-overlay" role="dialog" aria-modal="true" aria-label="HbA1c推移グラフ">
   <div class="rc-modal">
     <div class="rc-modal-header">
-      <button class="rc-modal-close" id="rc-ha-close" type="button">← 閉じる</button>
+      <button class="rc-modal-close" id="rc-ha-close" type="button">← 戻る</button>
       <div class="rc-modal-title">🩸 HbA1c 推移</div>
     </div>
     <div id="rc-ha-content">
@@ -239,7 +239,7 @@
 <div id="rc-cal-modal" class="rc-modal-overlay" role="dialog" aria-modal="true" aria-label="月間カレンダー">
   <div class="rc-modal">
     <div class="rc-modal-header">
-      <button class="rc-modal-close" id="rc-cal-close" type="button">← 閉じる</button>
+      <button class="rc-modal-close" id="rc-cal-close" type="button">← 戻る</button>
       <div class="rc-modal-title">📅 月間カレンダー</div>
     </div>
     <div id="rc-cal-content">
@@ -777,12 +777,37 @@ function loadCalendar(month) {
   var content = document.getElementById('rc-cal-content');
   content.innerHTML = '<div class="g-loading">読み込み中…</div>';
 
-  // 各APIを個別にcatch（1つ失敗しても他のマーカー/カレンダーは表示する＝全滅させない）
-  function softGet(p) { return p.catch(function() { return null; }); }
-  var p1 = softGet(SanroBoot.apiGet('meals_api', { action: 'getMonthly', month: month }));
-  var p2 = softGet(SanroBoot.apiGet('meals_api', { action: 'getSummary', month: month }));
-  var p3 = softGet(SanroBoot.apiGet('blood_pressure_data', { days: 90 }));
-  var p4 = softGet(SanroBoot.apiGet('weight_data'));
+  // 取得を「値 or null」に正規化し、8秒で打ち切る。reject も「いつまでも返事が来ない(ハング)」も
+  // 必ず前に進める＝「読み込み中のまま固まる」を根絶。
+  function softGet(thunk) {
+    return new Promise(function(resolve) {
+      var done = false;
+      var t = setTimeout(function() { if (!done) { done = true; resolve(null); } }, 8000);
+      try {
+        Promise.resolve(thunk()).then(
+          function(v) { if (!done) { done = true; clearTimeout(t); resolve(v); } },
+          function() { if (!done) { done = true; clearTimeout(t); resolve(null); } }
+        );
+      } catch (e) { if (!done) { done = true; clearTimeout(t); resolve(null); } }
+    });
+  }
+
+  // 同時リクエスト過多(プリフェッチ4＋カレンダー4)で詰まるのを避けるため、今月は
+  // プリフェッチ済みキャッシュ(calMealData/rcBpCache/rcWeightCache)を再利用し、再fetchしない。
+  var now = new Date();
+  var thisMonth = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+  var isThisMonth = (month === thisMonth);
+
+  var p1 = (isThisMonth && Object.keys(calMealData).length)
+    ? Promise.resolve(calMealData)
+    : softGet(function() { return SanroBoot.apiGet('meals_api', { action: 'getMonthly', month: month }); });
+  var p2 = softGet(function() { return SanroBoot.apiGet('meals_api', { action: 'getSummary', month: month }); });
+  var p3 = (isThisMonth && rcBpCache && rcBpCache.length)
+    ? Promise.resolve({ history: rcBpCache })
+    : softGet(function() { return SanroBoot.apiGet('blood_pressure_data', { days: 90 }); });
+  var p4 = (isThisMonth && rcWeightCache && rcWeightCache.length)
+    ? Promise.resolve({ data: rcWeightCache })
+    : softGet(function() { return SanroBoot.apiGet('weight_data'); });
 
   Promise.all([p1, p2, p3, p4]).then(function(results) {
     var r0 = results[0];
@@ -792,7 +817,11 @@ function loadCalendar(month) {
     calBpData   = (results[2] && results[2].history) ? results[2].history : [];
     calWgData   = (results[3] && results[3].data) ? results[3].data : [];
     calMonth    = month;
-    renderCalendar(month, null);
+    try {
+      renderCalendar(month, null);
+    } catch (e) {
+      content.innerHTML = '<div class="g-error">カレンダー表示でエラーが出ました。<br>もう一度開いてみてください。</div>';
+    }
   });
 }
 
