@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>検査値 - サンロくんのほけんしつ</title>
 <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-<link rel="stylesheet" href="/common/common.css?v=loadui">
+<link rel="stylesheet" href="/common/common.css?v=loadui2">
 <!-- v3.29.0: グラフをGAS外部画面でなくページ内モーダルで描画 -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js"></script>
@@ -112,7 +112,7 @@
 <script>
 // v3.25.0: LIFF内ブラウザ強キャッシュ対策 - バージョン違いで強制リロード（meal_input式）
 (function() {
-  var CURRENT_VERSION = 'v3.28.3';
+  var CURRENT_VERSION = 'v3.28.4';
   window.__APP_BUILD = CURRENT_VERSION;
   try {
     var stored = localStorage.getItem('blood_pressure_version');
@@ -228,7 +228,7 @@
   </div>
 </div>
 
-<script src="/common/common.js"></script>
+<script src="/common/common.js?v=loadui2"></script>
 <script>
 SanroBoot.init({
   liffId: '2009608282-AvUr4Jtb',
