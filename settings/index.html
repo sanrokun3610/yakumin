@@ -347,28 +347,34 @@ function loadUserInfo() {
 Array.prototype.forEach.call(document.querySelectorAll('[data-level]'), function(btn) {
   btn.addEventListener('click', function() {
     var level = this.getAttribute('data-level');
+    // タップ即時に選択表示（楽観的UI＝反応を良くする）。保存は裏で実行。
+    Array.prototype.forEach.call(document.querySelectorAll('[data-level]'), function(b) { b.classList.toggle('selected', b === btn); });
     SanroBoot.apiPost('settings_save', { field: 'activity', value: level }).then(function(data) {
       if (data && data.ok) {
         SanroBoot.toast('✅ 活動量を「' + ACTIVITY_LABELS[level] + '」に変更しました', 'success');
         loadUserInfo();
       } else {
         SanroBoot.toast('変更失敗: ' + (data && data.error ? data.error : 'unknown'), 'error');
+        loadUserInfo();
       }
-    });
+    }).catch(function() { loadUserInfo(); });
   });
 });
 
 Array.prototype.forEach.call(document.querySelectorAll('[data-goal]'), function(btn) {
   btn.addEventListener('click', function() {
     var goal = this.getAttribute('data-goal');
+    // タップ即時に選択表示（楽観的UI）。保存は裏で実行。
+    Array.prototype.forEach.call(document.querySelectorAll('[data-goal]'), function(b) { b.classList.toggle('selected', b === btn); });
     SanroBoot.apiPost('settings_save', { field: 'goal', value: goal }).then(function(data) {
       if (data && data.ok) {
         SanroBoot.toast('✅ 目的を「' + GOAL_LABELS[goal] + '」に変更しました', 'success');
         loadUserInfo();
       } else {
         SanroBoot.toast('変更失敗: ' + (data && data.error ? data.error : 'unknown'), 'error');
+        loadUserInfo();
       }
-    });
+    }).catch(function() { loadUserInfo(); });
   });
 });
 
@@ -465,7 +471,10 @@ function dobBuildValue() {
 document.getElementById('btn-save-birthdate').addEventListener('click', function() {
   var val = dobBuildValue();
   if (!val) { SanroBoot.toast('年・月・日をすべて選んでください', 'error'); return; }
+  var btn = this, orig = btn.textContent;
+  btn.disabled = true; btn.textContent = '保存中…';
   SanroBoot.apiPost('settings_save', { field: 'birthdate', value: val }).then(function(data) {
+    btn.disabled = false; btn.textContent = orig;
     if (data && data.ok) {
       SanroBoot.toast('✅ 生年月日を保存しました', 'success');
       loadUserInfo();
@@ -473,6 +482,7 @@ document.getElementById('btn-save-birthdate').addEventListener('click', function
       SanroBoot.toast('保存失敗: ' + (data && data.error ? data.error : 'unknown'), 'error');
     }
   }).catch(function(err) {
+    btn.disabled = false; btn.textContent = orig;
     SanroBoot.toast('通信失敗: ' + err.message, 'error');
   });
 });
@@ -481,16 +491,17 @@ document.getElementById('btn-save-birthdate').addEventListener('click', function
 Array.prototype.forEach.call(document.querySelectorAll('[data-gender]'), function(btn) {
   btn.addEventListener('click', function() {
     var gender = this.getAttribute('data-gender');
+    // タップ即時に選択表示（楽観的UI）。保存は裏で実行。
+    Array.prototype.forEach.call(document.querySelectorAll('[data-gender]'), function(b) { b.classList.toggle('selected', b === btn); });
     SanroBoot.apiPost('settings_save', { field: 'gender', value: gender }).then(function(data) {
       if (data && data.ok) {
         SanroBoot.toast('✅ 性別を「' + gender + '」に変更しました', 'success');
         loadUserInfo();
       } else {
         SanroBoot.toast('変更失敗: ' + (data && data.error ? data.error : 'unknown'), 'error');
+        loadUserInfo();
       }
-    }).catch(function(err) {
-      SanroBoot.toast('通信失敗: ' + err.message, 'error');
-    });
+    }).catch(function() { loadUserInfo(); });
   });
 });
 
@@ -499,7 +510,10 @@ document.getElementById('btn-save-meal').addEventListener('click', function() {
   var mb = document.getElementById('meal-breakfast').value;
   var ml = document.getElementById('meal-lunch').value;
   var md = document.getElementById('meal-dinner').value;
+  var btn = this, orig = btn.textContent;
+  btn.disabled = true; btn.textContent = '保存中…';
   SanroBoot.apiPost('settings_save', { field: 'meal', mb: mb, ml: ml, md: md }).then(function(data) {
+    btn.disabled = false; btn.textContent = orig;
     if (data && data.ok) {
       SanroBoot.toast('✅ 食事時間を保存しました', 'success');
       loadUserInfo();
@@ -507,6 +521,7 @@ document.getElementById('btn-save-meal').addEventListener('click', function() {
       SanroBoot.toast('保存失敗: ' + (data && data.error ? data.error : 'unknown'), 'error');
     }
   }).catch(function(err) {
+    btn.disabled = false; btn.textContent = orig;
     SanroBoot.toast('通信失敗: ' + err.message, 'error');
   });
 });
