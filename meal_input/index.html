@@ -18,7 +18,7 @@ try {
 if (window.__PHOTO_MODE) document.documentElement.className += ' photo-mode';
 // v3.18.0: LIFF 内ブラウザ強キャッシュ対策 - バージョン違いで強制リロード
 (function() {
-  var CURRENT_VERSION = 'v3.23.2';
+  var CURRENT_VERSION = 'v3.23.3';
   window.__APP_BUILD = CURRENT_VERSION;  // build表示用（版マーカーと同一の単一定数）
   // 古い sig キャッシュも強制削除 (くまさんFB対応)
   try {
@@ -1446,10 +1446,8 @@ $("hm-edit-save").addEventListener('click', function() {
   var isEditing = !!pendingHomeMealEdit;
   var existingId = pendingHomeMealEdit ? pendingHomeMealEdit.homeMealId : null;
   var mt = pendingHomeMealEditMt;
-  pendingHomeMealEdit = null;
-  pendingHomeMealEditMt = '';
-  $("home-meal-edit-modal").classList.add("hidden");
-  showToast(isEditing ? "✏ 編集中..." : "➕ 追加中...", "info");
+  var saveBtn = this, origText = saveBtn.textContent;
+  saveBtn.disabled = true; saveBtn.textContent = '保存中…';
   var body = { userId: APP.userId, sig: APP.sig, label: label, kcal: kcal, unit: unit, amount: amount, memo: memo, mealTypeDefault: mt };
   if (isEditing) body.homeMealId = existingId;
   var page = isEditing ? "home_meals_update" : "home_meals_add";
@@ -1459,7 +1457,11 @@ $("hm-edit-save").addEventListener('click', function() {
     body: JSON.stringify(body),
     redirect: "follow",
   }).then(function(r){return r.json();}).then(function(data) {
+    saveBtn.disabled = false; saveBtn.textContent = origText;
     if (data && data.ok) {
+      pendingHomeMealEdit = null;
+      pendingHomeMealEditMt = '';
+      $("home-meal-edit-modal").classList.add("hidden");
       showToast("✅ 保存しました", "success");
       loadHomeMeals();
     } else {
@@ -1471,7 +1473,7 @@ $("hm-edit-save").addEventListener('click', function() {
       else if (msg === 'invalid_unit') msg = '単位が不正';
       showToast("⚠ 保存失敗: " + msg, "error");
     }
-  }).catch(function() { showToast("⚠ 通信失敗", "error"); });
+  }).catch(function() { saveBtn.disabled = false; saveBtn.textContent = origText; showToast("⚠ 通信失敗", "error"); });
 });
 $("hm-edit-delete").addEventListener('click', function() {
   if (!pendingHomeMealEdit) return;
