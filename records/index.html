@@ -5,13 +5,13 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>記録をみる - サンロくんのほけんしつ</title>
 <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-<link rel="stylesheet" href="/common/common.css">
+<link rel="stylesheet" href="/common/common.css?v=loadui">
 <!-- v3.30.0: グラフ・カレンダーをページ内native描画に変更 -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js"></script>
 <script>
 // LIFF内ブラウザ強キャッシュ対策: バージョン違いで強制リロード
-(function(){var V='v3.30.6';try{var s=localStorage.getItem('records_version');if(s&&s!==V){localStorage.setItem('records_version',V);location.replace(location.pathname+'?v='+V+'&t='+Date.now());return;}localStorage.setItem('records_version',V);}catch(e){}})();
+(function(){var V='v3.30.7';try{var s=localStorage.getItem('records_version');if(s&&s!==V){localStorage.setItem('records_version',V);location.replace(location.pathname+'?v='+V+'&t='+Date.now());return;}localStorage.setItem('records_version',V);}catch(e){}})();
 </script>
 <script>
 // padStart polyfill: 古いLINE内WebViewで String.padStart 未対応だとカレンダー描画が例外で落ちる対策
@@ -101,7 +101,7 @@ if (!Array.prototype.find) {
 .g-table th:first-child,.g-table td:first-child{text-align:left;color:#666;}
 .g-table th{background:#fafafa;color:#666;font-size:11px;font-weight:600;}
 .g-no-data{text-align:center;padding:20px;color:#888;font-size:13px;}
-.g-loading{text-align:center;padding:32px 16px;color:#78350f;font-size:16px;font-weight:600;animation:sanro-pulse 1.2s infinite;}
+/* g-loading: common.css の共通スタイルを使用（ここでは上書きしない） */
 .g-error{text-align:center;padding:20px;color:#dc2626;font-size:13px;}
 .ha-latest-card{
   background:#fff;border-radius:12px;margin:10px 12px 0;padding:16px;
@@ -210,7 +210,7 @@ if (!Array.prototype.find) {
   <!-- #2 レイアウト美化: セクションタイトル16px・ボタン余白・間隔を統一 -->
   <div class="sanro-section" style="margin-bottom:0;padding-bottom:20px;">
     <div class="sanro-section-title" style="font-size:16px;margin-bottom:14px;">🍱 今日の食事</div>
-    <div id="today-meals"><div class="g-loading">読み込み中…</div></div>
+    <div id="today-meals"><div class="g-loading"></div></div>
   </div>
 
   <div class="sanro-section" style="margin-bottom:0;padding-top:20px;padding-bottom:20px;">
@@ -234,7 +234,7 @@ if (!Array.prototype.find) {
       <div class="rc-modal-title">⚖️ 体重推移</div>
     </div>
     <div id="rc-weight-content">
-      <div class="g-loading">読み込み中…</div>
+      <div class="g-loading"></div>
     </div>
   </div>
 </div>
@@ -247,7 +247,7 @@ if (!Array.prototype.find) {
       <div class="rc-modal-title">🩺 血圧手帳</div>
     </div>
     <div id="rc-bp-content">
-      <div class="g-loading">読み込み中…</div>
+      <div class="g-loading"></div>
     </div>
   </div>
 </div>
@@ -260,7 +260,7 @@ if (!Array.prototype.find) {
       <div class="rc-modal-title">🩸 HbA1c 推移</div>
     </div>
     <div id="rc-ha-content">
-      <div class="g-loading">読み込み中…</div>
+      <div class="g-loading"></div>
     </div>
   </div>
 </div>
@@ -273,7 +273,7 @@ if (!Array.prototype.find) {
       <div class="rc-modal-title">📅 月間カレンダー</div>
     </div>
     <div id="rc-cal-content">
-      <div class="g-loading">読み込み中…</div>
+      <div class="g-loading"></div>
     </div>
   </div>
 </div>
@@ -415,7 +415,7 @@ function fmtDateWg(s) {
 }
 
 function loadRcWeightGraph() {
-  document.getElementById('rc-weight-content').innerHTML = '<div class="g-loading">読み込み中…</div>';
+  document.getElementById('rc-weight-content').innerHTML = '<div class="g-loading"></div>';
   SanroBoot.apiGet('weight_data').then(function(res) {
     var data = (res && res.data) || [];
     data.sort(function(a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; });
@@ -516,7 +516,7 @@ function zoneColorBp(sbp, dbp) {
 }
 
 function loadRcBpGraph(days) {
-  document.getElementById('rc-bp-content').innerHTML = '<div class="g-loading">読み込み中…</div>';
+  document.getElementById('rc-bp-content').innerHTML = '<div class="g-loading"></div>';
   SanroBoot.apiGet('blood_pressure_data', { days: Math.max(days, 30) }).then(function(data) {
     rcBpCache = (data && data.history) ? data.history : [];
     renderRcBpGraph(days);
@@ -688,7 +688,7 @@ function zoneNameHa(v) {
 }
 
 function loadRcHaGraph() {
-  document.getElementById('rc-ha-content').innerHTML = '<div class="g-loading">読み込み中…</div>';
+  document.getElementById('rc-ha-content').innerHTML = '<div class="g-loading"></div>';
   SanroBoot.apiGet('hba1c_data').then(function(data) {
     rcHaCache = (data && data.history)
       ? data.history.slice().sort(function(a, b) { return new Date(a.date) - new Date(b.date); })
@@ -805,7 +805,7 @@ document.getElementById('btn-calendar').addEventListener('click', function() {
 
 function loadCalendar(month) {
   var content = document.getElementById('rc-cal-content');
-  content.innerHTML = '<div class="g-loading">読み込み中…</div>';
+  content.innerHTML = '<div class="g-loading"></div>';
 
   // 取得を「値 or null」に正規化し、8秒で打ち切る。reject も「いつまでも返事が来ない(ハング)」も
   // 必ず前に進める＝「読み込み中のまま固まる」を根絶。

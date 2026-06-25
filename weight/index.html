@@ -5,11 +5,11 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>体重を記録 - サンロくんのほけんしつ</title>
 <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-<link rel="stylesheet" href="/common/common.css">
+<link rel="stylesheet" href="/common/common.css?v=loadui">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 // LIFF内ブラウザ強キャッシュ対策（検査値と同方式）: バージョン違いで強制リロード
-(function(){var V='v3.28.2';try{var s=localStorage.getItem('weight_version');if(s&&s!==V){localStorage.setItem('weight_version',V);location.replace(location.pathname+'?v='+V+'&t='+Date.now());return;}localStorage.setItem('weight_version',V);}catch(e){}})();
+(function(){var V='v3.28.3';try{var s=localStorage.getItem('weight_version');if(s&&s!==V){localStorage.setItem('weight_version',V);location.replace(location.pathname+'?v='+V+'&t='+Date.now());return;}localStorage.setItem('weight_version',V);}catch(e){}})();
 </script>
 </head>
 <body>
@@ -33,7 +33,7 @@
 
   <div class="sanro-section" style="padding-top:20px;">
     <div class="sanro-section-title" style="font-size:16px;margin-bottom:14px;">📊 直近の記録</div>
-    <div id="recent-list"><div class="g-loading">読み込み中…</div></div>
+    <div id="recent-list"><div class="g-loading"></div></div>
     <div style="height:12px"></div>
     <button class="sanro-btn outline" id="btn-graph" style="font-size:16px;padding:14px;border-radius:12px;">📈 グラフを見る</button>
   </div>
@@ -75,7 +75,7 @@
 .wg-section-title{font-size:13px;color:#78350f;font-weight:bold;margin-bottom:10px;}
 .wg-chart-wrap{background:#fff;border:1px solid #e5e5e5;border-radius:12px;margin:10px 12px 0;padding:10px 8px 6px;}
 .wg-chart-canvas{position:relative;width:100%;height:240px;}
-.wg-loading{text-align:center;padding:32px 16px;color:#78350f;font-size:16px;font-weight:600;animation:sanro-pulse 1.2s infinite;}
+/* wg-loading: common.css の共通スタイルを使用（ここでは上書きしない） */
 .wg-error{text-align:center;padding:20px;color:#dc2626;font-size:13px;}
 .wg-latest-card{
   background:#fff;border-radius:12px;margin:10px 12px 0;padding:16px;
@@ -97,7 +97,7 @@
       <div class="wg-modal-title">⚖️ 体重推移</div>
     </div>
     <div id="wg-content">
-      <div class="wg-loading" id="graph-status">読み込み中…</div>
+      <div class="wg-loading" id="graph-status"></div>
     </div>
   </div>
 </div>
@@ -195,7 +195,7 @@ function fmtDateWg(s) {
 
 function loadWeightGraph() {
   var content = document.getElementById('wg-content');
-  content.innerHTML = '<div class="wg-loading">読み込み中…</div>';
+  content.innerHTML = '<div class="wg-loading"></div>';
   SanroBoot.apiGet('weight_data').then(function(res) {
     var data = (res && res.data) || [];
     data.sort(function(a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; });

@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>検査値 - サンロくんのほけんしつ</title>
 <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-<link rel="stylesheet" href="/common/common.css">
+<link rel="stylesheet" href="/common/common.css?v=loadui">
 <!-- v3.29.0: グラフをGAS外部画面でなくページ内モーダルで描画 -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js"></script>
@@ -106,16 +106,13 @@
 .ha-latest-card .g-sub{font-size:12px;color:#888;margin-top:4px;}
 
 /* ===== グラフ内ローディング ===== */
-.g-loading{
-  text-align:center;padding:32px 16px;color:#78350f;
-  font-size:16px;font-weight:600;animation:sanro-pulse 1.2s infinite;
-}
+/* g-loading: common.css の共通スタイルを使用（ここでは上書きしない） */
 .g-error{text-align:center;padding:20px;color:#dc2626;font-size:13px;}
 </style>
 <script>
 // v3.25.0: LIFF内ブラウザ強キャッシュ対策 - バージョン違いで強制リロード（meal_input式）
 (function() {
-  var CURRENT_VERSION = 'v3.28.2';
+  var CURRENT_VERSION = 'v3.28.3';
   window.__APP_BUILD = CURRENT_VERSION;
   try {
     var stored = localStorage.getItem('blood_pressure_version');
@@ -172,7 +169,7 @@
 
   <div class="sanro-section" style="padding-top:20px;">
     <div class="sanro-section-title" style="font-size:16px;margin-bottom:14px;">📊 直近の記録</div>
-    <div id="recent-list"><div class="g-loading">読み込み中…</div></div>
+    <div id="recent-list"><div class="g-loading"></div></div>
     <div style="height:12px"></div>
     <button class="sanro-btn outline" id="btn-graph" style="font-size:16px;padding:14px;border-radius:12px;">📈 グラフを見る</button>
   </div>
@@ -196,7 +193,7 @@
 
     <div class="sanro-section" style="padding-top:20px;">
       <div class="sanro-section-title" style="font-size:16px;margin-bottom:14px;">📊 直近の記録</div>
-      <div id="hba1c-recent-list"><div class="g-loading">読み込み中…</div></div>
+      <div id="hba1c-recent-list"><div class="g-loading"></div></div>
       <div style="height:12px"></div>
       <button class="sanro-btn outline" id="btn-hba1c-graph" style="font-size:16px;padding:14px;border-radius:12px;">📈 グラフを見る</button>
     </div>
@@ -213,7 +210,7 @@
       <div class="bp-modal-title">🩺 血圧手帳</div>
     </div>
     <div id="bp-graph-content">
-      <div class="g-loading" id="bp-graph-loading">読み込み中…</div>
+      <div class="g-loading" id="bp-graph-loading"></div>
     </div>
   </div>
 </div>
@@ -226,7 +223,7 @@
       <div class="bp-modal-title">🩸 HbA1c 推移</div>
     </div>
     <div id="ha-graph-content">
-      <div class="g-loading" id="ha-graph-loading">読み込み中…</div>
+      <div class="g-loading" id="ha-graph-loading"></div>
     </div>
   </div>
 </div>
@@ -422,7 +419,7 @@ function zoneColorBp(sbp, dbp) {
 
 function loadBpGraph(days) {
   var content = document.getElementById('bp-graph-content');
-  content.innerHTML = '<div class="g-loading">読み込み中…</div>';
+  content.innerHTML = '<div class="g-loading"></div>';
   SanroBoot.apiGet('blood_pressure_data', { days: Math.max(days, 30) }).then(function(data) {
     bpDataCache = (data && data.history) ? data.history : [];
     renderBpGraph(days);
@@ -641,7 +638,7 @@ function zoneNameHa(v) {
 
 function loadHaGraph() {
   var content = document.getElementById('ha-graph-content');
-  content.innerHTML = '<div class="g-loading">読み込み中…</div>';
+  content.innerHTML = '<div class="g-loading"></div>';
   SanroBoot.apiGet('hba1c_data').then(function(data) {
     haDataCache = (data && data.history)
       ? data.history.slice().sort(function(a, b) { return new Date(a.date) - new Date(b.date); })

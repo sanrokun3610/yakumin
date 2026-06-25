@@ -20,6 +20,46 @@ body{padding-bottom:80px}
 .sanro-error{padding:18px 16px;text-align:center;color:#dc2626;font-size:14px;font-weight:600;background:#fef2f2;border:1px dashed #fca5a5;border-radius:8px;margin:8px 16px}
 @keyframes sanro-pulse{0%,100%{opacity:1}50%{opacity:0.5}}
 
+/* ===== 共通ローディングUI (v3.28.5: 全ページ統一 settings基準) ===== */
+/* スピナー: 42px・#fde68a枠＋#f59e0b上辺・0.9s回転 + 「読み込み中…」茶色16px太字 */
+@keyframes sanro-spin{to{transform:rotate(360deg)}}
+.g-loading{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:32px 16px;text-align:center;
+}
+.g-loading::before{
+  content:'';display:block;
+  width:42px;height:42px;
+  border:4px solid #fde68a;border-top:4px solid #f59e0b;
+  border-radius:50%;
+  animation:sanro-spin 0.9s linear infinite;
+  margin-bottom:14px;
+  flex-shrink:0;
+}
+.g-loading::after{
+  content:'読み込み中…';
+  font-size:16px;font-weight:600;color:#78350f;
+}
+/* wg-loading: weight グラフモーダル用（.g-loading と同一見た目） */
+.wg-loading{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:32px 16px;text-align:center;
+  animation:none;
+}
+.wg-loading::before{
+  content:'';display:block;
+  width:42px;height:42px;
+  border:4px solid #fde68a;border-top:4px solid #f59e0b;
+  border-radius:50%;
+  animation:sanro-spin 0.9s linear infinite;
+  margin-bottom:14px;
+  flex-shrink:0;
+}
+.wg-loading::after{
+  content:'読み込み中…';
+  font-size:16px;font-weight:600;color:#78350f;
+}
+
 .sanro-input{width:100%;padding:14px 16px;font-size:17px;border:3px solid #f59e0b;border-radius:12px;background:#fffbeb;outline:none;box-shadow:0 2px 6px rgba(245,158,11,0.15);font-weight:500}
 .sanro-input:focus{border-color:#d97706;background:#fff}
 
