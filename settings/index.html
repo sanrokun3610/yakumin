@@ -404,6 +404,7 @@ document.getElementById('btn-edit-body').addEventListener('click', function() {
     opt.textContent = y + '年';
     yearSel.appendChild(opt);
   }
+  yearSel.value = '1980';  // 未設定時の初期値。既存ユーザーは loadUserInfo が実値で上書き
   // 月: 1〜12
   for (var m = 1; m <= 12; m++) {
     var opt2 = document.createElement('option');
