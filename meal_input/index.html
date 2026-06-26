@@ -18,7 +18,7 @@ try {
 if (window.__PHOTO_MODE) document.documentElement.className += ' photo-mode';
 // v3.18.0: LIFF 内ブラウザ強キャッシュ対策 - バージョン違いで強制リロード
 (function() {
-  var CURRENT_VERSION = 'v3.24.0';
+  var CURRENT_VERSION = 'v3.25.0';
   window.__APP_BUILD = CURRENT_VERSION;  // build表示用（版マーカーと同一の単一定数）
   // 古い sig キャッシュも強制削除 (くまさんFB対応)
   try {
@@ -180,7 +180,8 @@ body.q-has-text .clear-input-btn{display:flex;align-items:center;justify-content
 .result-item.history{border-left:4px solid #10b981}
 .result-item.restaurant{border-left:4px solid #f59e0b}
 .result-item.food{border-left:4px solid #6b7280}
-.result-item.long-pressing{background:#fef2f2;border-color:#fecaca}
+.result-item .hist-del-btn{flex:none;margin-left:10px;width:44px;height:44px;border:none;border-radius:8px;background:#fef2f2;color:#dc2626;font-size:18px;line-height:1;cursor:pointer;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
+.result-item .hist-del-btn:active{background:#fecaca;transform:scale(0.92)}
 .empty{padding:24px 16px;text-align:center;color:#666;font-size:15px;line-height:1.6}
 /* v3.15.5: 検索中表示を青系に統一 (くまさん指示) */
 .searching{padding:24px 16px;text-align:center;color:#1D4ED8;font-size:15px;font-weight:600;background:#EFF6FF;border:1px dashed #BFDBFE;border-radius:8px;margin:8px 0}
@@ -1726,38 +1727,24 @@ function appendCandidateCard(box, c) {
   else if (c.source && c.source.indexOf("restaurant") === 0) cls += " restaurant";
   else cls += " food";
   div.className = cls;
+  var isHistory = (c.source === "history" && c.key);
   div.innerHTML = "<div class=\"label\">" + esc(c.label || "") + "</div>" +
-    "<div class=\"kcal\">" + (c.kcal != null ? c.kcal + "kcal" : "") + "</div>";
-  // 履歴候補(履歴｜)は長押し(500ms)で履歴から削除(該当の過去記録を一括論理削除)
-  var longPressed = false;
-  if (c.source === "history" && c.key) {
-    var pressTimer = null;
-    var startPress = function() {
-      longPressed = false;
-      div.classList.add("long-pressing");
-      pressTimer = setTimeout(function() {
-        longPressed = true;
-        div.classList.remove("long-pressing");
-        if (navigator.vibrate) try { navigator.vibrate(40); } catch (e) {}
+    "<div class=\"kcal\">" + (c.kcal != null ? c.kcal + "kcal" : "") + "</div>" +
+    (isHistory ? "<button type=\"button\" class=\"hist-del-btn\" aria-label=\"履歴から削除\">🗑</button>" : "");
+
+  // 履歴候補(履歴｜)は 🗑ボタンで履歴から削除。カード本体タップは通常どおり記録(誤記録しない)。
+  if (isHistory) {
+    var delBtn = div.querySelector(".hist-del-btn");
+    if (delBtn) {
+      delBtn.addEventListener("click", function(e) {
+        e.preventDefault();
+        e.stopPropagation();   // カード本体のclick(記録)を発火させない
         openHistoryDeleteConfirm(c, div);
-      }, 500);
-    };
-    var cancelPress = function() {
-      div.classList.remove("long-pressing");
-      if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; }
-    };
-    div.addEventListener("touchstart", startPress, { passive: true });
-    div.addEventListener("touchend", cancelPress);
-    div.addEventListener("touchmove", cancelPress);
-    div.addEventListener("touchcancel", cancelPress);
-    div.addEventListener("mousedown", startPress);
-    div.addEventListener("mouseup", cancelPress);
-    div.addEventListener("mouseleave", cancelPress);
-    div.addEventListener("contextmenu", function(e) { e.preventDefault(); });
+      });
+    }
   }
 
-  div.addEventListener("click", function(e) {
-    if (longPressed) { e.preventDefault(); e.stopPropagation(); longPressed = false; return; }
+  div.addEventListener("click", function() {
     if (div.classList.contains("selecting")) return;
     Array.prototype.forEach.call(document.querySelectorAll(".result-item"), function(el) {
       el.classList.remove("selecting");
