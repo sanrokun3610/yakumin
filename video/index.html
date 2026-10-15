@@ -1,0 +1,187 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="robots" content="noindex"><style>html{color-scheme:light}body{margin:0;font:14px system-ui}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>やくそくAI 紹介動画</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@500;700;900&family=Noto+Sans+JP:wght@400;500&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: 上に再生中の1本（大きく）、下に選べる動画の棚。スマホでは縦1列 */
+:root {
+  --bg: #f4f6fa;
+  --panel: #ffffff;
+  --ink: #18223a;
+  --muted: #5b6680;
+  --line: #dde3ee;
+  --accent: #2a57e0;
+  --accent-soft: #e6edfd;
+  --mint: #0f8f7e;
+  --screen: #0d1424;
+  --f-display: "Zen Kaku Gothic New", "Hiragino Sans", "Yu Gothic", sans-serif;
+  --f-body: "Noto Sans JP", "Hiragino Sans", "Yu Gothic", sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1422; --panel: #171e31; --ink: #e8ecf6; --muted: #9aa5be; --line: #283149;
+    --accent: #7d9cff; --accent-soft: #1f2a4a; --mint: #3fc7b2; --screen: #000000; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f1422; --panel: #171e31; --ink: #e8ecf6; --muted: #9aa5be; --line: #283149;
+  --accent: #7d9cff; --accent-soft: #1f2a4a; --mint: #3fc7b2; --screen: #000000; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.7; }
+.wrap { max-width: 1120px; margin: 0 auto; padding-inline: 20px; padding-block: 28px 48px; display: grid; gap: 28px; }
+header { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 24px; }
+h1 { font-family: var(--f-display); font-weight: 900; font-size: clamp(26px, 4vw, 36px); letter-spacing: .02em; margin: 0; text-wrap: balance; }
+h1 small { display: block; font-size: 13px; font-weight: 500; color: var(--muted); letter-spacing: .12em; margin-bottom: 4px; }
+.count { font-family: var(--f-mono); color: var(--muted); font-size: 13px; }
+.stage { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 24px; align-items: start; }
+.player { background: var(--screen); border-radius: 14px; overflow: hidden; aspect-ratio: 16 / 9; max-width: 100%; }
+.player video { width: 100%; height: 100%; display: block; background: var(--screen); }
+.info { display: grid; gap: 14px; min-width: 0; }
+.tag { display: inline-block; font-size: 12px; letter-spacing: .08em; color: var(--accent); background: var(--accent-soft); border-radius: 999px; padding: 2px 10px; justify-self: start; }
+.info h2 { font-family: var(--f-display); font-weight: 700; font-size: 22px; line-height: 1.35; margin: 0; text-wrap: balance; }
+.info p { margin: 0; color: var(--muted); }
+.chapters { display: grid; gap: 2px; margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--line); padding-top: 10px; }
+.chapters button { all: unset; cursor: pointer; display: grid; grid-template-columns: 52px 1fr; gap: 8px; padding: 5px 6px; border-radius: 6px; font-size: 14px; }
+.chapters button:hover { background: var(--accent-soft); }
+.chapters button:focus-visible { outline: 2px solid var(--accent); }
+.chapters time { font-family: var(--f-mono); font-variant-numeric: tabular-nums; color: var(--accent); }
+.notes { font-size: 12px; color: var(--muted); border-top: 1px solid var(--line); padding-top: 10px; display: grid; gap: 2px; }
+.shelf h3 { font-family: var(--f-display); font-size: 15px; font-weight: 700; letter-spacing: .06em; margin: 0 0 12px; color: var(--muted); }
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 16px; }
+.card { all: unset; cursor: pointer; display: grid; gap: 8px; align-content: start; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 10px 10px 14px; }
+.card:hover { border-color: var(--accent); }
+.card:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.card[aria-current="true"] { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.thumb { position: relative; aspect-ratio: 16 / 9; border-radius: 8px; overflow: hidden; background: var(--screen); max-width: 100%; }
+.thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.thumb .dur { position: absolute; right: 6px; bottom: 6px; font-family: var(--f-mono); font-size: 12px; color: #fff; background: rgba(0,0,0,.66); border-radius: 4px; padding: 0 6px; font-variant-numeric: tabular-nums; }
+.card b { font-family: var(--f-display); font-weight: 700; font-size: 16px; line-height: 1.4; }
+.card span.sub { font-size: 13px; color: var(--muted); line-height: 1.5; }
+.card.soon { cursor: default; border-style: dashed; }
+.card.soon .thumb { display: grid; place-items: center; background: var(--accent-soft); color: var(--accent); font-family: var(--f-display); font-weight: 700; letter-spacing: .1em; }
+.now { font-size: 11px; color: var(--mint); letter-spacing: .1em; font-weight: 500; }
+footer { font-size: 12px; color: var(--muted); border-top: 1px solid var(--line); padding-top: 14px; }
+@media (max-width: 820px) { .stage { grid-template-columns: minmax(0, 1fr); } }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head><body>
+
+<div class="wrap">
+  <header>
+    <h1><small>YAKUSOKU AI · VIDEO</small>やくそくAI 紹介動画</h1>
+    <span class="count" id="count">3本</span>
+  </header>
+
+  <section class="stage" aria-label="再生中の動画">
+    <div class="player"><video id="video" controls playsinline preload="metadata"></video></div>
+    <div class="info">
+      <span class="tag" id="tag"></span>
+      <h2 id="title"></h2>
+      <p id="desc"></p>
+      <ul class="chapters" id="chapters"></ul>
+      <div class="notes" id="notes"></div>
+    </div>
+  </section>
+
+  <section class="shelf" aria-label="動画を選ぶ">
+    <h3>動画を選ぶ</h3>
+    <div class="cards" id="cards"></div>
+  </section>
+
+  <footer>動画内の画面はイメージです。登場する処方・医薬品の在庫・病院のデータは架空です。</footer>
+</div>
+
+<script>
+const VIDEOS = [
+  { id: "zaikonavi", tag: "アプリ", title: "やくみる 在庫ナビ", sub: "処方せんから候補・在庫・棚番をすぐ確認", dur: "0:56",
+    desc: "処方せんを撮影すると、個人情報を端末内で黒塗り処理してから読み取り、在庫のある医薬品の候補を表示します。バーコード照合、調剤後の写真保存、発注、添付文書の確認まで、ひとつのアプリで。",
+    chapters: [["0:00",0,"個人情報は端末内で黒塗り"],["0:08",8,"候補・在庫・棚番を表示"],["0:20",20,"バーコードで照合"],["0:25",25.5,"写真は端末だけに保存"],["0:31",31.1,"バーコードを読んで発注"],["0:38",38.4,"添付文書もすぐ確認"],["0:43",43,"まとめ"]],
+    notes: ["※在庫数表示は在庫システムがオンライン対応のものに限ります。","最終判断は薬剤師が行います。","premediは株式会社Cowellnexの提供するサービスです。本製品は同社と提携・推奨関係にはありません。","VOICEVOX:春日部つむぎ"] },
+  { id: "yakumiru_ai", tag: "アプリ", title: "やくみるAI", sub: "カメラで医薬品を鑑定、最後は薬剤師が確かめる", dur: "1:00",
+    desc: "カメラで撮った医薬品を候補から鑑定するアプリです。だれでも簡単に使えて、最後は薬剤師が確かめます。",
+    chapters: [],
+    notes: ["アニメーションによる説明です（実際のアプリ画面を簡略化して再現しています）。","VOICEVOX:ずんだもん / 春日部つむぎ"] },
+  { id: "rasubuddy", tag: "AIエージェント", title: "ラスバディ", sub: "端末内・施設内だけで動くAIの相棒", dur: "1:12",
+    desc: "ラスバディは、端末の中や施設の中だけで動くAIエージェントです。チャットでファイルを渡すだけで頼まれた仕事を作成し、毎月決まった作業は自動で実行します。管制台では、AIエージェントたちが働く様子を見られます。",
+    chapters: [],
+    notes: ["病院の月次資料の画面・数値は架空のデータです。","VOICEVOX:ずんだもん"] },
+];
+const SOON = null;
+
+const $ = (id) => document.getElementById(id);
+const video = $("video");
+
+function show(id, play) {
+  const v = VIDEOS.find((x) => x.id === id) || VIDEOS[0];
+  if (video.dataset.id !== v.id) {
+    video.dataset.id = v.id;
+    video.src = "v/" + v.id + ".mp4";
+    video.poster = "v/" + v.id + ".jpg";
+  }
+  $("tag").textContent = v.tag;
+  $("title").textContent = v.title;
+  $("desc").textContent = v.desc;
+  const ch = $("chapters");
+  ch.replaceChildren();
+  ch.hidden = v.chapters.length === 0;
+  v.chapters.forEach(([label, sec, text]) => {
+    const li = document.createElement("li");
+    const b = document.createElement("button");
+    const t = document.createElement("time");
+    t.textContent = label;
+    const s = document.createElement("span");
+    s.textContent = text;
+    b.append(t, s);
+    b.addEventListener("click", () => { video.currentTime = sec; video.play().catch(() => {}); });
+    li.append(b);
+    ch.append(li);
+  });
+  $("notes").replaceChildren(...v.notes.map((n) => { const d = document.createElement("div"); d.textContent = n; return d; }));
+  document.querySelectorAll(".card[data-id]").forEach((c) => {
+    const on = c.dataset.id === v.id;
+    c.setAttribute("aria-current", on ? "true" : "false");
+    c.querySelector(".now").hidden = !on;
+  });
+  try { localStorage.setItem("lastVideo", v.id); } catch (e) {}
+  if (play) video.play().catch(() => {});
+}
+
+function buildCards() {
+  const wrap = $("cards");
+  VIDEOS.forEach((v) => {
+    const c = document.createElement("button");
+    c.className = "card";
+    c.dataset.id = v.id;
+    c.type = "button";
+    c.innerHTML = '<div class="thumb"><img alt="" loading="lazy"><span class="dur"></span></div><span class="now" hidden>再生中</span><b></b><span class="sub"></span>';
+    c.querySelector("img").src = "v/" + v.id + ".jpg";
+    c.querySelector(".dur").textContent = v.dur;
+    c.querySelector("b").textContent = v.title;
+    c.querySelector(".sub").textContent = v.sub;
+    c.addEventListener("click", () => {
+      show(v.id, true);
+      try { history.replaceState(null, "", "#" + v.id); } catch (e) {}
+      document.querySelector(".stage").scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+    wrap.append(c);
+  });
+  if (!SOON) return;
+  const s = document.createElement("div");
+  s.className = "card soon";
+  s.innerHTML = '<div class="thumb">準備中</div><b></b><span class="sub"></span>';
+  s.querySelector("b").textContent = SOON.title;
+  s.querySelector(".sub").textContent = SOON.sub;
+  wrap.append(s);
+}
+
+buildCards();
+let first = (location.hash || "").slice(1);
+if (!VIDEOS.some((v) => v.id === first)) {
+  try { first = localStorage.getItem("lastVideo") || ""; } catch (e) { first = ""; }
+}
+show(first || VIDEOS[0].id, false);
+</script>
+</body></html>
