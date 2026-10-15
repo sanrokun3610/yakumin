@@ -72,7 +72,7 @@ footer { font-size: 12px; color: var(--muted); border-top: 1px solid var(--line)
 <div class="wrap">
   <header>
     <h1><small>VIDEO</small>紹介動画</h1>
-    <span class="count" id="count">3本</span>
+    <span class="count" id="count">4本</span>
   </header>
 
   <section class="stage" aria-label="再生中の動画">
@@ -91,7 +91,7 @@ footer { font-size: 12px; color: var(--muted); border-top: 1px solid var(--line)
     <div class="cards" id="cards"></div>
   </section>
 
-  <footer>動画内の画面はイメージです。登場する処方・医薬品の在庫・病院のデータは架空です。</footer>
+  <footer>動画内の画面はイメージです。登場する処方・医薬品の在庫・病院のデータは架空です（LINE FAXの実績・年齢層の数値は、当店の実データを割合で示しています）。</footer>
 </div>
 
 <script>
@@ -108,6 +108,10 @@ const VIDEOS = [
     desc: "ラスバディは、端末の中や施設の中だけで動くAIエージェントです。チャットでファイルを渡すだけで頼まれた仕事を作成し、毎月決まった作業は自動で実行します。管制台では、AIエージェントたちが働く様子を見られます。",
     chapters: [],
     notes: ["病院の月次資料の画面・数値は架空のデータです。","VOICEVOX:ずんだもん"] },
+  { id: "matome", tag: "キャラクター・LINE", title: "キャラクターで、伝わる仕組みをつくる", sub: "キャラクターを作り、ブランディングし、LINE FAXへ", dur: "1:44",
+    desc: "サンロくんが、自分が生まれてからLINE FAXができるまでを紹介します。お店の顔になるキャラクターを作り、店頭やLINEでブランディングし、それを活かして、LINEで送った処方せんを薬局のFAXへ届けるLINE FAXにつなげました。個人情報を社内のデータベースに残さない仕組みも紹介します。",
+    chapters: [["0:00",0,"はじめに"],["0:09",8.9,"1 キャラクターを作る"],["0:21",21.9,"2 ブランディング"],["0:39",39.4,"3 LINE FAX"],["1:06",66.0,"個人情報を残さない"],["1:18",77.9,"4 結果"],["1:32",92.4,"まとめ"]],
+    notes: ["LINE FAXの実績は当店・2026年9月。所要時間は当店スタッフによる実測で、通信状況などにより異なります。","年齢層はLINE公式アカウントの友だち属性（LINEによる推計値）。人数の少ない区分は「不明」に含まれます。","画面・資料はイメージを含みます。","VOICEVOX:小夜/SAYO"] },
 ];
 const SOON = null;
 
