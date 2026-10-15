@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0">
-<title>やくみん（薬速搭載）公式 | 医療×AIで、現場を変える</title>
+<title>やくみる（薬速搭載）公式 | 医療×AIで、現場を変える</title>
 <script>
 // === LIFF経由アクセスの早期振り分け（サンロくんのほけんしつ用） ===
 // 対応形式: #xxx (推奨)、?p=xxx、?liff.state=/xxx/
@@ -83,12 +83,22 @@ window.addEventListener('DOMContentLoaded', function() {
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;700;900&display=swap');
 *{margin:0;padding:0;box-sizing:border-box;}
 body{font-family:'Noto Sans JP',-apple-system,sans-serif;background:linear-gradient(135deg,#1d4ed8 0%,#3b82f6 100%);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;color:#fff;}
-.wrap{max-width:480px;text-align:center;}
+.wrap{width:100%;max-width:480px;min-width:0;text-align:center;}
 .logo{width:140px;height:140px;border-radius:50%;background:#fff;padding:8px;margin:0 auto 24px;box-shadow:0 12px 32px rgba(0,0,0,.25);display:block;}
 .brand{font-size:13px;letter-spacing:2px;color:rgba(255,255,255,.85);font-weight:700;margin-bottom:8px;}
 h1{font-size:30px;font-weight:900;letter-spacing:1px;margin-bottom:8px;}
 .tagline{font-size:14px;color:rgba(255,255,255,.85);line-height:1.7;margin-bottom:32px;}
 .coming{display:inline-block;font-size:12px;font-weight:700;letter-spacing:1.5px;background:rgba(255,255,255,.18);padding:6px 16px;border-radius:100px;backdrop-filter:blur(4px);margin-bottom:24px;}
+.videos{margin:8px 0 0;display:grid;grid-template-columns:minmax(0,1fr);gap:18px;text-align:left;}
+.videos-title{font-size:18px;font-weight:900;letter-spacing:2px;text-align:center;}
+.vcard{margin:0;min-width:0;background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.2);border-radius:14px;overflow:hidden;}
+.vcard video{display:block;width:100%;max-width:100%;aspect-ratio:16/9;background:#0d1424;}
+.vcard figcaption{padding:10px 14px 12px;display:grid;gap:2px;}
+.vcard b{font-size:15px;font-weight:900;}
+.vcard span{font-size:12px;color:rgba(255,255,255,.85);}
+.videos-note{font-size:11px;color:rgba(255,255,255,.75);text-align:center;}
+.videos-note a{color:#fff;}
+.about{max-width:100%;}
 .video-btn{display:inline-block;margin:0 0 8px;padding:14px 28px;border-radius:100px;background:#fff;color:#1d4ed8;font-weight:900;font-size:16px;text-decoration:none;box-shadow:0 8px 20px rgba(0,0,0,.2);}
 .video-btn:focus-visible{outline:3px solid #fff;outline-offset:3px;}
 .footer{margin-top:40px;font-size:11px;color:rgba(255,255,255,.6);line-height:1.8;}
@@ -107,12 +117,17 @@ h1{font-size:30px;font-weight:900;letter-spacing:1px;margin-bottom:8px;}
 </head>
 <body>
 <div class="wrap">
-<img src="/yakumin_profile.png" alt="やくみん" class="logo">
-<div class="brand">やくみん（薬速搭載）</div>
+<img src="/yakumin_profile.png" alt="やくみる" class="logo">
+<div class="brand">やくみる（薬速搭載）</div>
 <h1>医療×AIで、<br>現場を変える</h1>
-<p class="tagline">調剤薬局・病院向け業務効率化アプリ<br>「やくみん（薬速搭載）」公式サイト</p>
+<p class="tagline">調剤薬局・病院向け業務効率化アプリ<br>「やくみる（薬速搭載）」公式サイト</p>
 <div class="coming">COMING SOON</div>
-<div><a href="/video/" class="video-btn">▶ 紹介動画を見る</a></div>
+<section class="videos" aria-label="紹介動画"><h2 class="videos-title">紹介動画</h2>
+<figure class="vcard"><video controls playsinline preload="none" poster="/video/v/zaikonavi.jpg" src="/video/v/zaikonavi.mp4"></video><figcaption><b>やくみる 在庫ナビ</b><span>処方せんから候補・在庫・棚番をすぐ確認</span></figcaption></figure>
+<figure class="vcard"><video controls playsinline preload="none" poster="/video/v/yakumiru_ai.jpg" src="/video/v/yakumiru_ai.mp4"></video><figcaption><b>やくみるAI</b><span>カメラで医薬品を鑑定、最後は薬剤師が確かめる</span></figcaption></figure>
+<figure class="vcard"><video controls playsinline preload="none" poster="/video/v/rasubuddy.jpg" src="/video/v/rasubuddy.mp4"></video><figcaption><b>ラスバディ</b><span>端末内・施設内だけで動くAIの相棒</span></figcaption></figure>
+<figure class="vcard"><video controls playsinline preload="none" poster="/video/v/matome.jpg" src="/video/v/matome.mp4"></video><figcaption><b>キャラクターで、伝わる仕組みをつくる</b><span>キャラクター作成・ブランディング・LINE FAX</span></figcaption></figure>
+<p class="videos-note">画面はイメージです。<a href="/video/">注記・クレジットつきの一覧はこちら</a></p></section>
 
 <div class="about">
   <h2 class="about-title">YAKUSOKU / 薬速</h2>
