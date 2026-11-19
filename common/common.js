@@ -215,12 +215,24 @@ window.SanroBoot = (function() {
     return fetchJson(APP.deployUrl + '?page=' + encodeURIComponent(page) + '&' + qs)
       .then(function(d) { __checkAuthError(d); return d; });
   }
+  var pendingWrites = 0;
+  function showWriteProgress(page) {
+    pendingWrites++;
+    var box = document.getElementById('sanro-write-progress');
+    if (!box) { box = document.createElement('div'); box.id = 'sanro-write-progress'; box.setAttribute('role', 'status'); box.setAttribute('aria-live', 'polite'); box.style.cssText = 'position:fixed;top:38%;left:10%;width:80%;box-sizing:border-box;padding:26px;background:#fff8df;border:2px solid #b45309;border-radius:12px;color:#422006;font-size:23px;font-weight:bold;text-align:center;z-index:9999;box-shadow:0 8px 28px #0003'; document.body.appendChild(box); }
+    box.textContent = page.indexOf('delete') >= 0 ? '削除中…' : '保存中…';
+  }
+  function hideWriteProgress() {
+    pendingWrites = Math.max(0, pendingWrites - 1);
+    var box = document.getElementById('sanro-write-progress'); if (!pendingWrites && box) box.remove();
+  }
   function apiPost(page, body) {
+    showWriteProgress(page);
     var bd = Object.assign({ userId: APP.userId, sig: APP.sig }, body || {});
     return fetchJson(APP.deployUrl + '?page=' + encodeURIComponent(page), {
       method: 'POST',
       body: JSON.stringify(bd),
-    }).then(function(d) { __checkAuthError(d); return d; });
+    }).then(function(d) { __checkAuthError(d); return d; }).finally(hideWriteProgress);
   }
 
   return { init: init, $: $, esc: esc, toast: toast, close: close, apiGet: apiGet, apiPost: apiPost, getApp: function(){ return APP; } };

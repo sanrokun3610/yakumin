@@ -112,7 +112,7 @@
 <script>
 // v3.25.0: LIFF内ブラウザ強キャッシュ対策 - バージョン違いで強制リロード（meal_input式）
 (function() {
-  var CURRENT_VERSION = 'v3.28.4';
+  var CURRENT_VERSION = 'v3.31.0';
   window.__APP_BUILD = CURRENT_VERSION;
   try {
     var stored = localStorage.getItem('blood_pressure_version');
@@ -228,7 +228,7 @@
   </div>
 </div>
 
-<script src="/common/common.js?v=loadui2"></script>
+<script src="/common/common.js?v=v3.31.0"></script>
 <script>
 SanroBoot.init({
   liffId: '2009608282-AvUr4Jtb',
@@ -544,7 +544,7 @@ function renderBpGraph(days) {
         '<li class="g-zone-item"><div class="g-zone-chip" style="background:#F44336"></div>II度高血圧（145〜159）</li>' +
         '<li class="g-zone-item"><div class="g-zone-chip" style="background:#B71C1C"></div>III度高血圧（≥160）※医師相談を</li>' +
       '</ul>' +
-      '<div style="font-size:11px;color:#888;margin-top:8px">※数値はあくまで目安です。判断は医師にご相談ください。</div>' +
+      '<div style="font-size:11px;color:#888;margin-top:8px">※健診の参考値です。診断や治療目標ではありません。個別の判断は医師にご相談ください。</div>' +
     '</div>' +
     // カレンダー（30日のみ）
     calHtml +
@@ -626,14 +626,14 @@ function fmtDateHa(s) {
 function zoneColorHa(v) {
   if (v >= 7.0) return '#dc2626';
   if (v >= 6.5) return '#ea580c';
-  if (v >= 6.0) return '#ca8a04';
+  if (v >= 5.6) return '#ca8a04';
   return '#16a34a';
 }
 function zoneNameHa(v) {
   if (v >= 7.0) return '要管理';
   if (v >= 6.5) return '高';
-  if (v >= 6.0) return '注意';
-  return '正常';
+  if (v >= 5.6) return '保健指導判定値以上';
+  return '基準範囲の目安';
 }
 
 function loadHaGraph() {
@@ -689,18 +689,18 @@ function renderHaGraph() {
     '<div class="g-section">' +
       '<div class="g-section-title">HbA1cの目安</div>' +
       '<ul class="g-zone-list">' +
-        '<li class="g-zone-item"><div class="g-zone-chip" style="background:#16a34a"></div>正常（&lt;6.0%）</li>' +
-        '<li class="g-zone-item"><div class="g-zone-chip" style="background:#ca8a04"></div>注意（6.0〜6.4%）</li>' +
+        '<li class="g-zone-item"><div class="g-zone-chip" style="background:#16a34a"></div>基準範囲の目安（&lt;5.6%）</li>' +
+        '<li class="g-zone-item"><div class="g-zone-chip" style="background:#ca8a04"></div>保健指導判定値以上（5.6〜6.4%）</li>' +
         '<li class="g-zone-item"><div class="g-zone-chip" style="background:#ea580c"></div>高（6.5〜6.9%）</li>' +
         '<li class="g-zone-item"><div class="g-zone-chip" style="background:#dc2626"></div>要管理（≥7.0%）※医師相談を</li>' +
       '</ul>' +
-      '<div style="font-size:11px;color:#888;margin-top:8px">※数値はあくまで目安です。判断は医師にご相談ください。</div>' +
+      '<div style="font-size:11px;color:#888;margin-top:8px">※健診の参考値です。診断や治療目標ではありません。個別の判断は医師にご相談ください。</div>' +
     '</div>' +
     // テーブル
     '<div class="g-section">' +
       '<div class="g-section-title">直近の記録</div>' +
       (tableRows
-        ? '<table class="g-table"><thead><tr><th>日付</th><th>HbA1c</th><th>判定</th></tr></thead><tbody>' + tableRows + '</tbody></table>'
+        ? '<table class="g-table"><thead><tr><th>日付</th><th>HbA1c</th><th>目安</th></tr></thead><tbody>' + tableRows + '</tbody></table>'
         : '<div class="g-no-data">まだ記録がありません</div>') +
     '</div>';
 
@@ -738,8 +738,8 @@ function renderHaGraph() {
         plugins: {
           legend: { display: false },
           annotation: { annotations: {
-            zNormal: { type:'box', yMin:4,   yMax:6.0, backgroundColor:'rgba(22,163,74,0.08)',  borderWidth:0 },
-            zWatch:  { type:'box', yMin:6.0, yMax:6.5, backgroundColor:'rgba(202,138,4,0.10)', borderWidth:0 },
+            zNormal: { type:'box', yMin:4,   yMax:5.6, backgroundColor:'rgba(22,163,74,0.08)',  borderWidth:0 },
+            zWatch:  { type:'box', yMin:5.6, yMax:6.5, backgroundColor:'rgba(202,138,4,0.10)', borderWidth:0 },
             zHigh:   { type:'box', yMin:6.5, yMax:7.0, backgroundColor:'rgba(234,88,12,0.12)', borderWidth:0 },
             zMng:    { type:'box', yMin:7.0, yMax:11,  backgroundColor:'rgba(220,38,38,0.14)', borderWidth:0 },
             line65:  { type:'line', yMin:6.5, yMax:6.5, borderColor:'rgba(234,88,12,0.6)', borderWidth:1, borderDash:[3,3] },

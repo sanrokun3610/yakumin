@@ -18,7 +18,7 @@ try {
 if (window.__PHOTO_MODE) document.documentElement.className += ' photo-mode';
 // v3.18.0: LIFF 内ブラウザ強キャッシュ対策 - バージョン違いで強制リロード
 (function() {
-  var CURRENT_VERSION = 'v3.25.0';
+  var CURRENT_VERSION = 'v3.31.0';
   window.__APP_BUILD = CURRENT_VERSION;  // build表示用（版マーカーと同一の単一定数）
   // 古い sig キャッシュも強制削除 (くまさんFB対応)
   try {
@@ -207,7 +207,7 @@ body.q-has-text .clear-input-btn{display:flex;align-items:center;justify-content
 
 /* v3.20.0 撮影モード (mode=photo): 検索系UIを隠し撮影パネルのみ表示。レイアウト・既存スタイルは不変更 */
 #photo-panel{display:none}
-.photo-mode .search-box, .photo-mode #mode-switch, .photo-mode #frequent-section,
+.photo-mode .search-box, .photo-mode #mode-switch, .photo-mode #brand-filter, .photo-mode #frequent-section,
 .photo-mode #home-meals-section, .photo-mode #results, .photo-mode #today-meals-section{display:none !important}
 .photo-mode #photo-panel{display:block}
 #photo-panel{padding:16px}
@@ -280,14 +280,23 @@ body.q-has-text .clear-input-btn{display:flex;align-items:center;justify-content
   </div>
   <div class="chip-row" id="mode-switch">
     <span class="chip-label">対象</span>
-    <button class="mode-chip selected" data-mode="all">すべて</button>
-    <button class="mode-chip" data-mode="home">自炊</button>
+    <button class="mode-chip selected" data-mode="food">食品名</button>
+    <button class="mode-chip" data-mode="home">自分の定番</button>
     <button class="mode-chip" data-mode="restaurant">外食</button>
     <button class="mode-chip" data-mode="convenience">コンビニ</button>
+  </div>
+  <div id="brand-filter" class="chip-row hidden" aria-label="コンビニの店名で絞り込み">
+    <span>店名から探す</span>
+    <button type="button" class="mode-chip" data-chain="ファミリーマート">ファミリーマート</button>
+    <button type="button" class="mode-chip" data-chain="セブンイレブン">セブンイレブン</button>
+    <button type="button" class="mode-chip" data-chain="ローソン">ローソン</button>
+    <button type="button" class="mode-chip" data-chain="ミニストップ">ミニストップ</button>
+    <button type="button" class="mode-chip" data-chain="デイリーヤマザキ">デイリーヤマザキ</button>
   </div>
 </div>
 
 <!-- v3.17.3 くまさんFB: 入力欄右端に × クリアボタン -->
+<label style="display:block;margin:12px 0;font-weight:700">記録する日 <input type="date" id="record-date" style="font:inherit;padding:10px"></label>
 <div class="search-box">
   <div class="search-input-wrap">
     <input type="text" id="q" placeholder="" autocomplete="off" inputmode="text" enterkeyhint="search">
@@ -385,7 +394,7 @@ body.q-has-text .clear-input-btn{display:flex;align-items:center;justify-content
 <!-- v3.15.4 Phase 7.1.B 追加: 未検索時の当日食事一覧 -->
 <div id="today-meals-section" class="today-meals" style="display:none">
   <div class="today-meals-title">
-    <span>📋 今日の食事</span>
+    <span>📋 選択した日の食事</span>
     <span class="today-meals-total" id="today-total">合計 0 kcal</span>
   </div>
   <div id="today-meals-body"></div>
@@ -644,7 +653,7 @@ window.__APP__ = {
   sig: '',
   qsBase: '',
   mealType: 'lunch',
-  searchMode: 'all',  // v3.15.2 Phase 7.1.B: all/home/restaurant/convenience
+  searchMode: 'food',  // v3.15.2 Phase 7.1.B: all/home/restaurant/convenience
 };
 
 (function(){
@@ -672,6 +681,10 @@ function autoMealTypeFromTime() {
   return 'snack';
 }
 APP.mealType = autoMealTypeFromTime();
+var dateInput = $('record-date');
+if (dateInput) { var localToday = new Intl.DateTimeFormat('sv-SE', {timeZone:'Asia/Tokyo'}).format(new Date()); dateInput.value = localToday; dateInput.max = localToday; }
+function selectedRecordDate() { return dateInput ? dateInput.value : ''; }
+if (dateInput) dateInput.addEventListener('change', function() { if (state.ready) loadTodayMeals(); });
 setHeader('🐻 ' + MEAL_LABELS[APP.mealType] + 'を記録');
 setSelectedMealType(APP.mealType);
 
@@ -691,6 +704,7 @@ function setSelectedMealType(mt) {
 // 食事区分 chip クリック (v3.15.0 / v3.17.0 で frequent 再ロード追加)
 Array.prototype.forEach.call(document.querySelectorAll('.mt-chip'), function(btn) {
   btn.addEventListener('click', function() {
+    if (state.saving) return;
     var mt = this.getAttribute('data-mt');
     APP.mealType = mt;
     setHeader('🐻 ' + MEAL_LABELS[mt] + 'を記録');
@@ -702,6 +716,7 @@ Array.prototype.forEach.call(document.querySelectorAll('.mt-chip'), function(btn
 
 // v3.15.5: 検索ガイド廃止 (くまさん指示) / placeholder はモード別に変更
 var MODE_PLACEHOLDERS = {
+  food:        '例：ごはん / クロワッサン / ゆで卵',
   all:         '例：納豆ごはん / すき家 牛丼 / セブン おにぎり',
   home:        '例：納豆ごはん / 味噌汁 / ゆで卵',
   restaurant:  '例：すき家 牛丼 / マック ポテト',
@@ -709,11 +724,13 @@ var MODE_PLACEHOLDERS = {
 };
 
 // 検索モード chip クリック (v3.15.2 Phase 7.1.B → v3.15.5 で placeholder のみ更新)
-Array.prototype.forEach.call(document.querySelectorAll('.mode-chip'), function(btn) {
+Array.prototype.forEach.call(document.querySelectorAll('#mode-switch .mode-chip'), function(btn) {
   btn.addEventListener('click', function() {
     var mode = this.getAttribute('data-mode');
     APP.searchMode = mode;
-    Array.prototype.forEach.call(document.querySelectorAll('.mode-chip'), function(b) {
+    state.reqCounter++; // 前の分類の遅い応答を新しい一覧へ混ぜない。
+    $('brand-filter').classList.toggle('hidden', mode !== 'convenience');
+    Array.prototype.forEach.call(document.querySelectorAll('#mode-switch .mode-chip'), function(b) {
       b.classList.toggle('selected', b === btn);
     });
     var q = $("q");
@@ -734,7 +751,10 @@ Array.prototype.forEach.call(document.querySelectorAll('.mode-chip'), function(b
 // v3.15.4 Phase 7.1.B 追加: 当日食事一覧
 function loadTodayMeals() {
   if (!state.ready || !APP.qsBase) return;
-  fetch(APP.deployUrl + "?page=meal_input_today&" + APP.qsBase).then(function(r){return r.json();}).then(function(data) {
+  var listRequest = state.listRequest = (state.listRequest || 0) + 1;
+  var requestedDate = selectedRecordDate();
+  fetch(APP.deployUrl + "?page=meal_input_today&" + APP.qsBase + "&date=" + encodeURIComponent(requestedDate)).then(function(r){return r.json();}).then(function(data) {
+    if (listRequest !== state.listRequest || requestedDate !== selectedRecordDate()) return;
     // v3.17.14: 認証エラー検知 → キャッシュクリア+リロード
     if (data && data.error && typeof isAuthError === 'function' && isAuthError(data.error)) {
       handleSigInvalidated();
@@ -746,7 +766,7 @@ function loadTodayMeals() {
     }
     state.todayMeals = data;
     renderTodayMeals(data);
-  }).catch(function() { hideTodayMeals(); });
+  }).catch(function() { if (listRequest === state.listRequest) hideTodayMeals(); });
 }
 
 function showTodayMeals() {
@@ -771,7 +791,7 @@ function renderTodayMeals(data) {
   var totalEl = $("today-total");
   if (!body || !totalEl) return;
   if (!data || !data.meals || data.meals.length === 0) {
-    body.innerHTML = '<div class="today-empty">まだ今日の記録はありません。<br>↑ から食事を入力してください</div>';
+    body.innerHTML = '<div class="today-empty">この日の記録はありません。<br>↑ から食事を入力してください</div>';
     totalEl.textContent = '合計 0 kcal';
     return;
   }
@@ -804,7 +824,7 @@ function renderTodayMeals(data) {
     html += '</div>';
   });
   if (!anyShown) {
-    body.innerHTML = '<div class="today-empty">まだ今日の記録はありません。<br>↑ から食事を入力してください</div>';
+    body.innerHTML = '<div class="today-empty">この日の記録はありません。<br>↑ から食事を入力してください</div>';
   } else {
     body.innerHTML = html;
   }
@@ -1385,14 +1405,14 @@ $("hm-btn-edit").addEventListener('click', function() {
 });
 
 function recordFromHomeMeal(item, multiplier) {
-  showToast("📡 記録中...", "info");
+  if (state.saving) return; state.saving = true; showSearching(); $("searching-bar").textContent = "保存中…";
   fetch(APP.deployUrl + "?page=home_meals_record", {
     method: "POST",
     headers: { "Content-Type": "text/plain;charset=UTF-8" },
     body: JSON.stringify({
       userId: APP.userId, sig: APP.sig,
       homeMealId: item.homeMealId,
-      mealType: APP.mealType || 'lunch',
+      mealType: APP.mealType || 'lunch', recordDate: selectedRecordDate(),
       amount: multiplier || 1,
     }),
     redirect: "follow",
@@ -1406,7 +1426,7 @@ function recordFromHomeMeal(item, multiplier) {
     } else {
       showToast("⚠ 記録失敗: " + (data && data.error ? data.error : 'unknown'), "error");
     }
-  }).catch(function() { showToast("⚠ 通信失敗", "error"); });
+  }).catch(function() { showToast("⚠ 通信失敗", "error"); }).finally(function() { state.saving = false; hideSearching(); });
 }
 
 // 自炊メニュー 編集モーダル
@@ -1513,14 +1533,14 @@ $("hm-edit-delete").addEventListener('click', function() {
 });
 
 function recordFromFrequent(item, multiplier) {
-  showToast("📡 記録中...", "info");
+  if (state.saving) return; state.saving = true; showSearching(); $("searching-bar").textContent = "保存中…";
   fetch(APP.deployUrl + "?page=meal_record_from_frequent", {
     method: "POST",
     headers: { "Content-Type": "text/plain;charset=UTF-8" },
     body: JSON.stringify({
       userId: APP.userId, sig: APP.sig,
       key: item.key,
-      mealType: APP.mealType || 'lunch',
+      mealType: APP.mealType || 'lunch', recordDate: selectedRecordDate(),
       amount: multiplier || 1,
     }),
     redirect: "follow",
@@ -1536,7 +1556,7 @@ function recordFromFrequent(item, multiplier) {
     } else {
       showToast("⚠ 記録失敗: " + (data && data.error ? data.error : 'unknown'), "error");
     }
-  }).catch(function() { showToast("⚠ 通信失敗", "error"); });
+  }).catch(function() { showToast("⚠ 通信失敗", "error"); }).finally(function() { state.saving = false; hideSearching(); });
 }
 
 // v3.15.0 Phase 7.1.A: 検索閾値 2文字以上 + debounce 350ms
@@ -1582,6 +1602,17 @@ $("q").addEventListener("keydown", function(e) {
   }
 });
 
+// 店名は既存AND検索へ渡す。未取得のマスタや新しい分類は作らない。
+Array.prototype.forEach.call(document.querySelectorAll('#brand-filter [data-chain]'), function(btn) {
+  btn.addEventListener('click', function() {
+    if (APP.searchMode !== 'convenience') return;
+    var query = this.getAttribute('data-chain');
+    $('q').value = query;
+    clearTimeout(state.debounceTimer);
+    if (state.ready) { showSearching(); fetchCandidates(query, 0, false); }
+  });
+});
+
 // v3.15.3: 旧カテゴリボタン廃止 (お気に入り検索ボタンは Phase 7.1.C で追加)
 
 // 候補取得 API (v3.15.2 Phase 7.1.B: mode パラメータ追加)
@@ -1596,10 +1627,11 @@ function searchCachePut(key, data) {
   if (state.searchCacheKeys.length > 50) { delete state.searchCache[state.searchCacheKeys.shift()]; }
 }
 function fetchCandidates(q, offset, append) {
+  if (state.saving) return;
   // 認証未完了なら検索しない (qsBase が空)
   if (!APP.qsBase) return;
   offset = offset || 0;
-  var mode = APP.searchMode || 'all';
+  var mode = APP.searchMode || 'food';
   var reqId = ++state.reqCounter;
   state.lastQuery = q;
   var key = searchCacheKey(q, mode, offset);
@@ -1678,9 +1710,10 @@ function showSearching() {
   var bar = document.createElement("div");
   bar.id = "searching-bar";
   bar.className = "searching-bar";
+  bar.setAttribute("role", "status");
+  bar.style.cssText = "position:fixed;top:40%;left:10%;width:80%;box-sizing:border-box;background:#fff8df;color:#422006;border:2px solid #b45309;border-radius:12px;padding:26px;text-align:center;font-size:23px;font-weight:bold;z-index:9999;animation:none;opacity:1;box-shadow:0 8px 28px #0003;pointer-events:none";
   bar.textContent = "🔍 検索中…";
-  var sb = document.querySelector(".search-box");
-  if (sb) sb.appendChild(bar);
+  document.body.appendChild(bar);
 }
 function hideSearching() {
   var bar = document.getElementById("searching-bar");
@@ -1697,9 +1730,11 @@ function renderResults(cands) {
       box.innerHTML = "";
       return;
     }
-    var mode = APP.searchMode || 'all';
+    var mode = APP.searchMode || 'food';
     var emptyMsg;
-    if (mode === 'home') {
+    if (mode === 'food') {
+      emptyMsg = '食品名の候補が見つかりませんでした。<br>食品名を変えて入力してください。';
+    } else if (mode === 'home') {
       emptyMsg = '自炊メニューに候補がありません。<br>別の言葉で入力してください。' +
                  '<br><br><small style="color:#999">例: 納豆ごはん / 味噌汁 / いつもの朝食</small>';
     } else if (mode === 'restaurant') {
@@ -1854,6 +1889,9 @@ $("amount-close").addEventListener("click", function() {
 });
 
 function saveRecord(c, size, kcal, sizeRow, amountInfo) {
+  if (state.saving) return;
+  state.saving = true;
+  showSearching(); $("searching-bar").textContent = "保存中…";
   $("amount-modal").classList.add("hidden");
   state.processing = false;
   Array.prototype.forEach.call(document.querySelectorAll(".result-item"), function(el) {
@@ -1861,7 +1899,7 @@ function saveRecord(c, size, kcal, sizeRow, amountInfo) {
   });
   showToast("📡 記録中...", "info");
   var body = {
-    userId: APP.userId, sig: APP.sig, mealType: APP.mealType,
+    userId: APP.userId, sig: APP.sig, mealType: APP.mealType, recordDate: selectedRecordDate(),
     candidate: c, size: size, kcal: kcal, sizeRow: sizeRow, amountInfo: amountInfo,
   };
   fetch(APP.deployUrl + "?page=meal_input_save", {
@@ -1890,7 +1928,7 @@ function saveRecord(c, size, kcal, sizeRow, amountInfo) {
     });
   }).catch(function(err) {
     showToast("⚠ 通信失敗", "error");
-  });
+  }).finally(function() { state.saving = false; hideSearching(); });
 }
 
 function addToRecorded(saved) {
@@ -2178,12 +2216,14 @@ if (window.__PHOTO_MODE) (function() {
     var btn = $("photo-submit");
     btn.disabled = true;
     pStatus('🔍 解析しています…（30秒ほどかかることがあります）');
+    showSearching(); $("searching-bar").textContent = '写真を解析中…';
     pPost('meal_photo_analyze', {
       userId: APP.userId, sig: APP.sig,
       mealType: APP.mealType,
       imageBase64: pState.dataUrl.split(',')[1],
     }).then(function(data) {
       pState.submitting = false;
+      state.saving = false; hideSearching();
       btn.disabled = false;
       if (data && data.ok) { pStatus(null); pRenderConfirm(data); return; }
       var errCode = data && data.error;
@@ -2191,6 +2231,7 @@ if (window.__PHOTO_MODE) (function() {
       pStatus(PHOTO_ERRORS[errCode] || '分析に失敗しました。もう一度お試しください。', true);
     }).catch(function() {
       pState.submitting = false;
+      state.saving = false; hideSearching();
       btn.disabled = false;
       pStatus('通信に失敗しました。電波状況を確認して再度お試しください。', true);
     });
@@ -2211,15 +2252,17 @@ if (window.__PHOTO_MODE) (function() {
     var btn = $("pc-commit");
     btn.disabled = true;
     pStatus('📝 登録しています…');
+    state.saving = true; showSearching(); $("searching-bar").textContent = '保存中…';
     pPost('meal_photo_commit', {
       userId: APP.userId, sig: APP.sig,
       analysisId: a.analysisId,
-      mealType: APP.mealType,
+      mealType: APP.mealType, recordDate: selectedRecordDate(),
       sourceContext: pState.source,
       imageBase64: pState.dataUrl ? pState.dataUrl.split(',')[1] : '',
       corrections: corrections,
     }).then(function(data) {
       pState.submitting = false;
+      state.saving = false; hideSearching();
       btn.disabled = false;
       if (data && data.ok) {
         pStatus(null);
@@ -2235,6 +2278,7 @@ if (window.__PHOTO_MODE) (function() {
       pStatus(PHOTO_ERRORS[errCode] || '登録に失敗しました。もう一度お試しください。', true);
     }).catch(function() {
       pState.submitting = false;
+      state.saving = false; hideSearching();
       btn.disabled = false;
       pStatus('通信に失敗しました。電波状況を確認して再度お試しください。', true);
     });

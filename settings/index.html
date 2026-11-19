@@ -17,7 +17,7 @@
 <script>
 // LIFF内ブラウザ強キャッシュ対策（weight/records と同方式）: バージョン違いで強制リロード。
 // 旧「設定→再登録フォームへ即転送」版がキャッシュに残るのを防ぐため導入（設定だけ未導入だった）。
-(function(){var V='v3.28.5';try{var s=localStorage.getItem('settings_version');if(s&&s!==V){localStorage.setItem('settings_version',V);location.replace(location.pathname+'?v='+V+'&t='+Date.now());return;}localStorage.setItem('settings_version',V);}catch(e){}})();
+(function(){var V='v3.31.0';try{var s=localStorage.getItem('settings_version');if(s&&s!==V){localStorage.setItem('settings_version',V);location.replace(location.pathname+'?v='+V+'&t='+Date.now());return;}localStorage.setItem('settings_version',V);}catch(e){}})();
 </script>
 <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <link rel="stylesheet" href="/common/common.css?v=loadui2">
@@ -189,6 +189,20 @@
     <button class="sanro-btn secondary" id="btn-hm-add">+ 自炊メニューを追加</button>
   </div>
 
+  <section class="sanro-section feedback-section" id="feedback-section" aria-labelledby="feedback-title">
+    <h2 class="sanro-section-title" id="feedback-title">ご意見・修正</h2>
+    <label for="feedback-body" class="feedback-label">直してほしいところを教えてください</label>
+    <p class="feedback-help" id="feedback-help">氏名などの個人情報は入力しないでください。</p>
+    <textarea id="feedback-body" maxlength="2000" rows="4" aria-describedby="feedback-help feedback-count" placeholder="例：食品検索の結果が見づらいです。文字を大きくしてほしいです。"></textarea>
+    <div id="feedback-count" class="feedback-count">0 / 2000文字</div>
+    <button type="button" class="sanro-btn primary" id="feedback-send">修正依頼を送信</button>
+    <p id="feedback-status" role="status" aria-live="polite" class="feedback-status"></p>
+    <h3 class="feedback-history-title">最近の修正履歴 <small>反映済み</small></h3>
+    <div id="feedback-history" aria-live="polite">読み込み中…</div>
+    <button type="button" class="sanro-btn secondary hidden" id="feedback-more">過去の修正を見る</button>
+  </section>
+
+  <p id="sanro-app-version" style="font-size:12px;color:#76563d;margin:16px 0 0">アプリバージョン 3.31.0</p>
   <!-- v3.17.9 くまさんFB: 「完了してLINEに戻る」廃止 → ヘッダー左上の共通 ← 戻るに統一 -->
 </div>
 
@@ -261,10 +275,26 @@
 .hm-row .hm-actions .hm-edit-btn{color:#0369a1;border-color:#bae6fd}
 .hm-row .hm-actions .hm-del-btn{color:#dc2626;border-color:#fecaca}
 .hm-empty{font-size:12px;color:#9ca3af;text-align:center;padding:12px;font-style:italic}
+
+.feedback-section{background:#fffaf0;border:1px solid #f4d4a5}
+.feedback-label{display:block;font-weight:700;color:#633919;font-size:16px;line-height:1.6}
+.feedback-help{font-size:13px;line-height:1.6;color:#654c38;margin:6px 0 12px}
+#feedback-body{box-sizing:border-box;width:100%;font:inherit;font-size:16px;line-height:1.7;padding:12px;border:1px solid #c7a47a;border-radius:8px;resize:vertical;background:#fff;color:#31251c}
+#feedback-body:focus{outline:2px solid #b65d12;outline-offset:2px}
+.feedback-count{text-align:right;font-size:12px;color:#685640;margin:4px 0 12px}
+.feedback-status{font-size:14px;line-height:1.7;margin:10px 0;color:#633919;min-height:1.7em;overflow-wrap:anywhere}
+#feedback-send{background:#ad570f;border:1px solid #ad570f;color:#fff;min-height:52px}#feedback-send:disabled{opacity:.65}
+.feedback-status.error{color:#a52a18}.feedback-status.success{color:#21643b}
+.feedback-history-title{font-size:17px;margin:24px 0 12px;color:#633919}
+.feedback-history-title small{font-size:12px;font-weight:400;margin-left:6px}
+.feedback-release{padding:12px 0;border-top:1px solid #ebd8be;font-size:15px;line-height:1.7;overflow-wrap:anywhere}
+.feedback-release time{display:block;font-size:12px;color:#79634d;margin-bottom:3px}
+#feedback-more{margin-top:12px}
+
 .hidden{display:none !important}
 </style>
 
-<script src="/common/common.js?v=loadui2"></script>
+<script src="/common/common.js?v=v3.31.0"></script>
 <script>
 SanroBoot.init({
   liffId: '2009608282-1EPIatV3',
@@ -272,6 +302,7 @@ SanroBoot.init({
   onReady: function(APP) {
     document.getElementById('content').classList.remove('hidden');
     loadUserInfo();
+    feedbackLoadHistory(false);
     // v3.18.0 Phase 7.1.D: 自炊メニュー一覧も並列取得 (loadUserInfo と独立で軽量)
     if (typeof hmLoad === 'function') hmLoad();
   }
@@ -329,7 +360,8 @@ function loadUserInfo() {
     });
     document.getElementById('info-gender-disp').textContent = u.gender || '—';
 
-    // 食事時間 ドロップダウンに現在値を反映
+    // 食事時間 ドロップダウンに現在値を反映（旧「なし」も同じ選択肢）
+    ['mb','ml','md'].forEach(function(k) { if (/^なし$|^食べない$/.test(u[k] || '')) u[k] = 'なし（食べない）'; });
     if (u.mb) { var mbEl = document.getElementById('meal-breakfast'); if (mbEl) mbEl.value = u.mb; }
     if (u.ml) { var mlEl = document.getElementById('meal-lunch');     if (mlEl) mlEl.value = u.ml; }
     if (u.md) { var mdEl = document.getElementById('meal-dinner');    if (mdEl) mdEl.value = u.md; }
@@ -727,6 +759,46 @@ document.getElementById('hm-edit-save').addEventListener('click', hmSave);
 document.getElementById('hm-edit-modal').addEventListener('click', function(e) {
   if (e.target === this) hmCloseEdit();
 });
+
+
+// Only explicit form submission sends request text. No browser persistence or LINE push.
+function feedbackApi(page,body){
+ var endpoint='https://script.google.com/macros/s/AKfycbylh1cDQGAdKJFx-wOtbuEMPf52Bht8PhdV81KcsAt5W6Kj_MBXaBtH4CKOT6OK_IF-TA/exec';
+ var controller=new AbortController(),timer=setTimeout(function(){controller.abort();},45000),options={signal:controller.signal},url=endpoint+'?page='+page;
+ if(page==='feedback_submit'){var app=SanroBoot.getApp();if(!app||!app.userId||!app.sig){clearTimeout(timer);return Promise.reject(Error('feedback_auth_required'));}options.method='POST';options.headers={'Content-Type':'text/plain;charset=UTF-8'};var payload={userId:app.userId,sig:app.sig,text:body.text,requestId:body.requestId};try{var token=window.liff&&typeof liff.getIDToken==='function'?liff.getIDToken():null;if(typeof token==='string'&&token)payload.idToken=token;}catch(ignored){}options.body=JSON.stringify(payload);}
+ else if(page==='feedback_history')url+='&history_page='+encodeURIComponent(body.history_page);
+ else {clearTimeout(timer);return Promise.reject(Error('feedback_operation_invalid'));}
+ return fetch(url,options).then(function(r){if(!r.ok)throw Error('feedback_http');return r.json();}).finally(function(){clearTimeout(timer);});
+}
+var feedbackSending=false,feedbackRequestId='',feedbackRequestText='',feedbackHistoryPage=0,feedbackHistoryLoading=false;
+function feedbackStatus(text,kind){var e=document.getElementById('feedback-status');e.textContent=text;e.className='feedback-status '+(kind||'');}
+function feedbackUuid(){if(window.crypto&&crypto.randomUUID)return crypto.randomUUID();var b=new Uint8Array(16);crypto.getRandomValues(b);b[6]=(b[6]&15)|64;b[8]=(b[8]&63)|128;var h=Array.from(b,x=>x.toString(16).padStart(2,'0')).join('');return h.slice(0,8)+'-'+h.slice(8,12)+'-'+h.slice(12,16)+'-'+h.slice(16,20)+'-'+h.slice(20);}
+document.getElementById('feedback-body').addEventListener('input',function(){document.getElementById('feedback-count').textContent=this.value.length+' / 2000文字';if(!feedbackSending)feedbackStatus('未送信');});
+document.getElementById('feedback-send').addEventListener('click',function(){
+ if(feedbackSending)return;var input=document.getElementById('feedback-body'),text=input.value;
+ if(!text.trim()){feedbackStatus('修正してほしい内容を入力してください。','error');input.focus();return;}
+ if(text.length>2000){feedbackStatus('2000文字以内で入力してください。','error');return;}
+ try{if(!feedbackRequestId||feedbackRequestText!==text){feedbackRequestId=feedbackUuid();feedbackRequestText=text;}}catch(e){feedbackStatus('送信の準備ができませんでした。入力内容は残っています。','error');return;}
+ feedbackSending=true;input.disabled=true;this.disabled=true;this.textContent='送信中…';feedbackStatus('送信中…');
+ feedbackApi('feedback_submit',{text:text,requestId:feedbackRequestId}).then(function(d){
+  if(!d||d.ok!==true)throw Error('feedback_not_confirmed');
+  feedbackStatus('修正依頼として送信しました！ご協力ありがとうございます。','success');input.value='';document.getElementById('feedback-count').textContent='0 / 2000文字';feedbackRequestId='';feedbackRequestText='';
+ }).catch(function(){feedbackStatus('送信を確認できませんでした。入力内容は残っています。時間をおいて再度お試しください。','error');
+ }).finally(function(){feedbackSending=false;input.disabled=false;var b=document.getElementById('feedback-send');b.disabled=false;b.textContent='修正依頼を送信';});
+});
+function feedbackLoadHistory(more){
+ if(feedbackHistoryLoading)return;feedbackHistoryLoading=true;var box=document.getElementById('feedback-history'),btn=document.getElementById('feedback-more');btn.disabled=true;
+ var next=more?feedbackHistoryPage+1:1;if(!more)box.textContent='読み込み中…';
+ feedbackApi('feedback_history',{history_page:next}).then(function(d){
+  if(!d||d.ok!==true||!Array.isArray(d.items))throw Error('history_unavailable');
+  if(!more)box.textContent='';
+  d.items.forEach(function(item){var row=document.createElement('div');row.className='feedback-release';var date=document.createElement('time');date.textContent=String(item.date||'');var summary=document.createElement('div');summary.textContent=String(item.summary||'');row.appendChild(date);row.appendChild(summary);box.appendChild(row);});
+  if(!more&&!d.items.length)box.textContent='反映済みの修正履歴はまだありません。';
+  feedbackHistoryPage=next;btn.classList.toggle('hidden',d.hasMore!==true);btn.textContent='過去の修正を見る';
+ }).catch(function(){if(!more)box.textContent='修正履歴を読み込めませんでした。';btn.classList.remove('hidden');btn.textContent='修正履歴を再読み込み';btn.dataset.retry='true';
+ }).finally(function(){feedbackHistoryLoading=false;btn.disabled=false;});
+}
+document.getElementById('feedback-more').addEventListener('click',function(){var retry=this.dataset.retry==='true';delete this.dataset.retry;feedbackLoadHistory(retry?feedbackHistoryPage>0:true);});
 
 // 初回ロードは SanroBoot.init の onReady で hmLoad() 呼出済 (上記参照)
 </script>

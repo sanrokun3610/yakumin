@@ -9,7 +9,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 // LIFF内ブラウザ強キャッシュ対策（検査値と同方式）: バージョン違いで強制リロード
-(function(){var V='v3.28.4';try{var s=localStorage.getItem('weight_version');if(s&&s!==V){localStorage.setItem('weight_version',V);location.replace(location.pathname+'?v='+V+'&t='+Date.now());return;}localStorage.setItem('weight_version',V);}catch(e){}})();
+(function(){var V='v3.31.0';try{var s=localStorage.getItem('weight_version');if(s&&s!==V){localStorage.setItem('weight_version',V);location.replace(location.pathname+'?v='+V+'&t='+Date.now());return;}localStorage.setItem('weight_version',V);}catch(e){}})();
 </script>
 </head>
 <body>
@@ -102,7 +102,7 @@
   </div>
 </div>
 
-<script src="/common/common.js?v=loadui2"></script>
+<script src="/common/common.js?v=v3.31.0"></script>
 <script>
 SanroBoot.init({
   liffId: '2009608282-XNKKXND6',
@@ -142,6 +142,23 @@ function loadRecent() {
       var row = document.createElement('div');
       row.className = 'sanro-list-item';
       row.innerHTML = '<span class="date">' + SanroBoot.esc(item.date || '') + '</span><span class="value">' + SanroBoot.esc(item.weight || '') + ' kg</span>';
+      if (item.recordId) {
+        ['訂正', '削除'].forEach(function(label) {
+          var button = document.createElement('button'); button.type = 'button'; button.textContent = label;
+          button.style.cssText = 'font:inherit;min-height:44px;padding:8px;margin:4px';
+          button.addEventListener('click', function() {
+            var remove = label === '削除', body = { recordId: item.recordId };
+            if (remove) { if (!confirm(item.date + ' の ' + item.weight + 'kg を削除しますか？')) return; }
+            else { var entered = prompt('訂正後の体重（kg）', item.weight); if (entered === null) return; body.weight = Number(entered); if (!isFinite(body.weight) || body.weight < 20 || body.weight > 200) { SanroBoot.toast('20〜200 kgで入力してください', 'error'); return; } }
+            button.disabled = true; button.textContent = '処理中…';
+            SanroBoot.apiPost(remove ? 'weight_delete' : 'weight_update', body).then(function(res) {
+              if (!res || !res.ok) throw Error('change_failed');
+              wgDataCache = null; loadRecent();
+              SanroBoot.toast(res.needsCurrentWeight ? '記録を削除しました。現在の体重を改めて入力してください。' : '記録を更新しました', 'success');
+            }).catch(function() { button.disabled = false; button.textContent = label; SanroBoot.toast('更新を確認できません。記録を再読込してください。', 'error'); });
+          }); row.appendChild(button);
+        });
+      }
       box.appendChild(row);
     });
   }).catch(function(err) {
