@@ -144,7 +144,7 @@ window.SanroBoot = (function() {
                 '<button onclick="try{liff.closeWindow()}catch(e){}" style="margin-top:16px;padding:11px 26px;border:none;border-radius:10px;background:#22c55e;color:#fff;font-weight:bold;font-size:15px;cursor:pointer;">LINEのトークに戻る</button>' +
                 '</div>';
             } else {
-              showError($('sanro-status'), '認証失敗: ' + (data && data.error ? data.error : 'unknown'));
+              showError($('sanro-status'), data && data.error === 'authentication_failed' ? '本人確認ができませんでした。通信状況を確認し、LINEメニューから開き直してください。' : '認証失敗: ' + (data && data.error ? data.error : 'unknown'));
             }
           }
           return;
