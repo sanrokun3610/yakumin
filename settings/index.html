@@ -17,7 +17,7 @@
 <script>
 // LIFF内ブラウザ強キャッシュ対策（weight/records と同方式）: バージョン違いで強制リロード。
 // 旧「設定→再登録フォームへ即転送」版がキャッシュに残るのを防ぐため導入（設定だけ未導入だった）。
-(function(){var V='v3.31.2';try{var s=localStorage.getItem('settings_version');if(s&&s!==V){localStorage.setItem('settings_version',V);location.replace(location.pathname+'?v='+V+'&t='+Date.now());return;}localStorage.setItem('settings_version',V);}catch(e){}})();
+(function(){var V='v3.31.3';try{var s=localStorage.getItem('settings_version');if(s&&s!==V){localStorage.setItem('settings_version',V);location.replace(location.pathname+'?v='+V+'&t='+Date.now());return;}localStorage.setItem('settings_version',V);}catch(e){}})();
 </script>
 <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <link rel="stylesheet" href="/common/common.css?v=loadui2">
@@ -197,12 +197,15 @@
     <div id="feedback-count" class="feedback-count">0 / 2000文字</div>
     <button type="button" class="sanro-btn primary" id="feedback-send">修正依頼を送信</button>
     <p id="feedback-status" role="status" aria-live="polite" class="feedback-status"></p>
+    <h3 class="feedback-history-title">今回の改善</h3>
+    <div id="repair-progress" aria-live="polite">読み込み中…</div>
+    <button type="button" id="repair-progress-refresh">最新の状況を見る</button>
     <h3 class="feedback-history-title">最近の修正履歴 <small>反映済み</small></h3>
     <div id="feedback-history" aria-live="polite">読み込み中…</div>
     <button type="button" class="sanro-btn secondary hidden" id="feedback-more">過去の修正を見る</button>
   </section>
 
-  <p id="sanro-app-version" style="font-size:12px;color:#76563d;margin:16px 0 0">アプリバージョン 3.31.2</p>
+  <p id="sanro-app-version" style="font-size:12px;color:#76563d;margin:16px 0 0">アプリバージョン 3.31.3</p>
   <!-- v3.17.9 くまさんFB: 「完了してLINEに戻る」廃止 → ヘッダー左上の共通 ← 戻るに統一 -->
 </div>
 
@@ -294,7 +297,7 @@
 .hidden{display:none !important}
 </style>
 
-<script src="/common/common.js?v=v3.31.2"></script>
+<script src="/common/common.js?v=v3.31.3"></script>
 <script>
 SanroBoot.init({
   liffId: '2009608282-1EPIatV3',
@@ -303,6 +306,7 @@ SanroBoot.init({
     document.getElementById('content').classList.remove('hidden');
     loadUserInfo();
     feedbackLoadHistory(false);
+    feedbackLoadProgress();
     // v3.18.0 Phase 7.1.D: 自炊メニュー一覧も並列取得 (loadUserInfo と独立で軽量)
     if (typeof hmLoad === 'function') hmLoad();
   }
@@ -766,6 +770,7 @@ function feedbackApi(page,body){
  var endpoint='https://script.google.com/macros/s/AKfycbylh1cDQGAdKJFx-wOtbuEMPf52Bht8PhdV81KcsAt5W6Kj_MBXaBtH4CKOT6OK_IF-TA/exec';
  var controller=new AbortController(),timer=setTimeout(function(){controller.abort();},45000),options={signal:controller.signal},url=endpoint+'?page='+page;
  if(page==='feedback_submit'){var app=SanroBoot.getApp();if(!app||!app.userId||!app.sig){clearTimeout(timer);return Promise.reject(Error('feedback_auth_required'));}options.method='POST';options.headers={'Content-Type':'text/plain;charset=UTF-8'};var payload={userId:app.userId,sig:app.sig,text:body.text,requestId:body.requestId};options.body=JSON.stringify(payload);}
+ else if(page==='repair_progress'){}
  else if(page==='feedback_history')url+='&history_page='+encodeURIComponent(body.history_page);
  else {clearTimeout(timer);return Promise.reject(Error('feedback_operation_invalid'));}
  return fetch(url,options).then(function(r){if(!r.ok)throw Error('feedback_http');return r.json();}).finally(function(){clearTimeout(timer);});
@@ -786,6 +791,20 @@ document.getElementById('feedback-send').addEventListener('click',function(){
  }).catch(function(){feedbackStatus('送信を確認できませんでした。入力内容は残っています。時間をおいて再度お試しください。','error');
  }).finally(function(){feedbackSending=false;input.disabled=false;var b=document.getElementById('feedback-send');b.disabled=false;b.textContent='修正依頼を送信';});
 });
+function feedbackLoadProgress(){
+ var box=document.getElementById('repair-progress'),button=document.getElementById('repair-progress-refresh');button.disabled=true;
+ feedbackApi('repair_progress',{}).then(function(d){
+  if(!d||!d.ok||!d.summary||!Array.isArray(d.summary.items))throw Error('progress_unavailable');
+  var s=d.summary;if(!Number.isInteger(s.total)||s.total<0||s.total>20||!Number.isInteger(s.done)||s.done<0||s.done>s.total)throw Error('progress_invalid');
+  box.textContent='';var title=document.createElement('p');title.textContent=s.done+'/'+s.total+'項目 修正済み';box.appendChild(title);
+  var bar=document.createElement('progress');bar.max=s.total||1;bar.value=s.done;bar.style.width='100%';bar.setAttribute('aria-label','今回の改善の完了項目');box.appendChild(bar);
+  s.items.forEach(function(item){var row=document.createElement('p');row.style.margin='8px 0';row.textContent=String(item.label)+'：'+String(item.statusLabel);box.appendChild(row);});
+  var parts=[],counts=d.intakeCounts;
+  if(d.intakeKnown&&counts){[['waiting','確認待ち'],['working','対応中'],['awaiting_release','反映待ち']].forEach(function(pair){var n=counts[pair[0]];if(!Number.isInteger(n)||n<0||n>99999)throw Error('intake_invalid');if(n)parts.push(pair[1]+n+'件');});}
+  if(!d.intakeKnown||parts.length){var intake=document.createElement('p');intake.textContent=d.intakeKnown?'届いたご意見：'+parts.join('・'):'受付状況は確認中';box.appendChild(intake);}
+ }).catch(function(){box.textContent='改善状況を読み込めませんでした。修正依頼の送信は引き続き利用できます。';}).finally(function(){button.disabled=false;});
+}
+document.getElementById('repair-progress-refresh').addEventListener('click',feedbackLoadProgress);
 function feedbackLoadHistory(more){
  if(feedbackHistoryLoading)return;feedbackHistoryLoading=true;var box=document.getElementById('feedback-history'),btn=document.getElementById('feedback-more');btn.disabled=true;
  var next=more?feedbackHistoryPage+1:1;if(!more)box.textContent='読み込み中…';
