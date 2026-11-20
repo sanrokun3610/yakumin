@@ -18,7 +18,7 @@ try {
 if (window.__PHOTO_MODE) document.documentElement.className += ' photo-mode';
 // v3.18.0: LIFF 内ブラウザ強キャッシュ対策 - バージョン違いで強制リロード
 (function() {
-  var CURRENT_VERSION = 'v3.31.3';
+  var CURRENT_VERSION = 'v3.31.4';
   window.__APP_BUILD = CURRENT_VERSION;  // build表示用（版マーカーと同一の単一定数）
   // 古い sig キャッシュも強制削除 (くまさんFB対応)
   try {
@@ -1564,6 +1564,7 @@ function recordFromFrequent(item, multiplier) {
 // v3.17.3 くまさんFB: q-has-text class 制御を統合 (× ボタン表示 + よく使うもの非表示)
 $("q").addEventListener("input", function() {
   if (!state.ready) return;
+  state.reqCounter++; // 入力変更直後に旧応答を無効化（空欄・1文字・debounce待ちも含む）。
   clearTimeout(state.debounceTimer);
   var v = this.value.trim();
   // q-has-text: 文字 (空白以外) があれば付与

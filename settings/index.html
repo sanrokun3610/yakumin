@@ -17,7 +17,7 @@
 <script>
 // LIFF内ブラウザ強キャッシュ対策（weight/records と同方式）: バージョン違いで強制リロード。
 // 旧「設定→再登録フォームへ即転送」版がキャッシュに残るのを防ぐため導入（設定だけ未導入だった）。
-(function(){var V='v3.31.3';try{var s=localStorage.getItem('settings_version');if(s&&s!==V){localStorage.setItem('settings_version',V);location.replace(location.pathname+'?v='+V+'&t='+Date.now());return;}localStorage.setItem('settings_version',V);}catch(e){}})();
+(function(){var V='v3.31.4';try{var s=localStorage.getItem('settings_version');if(s&&s!==V){localStorage.setItem('settings_version',V);location.replace(location.pathname+'?v='+V+'&t='+Date.now());return;}localStorage.setItem('settings_version',V);}catch(e){}})();
 </script>
 <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <link rel="stylesheet" href="/common/common.css?v=loadui2">
@@ -205,7 +205,7 @@
     <button type="button" class="sanro-btn secondary hidden" id="feedback-more">過去の修正を見る</button>
   </section>
 
-  <p id="sanro-app-version" style="font-size:12px;color:#76563d;margin:16px 0 0">アプリバージョン 3.31.3</p>
+  <p id="sanro-app-version" style="font-size:12px;color:#76563d;margin:16px 0 0">アプリバージョン 3.31.4</p>
   <!-- v3.17.9 くまさんFB: 「完了してLINEに戻る」廃止 → ヘッダー左上の共通 ← 戻るに統一 -->
 </div>
 
@@ -297,7 +297,7 @@
 .hidden{display:none !important}
 </style>
 
-<script src="/common/common.js?v=v3.31.3"></script>
+<script src="/common/common.js?v=v3.31.4"></script>
 <script>
 SanroBoot.init({
   liffId: '2009608282-1EPIatV3',
