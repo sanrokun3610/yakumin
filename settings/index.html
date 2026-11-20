@@ -801,6 +801,7 @@ function feedbackLoadProgress(){
   s.items.forEach(function(item){var row=document.createElement('p');row.style.margin='8px 0';row.textContent=String(item.label)+'：'+String(item.statusLabel);box.appendChild(row);});
   var parts=[],counts=d.intakeCounts;
   if(d.intakeKnown&&counts){[['waiting','確認待ち'],['working','対応中'],['awaiting_release','反映待ち']].forEach(function(pair){var n=counts[pair[0]];if(!Number.isInteger(n)||n<0||n>99999)throw Error('intake_invalid');if(n)parts.push(pair[1]+n+'件');});}
+  if(d.intakeKnown&&Array.isArray(counts.workingCategories)&&counts.workingCategories.length){var working=document.createElement('p');working.textContent=counts.workingCategories.slice(0,2).join('・')+'に対応中';box.appendChild(working);}
   if(!d.intakeKnown||parts.length){var intake=document.createElement('p');intake.textContent=d.intakeKnown?'届いたご意見：'+parts.join('・'):'受付状況は確認中';box.appendChild(intake);}
  }).catch(function(){box.textContent='改善状況を読み込めませんでした。修正依頼の送信は引き続き利用できます。';}).finally(function(){button.disabled=false;});
 }
