@@ -191,6 +191,23 @@
 
   <section class="sanro-section feedback-section" id="feedback-section" aria-labelledby="feedback-title">
     <h2 class="sanro-section-title" id="feedback-title">ご意見・修正</h2>
+    <label for="feedback-issue" class="feedback-label">当てはまる症状（任意）</label>
+    <select id="feedback-issue" aria-describedby="feedback-issue-help" style="width:100%;min-height:44px;font-size:16px;margin:6px 0;padding:8px;border:1px solid #cdb89c;border-radius:8px;background:#fff;color:#3d3026">
+      <option value="">その他・わからない／選択しない</option>
+      <option value="search_cleared_stale">消した検索結果が戻る</option>
+      <option value="search_category_mix">食品の分類が混ざる</option>
+      <option value="search_shop_product">店名と商品名で検索できない</option>
+      <option value="meal_type_override">食事の区分が変わる</option>
+      <option value="past_date_missing">過去の日付で保存できない</option>
+      <option value="totals_after_edit">訂正後の合計が変わらない</option>
+      <option value="weight_edit_delete">体重を訂正・削除できない</option>
+      <option value="birthdate_shift">誕生日の日付がずれる</option>
+      <option value="feedback_submission">修正依頼を送れない</option>
+      <option value="feedback_footer_hidden">修正依頼ボタンが見えない</option>
+      <option value="advice_card_readability">AI回答の文字が読みにくい</option>
+      <option value="photo_analyze_failure">写真を解析できない</option>
+    </select>
+    <p class="feedback-help" id="feedback-issue-help">近いものがあれば選んでください。選ばなくても送信できます。</p>
     <label for="feedback-body" class="feedback-label">直してほしいところを教えてください</label>
     <p class="feedback-help" id="feedback-help">氏名などの個人情報は入力しないでください。</p>
     <textarea id="feedback-body" maxlength="2000" rows="4" aria-describedby="feedback-help feedback-count" placeholder="例：食品検索の結果が見づらいです。文字を大きくしてほしいです。"></textarea>
@@ -770,27 +787,27 @@ document.getElementById('hm-edit-modal').addEventListener('click', function(e) {
 function feedbackApi(page,body){
  var endpoint='https://script.google.com/macros/s/AKfycbylh1cDQGAdKJFx-wOtbuEMPf52Bht8PhdV81KcsAt5W6Kj_MBXaBtH4CKOT6OK_IF-TA/exec';
  var controller=new AbortController(),timer=setTimeout(function(){controller.abort();},45000),options={signal:controller.signal},url=endpoint+'?page='+page;
- if(page==='feedback_submit'){var app=SanroBoot.getApp();if(!app||!app.userId||!app.sig){clearTimeout(timer);return Promise.reject(Error('feedback_auth_required'));}options.method='POST';options.headers={'Content-Type':'text/plain;charset=UTF-8'};var payload={userId:app.userId,sig:app.sig,text:body.text,requestId:body.requestId};options.body=JSON.stringify(payload);}
+ if(page==='feedback_submit'){var app=SanroBoot.getApp();if(!app||!app.userId||!app.sig){clearTimeout(timer);return Promise.reject(Error('feedback_auth_required'));}options.method='POST';options.headers={'Content-Type':'text/plain;charset=UTF-8'};var payload={userId:app.userId,sig:app.sig,text:body.text,requestId:body.requestId,issueCode:body.issueCode||''};options.body=JSON.stringify(payload);}
  else if(page==='repair_progress'){}
  else if(page==='feedback_history')url+='&history_page='+encodeURIComponent(body.history_page);
  else {clearTimeout(timer);return Promise.reject(Error('feedback_operation_invalid'));}
  return fetch(url,options).then(function(r){if(!r.ok)throw Error('feedback_http');return r.json();}).finally(function(){clearTimeout(timer);});
 }
-var feedbackSending=false,feedbackRequestId='',feedbackRequestText='',feedbackHistoryPage=0,feedbackHistoryLoading=false;
+var feedbackSending=false,feedbackRequestId='',feedbackRequestText='',feedbackRequestIssueCode='',feedbackHistoryPage=0,feedbackHistoryLoading=false;
 function feedbackStatus(text,kind){var e=document.getElementById('feedback-status');e.textContent=text;e.className='feedback-status '+(kind||'');}
 function feedbackUuid(){if(window.crypto&&crypto.randomUUID)return crypto.randomUUID();var b=new Uint8Array(16);crypto.getRandomValues(b);b[6]=(b[6]&15)|64;b[8]=(b[8]&63)|128;var h=Array.from(b,x=>x.toString(16).padStart(2,'0')).join('');return h.slice(0,8)+'-'+h.slice(8,12)+'-'+h.slice(12,16)+'-'+h.slice(16,20)+'-'+h.slice(20);}
 document.getElementById('feedback-body').addEventListener('input',function(){document.getElementById('feedback-count').textContent=this.value.length+' / 2000文字';if(!feedbackSending)feedbackStatus('未送信');});
 document.getElementById('feedback-send').addEventListener('click',function(){
- if(feedbackSending)return;var input=document.getElementById('feedback-body'),text=input.value;
+ if(feedbackSending)return;var input=document.getElementById('feedback-body'),choice=document.getElementById('feedback-issue'),text=input.value,issueCode=choice.value;
  if(!text.trim()){feedbackStatus('修正してほしい内容を入力してください。','error');input.focus();return;}
  if(text.length>2000){feedbackStatus('2000文字以内で入力してください。','error');return;}
- try{if(!feedbackRequestId||feedbackRequestText!==text){feedbackRequestId=feedbackUuid();feedbackRequestText=text;}}catch(e){feedbackStatus('送信の準備ができませんでした。入力内容は残っています。','error');return;}
- feedbackSending=true;input.disabled=true;this.disabled=true;this.textContent='送信中…';feedbackStatus('送信中…');
- feedbackApi('feedback_submit',{text:text,requestId:feedbackRequestId}).then(function(d){
+ try{if(!feedbackRequestId||feedbackRequestText!==text||feedbackRequestIssueCode!==issueCode){feedbackRequestId=feedbackUuid();feedbackRequestText=text;feedbackRequestIssueCode=issueCode;}}catch(e){feedbackStatus('送信の準備ができませんでした。入力内容は残っています。','error');return;}
+ feedbackSending=true;input.disabled=true;choice.disabled=true;this.disabled=true;this.textContent='送信中…';feedbackStatus('送信中…');
+ feedbackApi('feedback_submit',{text:text,requestId:feedbackRequestId,issueCode:issueCode}).then(function(d){
   if(!d||d.ok!==true)throw Error('feedback_not_confirmed');
-  feedbackStatus('修正依頼として送信しました！ご協力ありがとうございます。','success');input.value='';document.getElementById('feedback-count').textContent='0 / 2000文字';feedbackRequestId='';feedbackRequestText='';
+  feedbackStatus('修正依頼として送信しました！ご協力ありがとうございます。','success');input.value='';document.getElementById('feedback-count').textContent='0 / 2000文字';feedbackRequestId='';feedbackRequestText='';feedbackRequestIssueCode='';choice.value='';
  }).catch(function(){feedbackStatus('送信を確認できませんでした。入力内容は残っています。時間をおいて再度お試しください。','error');
- }).finally(function(){feedbackSending=false;input.disabled=false;var b=document.getElementById('feedback-send');b.disabled=false;b.textContent='修正依頼を送信';});
+ }).finally(function(){feedbackSending=false;input.disabled=false;choice.disabled=false;var b=document.getElementById('feedback-send');b.disabled=false;b.textContent='修正依頼を送信';});
 });
 // Read restored LIFF query only after SanroBoot onReady (liff.init has completed).
 function feedbackOpenFromLink(){
