@@ -45,20 +45,37 @@ window.SanroBoot = (function() {
   }
 
   function fetchJson(url, opts) {
-    opts = opts || {};
-    if (opts.method === 'POST') {
+    opts = Object.assign({}, opts || {});
+    var write = opts.method === 'POST';
+    if (write) {
       opts.headers = Object.assign({ 'Content-Type': 'text/plain;charset=UTF-8' }, opts.headers || {});
       opts.redirect = 'follow';
     }
-    return fetch(url, opts).then(function(r) {
-      return r.text().then(function(txt) {
-        try { return JSON.parse(txt); }
-        catch (e) {
-          // 生レスポンス(URLやHTML)は画面に出さず、console だけに残す
-          try { console.error('parse_fail raw:', txt.substring(0, 500)); } catch (e2) {}
-          throw new Error('サーバー応答エラー (再度開き直してください)');
-        }
-      });
+    return new Promise(function(resolve, reject) {
+      var controller = typeof AbortController === 'function' ? new AbortController() : null;
+      if (controller) opts.signal = controller.signal;
+      var finished = false;
+      function done(error, value) {
+        if (finished) return;
+        finished = true; clearTimeout(timer);
+        if (error) reject(error); else resolve(value);
+      }
+      function failure(code) {
+        var error = new Error(write ? '処理の結果を確認できません。再送する前に記録を確認してください。' : '読み込めませんでした。もう一度お試しください。');
+        error.code = write ? 'write_result_unknown' : code;
+        return error;
+      }
+      var timer = setTimeout(function() {
+        done(failure('read_timeout'));
+        if (controller) controller.abort();
+      }, write ? 45000 : 15000);
+      Promise.resolve().then(function(){ return fetch(url, opts); }).then(function(r) {
+        if (r.ok === false) throw failure('read_failed');
+        return r.text();
+      }).then(function(txt) {
+        var data; try { data = JSON.parse(txt); } catch (ignored) { throw failure('read_failed'); }
+        done(null, data);
+      }).catch(function() { done(failure('read_failed')); });
     });
   }
 
@@ -216,15 +233,24 @@ window.SanroBoot = (function() {
     return false;
   }
 
+  var pendingReads = Object.create(null), readEpoch = 0;
   function apiGet(page, params) {
     var qs = 'userId=' + encodeURIComponent(APP.userId) + '&sig=' + encodeURIComponent(APP.sig);
     if (params) {
-      Object.keys(params).forEach(function(k) {
+      Object.keys(params).sort().forEach(function(k) {
         qs += '&' + encodeURIComponent(k) + '=' + encodeURIComponent(params[k]);
       });
     }
-    return fetchJson(APP.deployUrl + '?page=' + encodeURIComponent(page) + '&' + qs)
-      .then(function(d) { __checkAuthError(d); return d; });
+    var url = APP.deployUrl + '?page=' + encodeURIComponent(page) + '&' + qs;
+    // Only in-flight reads are shared, scoped to current identity/signature/parameters.
+    // No browser storage or automatic write retries.
+    var key = readEpoch + ':' + url;
+    if (pendingReads[key]) return pendingReads[key];
+    var request = fetchJson(url).then(function(d) { __checkAuthError(d); return d; });
+    pendingReads[key] = request;
+    function clear() { if (pendingReads[key] === request) delete pendingReads[key]; }
+    request.then(clear, clear);
+    return request;
   }
   var pendingWrites = 0;
   function showWriteProgress(page) {
@@ -238,12 +264,13 @@ window.SanroBoot = (function() {
     var box = document.getElementById('sanro-write-progress'); if (!pendingWrites && box) box.remove();
   }
   function apiPost(page, body) {
+    readEpoch++; // Reads after a mutation must not join pre-mutation requests.
     showWriteProgress(page);
     var bd = Object.assign({ userId: APP.userId, sig: APP.sig }, body || {});
     return fetchJson(APP.deployUrl + '?page=' + encodeURIComponent(page), {
       method: 'POST',
       body: JSON.stringify(bd),
-    }).then(function(d) { __checkAuthError(d); return d; }).finally(hideWriteProgress);
+    }).then(function(d) { __checkAuthError(d); return d; }).finally(function(){readEpoch++;hideWriteProgress();});
   }
 
   return { init: init, $: $, esc: esc, toast: toast, close: close, apiGet: apiGet, apiPost: apiPost, getApp: function(){ return APP; } };
