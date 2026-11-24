@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>検査値 - サンロくんのほけんしつ</title>
 <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <link rel="stylesheet" href="/common/common.css?v=loadui2">
@@ -112,7 +112,7 @@
 <script>
 // v3.25.0: LIFF内ブラウザ強キャッシュ対策 - バージョン違いで強制リロード（meal_input式）
 (function() {
-  var CURRENT_VERSION = 'v3.31.9';
+  var CURRENT_VERSION = 'v3.31.10';
   window.__APP_BUILD = CURRENT_VERSION;
   try {
     var stored = localStorage.getItem('blood_pressure_version');
@@ -125,7 +125,15 @@
   } catch (e) {}
 })();
 </script>
-</head>
+<style>
+/* Readable controls without changing clinical values. */
+button:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid #92400e;outline-offset:3px}
+.g-tabs button.active,.sanro-chip.selected{background:#f59e0b!important;color:#422006!important;border-color:#b45309!important}
+.g-label,.g-sub,.g-legend,.g-table,.g-table th,.wg-label,.wg-sub,.wg-table,.wg-table th,.wg-section-title{font-size:14px!important;color:#57534e!important}
+.g-tabs button{font-size:14px!important;min-height:44px}
+.sample-save-status{margin:12px 0;padding:12px;background:#fff7ed;color:#78350f;border:1px solid #d97706;border-radius:10px;line-height:1.6}
+.sample-save-status button{min-height:44px;margin-top:8px;padding:8px 12px}
+</style></head>
 <body>
 <div class="sanro-header">
   <!-- v3.28.0: 戻る・血圧・HbA1c をヘッダーに横並び（右上タイトル廃止） -->
@@ -228,7 +236,7 @@
   </div>
 </div>
 
-<script src="/common/common.js?v=v3.31.9"></script>
+<script src="/common/common.js?v=v3.31.10"></script>
 <script>
 SanroBoot.init({
   liffId: '2009608282-AvUr4Jtb',
@@ -315,12 +323,34 @@ function loadRecent() {
   });
 }
 
+
+var healthRequests={bp:null,ha:null};
+function healthUuid(){if(crypto.randomUUID)return crypto.randomUUID();var a=new Uint8Array(16);crypto.getRandomValues(a);a[6]=(a[6]&15)|64;a[8]=(a[8]&63)|128;var h=Array.from(a,function(n){return n.toString(16).padStart(2,'0');}).join('');return h.slice(0,8)+'-'+h.slice(8,12)+'-'+h.slice(12,16)+'-'+h.slice(16,20)+'-'+h.slice(20);}
+function healthFields(kind,locked){var ids=kind==='bp'?['sbp','dbp','pulse']:['hba1c-val','hba1c-memo'];ids.forEach(function(id){document.getElementById(id).disabled=locked;});if(kind==='bp')Array.prototype.forEach.call(document.querySelectorAll('[data-timing]'),function(el){el.disabled=locked;});}
+function healthStatus(kind,text){var id='save-status-'+kind,box=document.getElementById(id);if(!box){box=document.createElement('div');box.id=id;box.className='sample-save-status';box.setAttribute('role','status');document.getElementById(kind==='bp'?'btn-save':'btn-hba1c-save').insertAdjacentElement('afterend',box);}box.textContent=text;}
+function healthSubmit(kind,body,btn,onSuccess){
+ if(btn.disabled)return;
+ if(!healthRequests[kind])healthRequests[kind]=Object.assign({},body,{requestId:(kind==='bp'?'bp1:':'ha1:')+Date.now()+':'+healthUuid()});
+ setBusy(btn,true);healthFields(kind,true);healthStatus(kind,'保存中…');
+ return SanroBoot.apiPost(kind==='bp'?'bp_save':'hba1c_save',healthRequests[kind]).then(function(data){
+  if(data&&data.ok){healthRequests[kind]=null;healthFields(kind,false);healthStatus(kind,'記録しました');onSuccess(data);}
+  else{healthStatus(kind,'記録を確認できません。入力内容を保ったまま、下の記録を確認してください。');if(data&&(/^(invalid_|bad_request$)/.test(data.error||''))){healthRequests[kind]=null;healthFields(kind,false);}}
+  if(data&&!data.ok&&['save_unconfirmed','request_expired','request_conflict'].indexOf(data.error)>=0){
+   healthStatus(kind,'保存結果を確定できません。直近の記録を確認し、解消しない場合は修正依頼からお知らせください。');
+   var box=document.getElementById('save-status-'+kind),read=document.createElement('button');read.type='button';read.textContent='直近の記録を読み直す';read.onclick=function(){kind==='bp'?loadRecent():loadHba1cRecent();};box.appendChild(read);
+   var link=document.createElement('a');link.href='https://liff.line.me/2009608282-1EPIatV3?open=feedback';link.textContent='修正依頼はこちら';link.style='display:block;padding:12px;color:#78350f';box.appendChild(link);
+  }
+  setBusy(btn,false);if(healthRequests[kind])btn.textContent='保存を再確認';
+ }).catch(function(){setBusy(btn,false);btn.textContent='保存を再確認';healthStatus(kind,'通信が途切れました。保存を再確認すると、同じ記録を重ねずに確認できます。');});
+}
+
 function normalizeNum(v) {
   if (!v) return 0;
   return Number(String(v).trim().replace(/[０-９]/g, function(ch){return String.fromCharCode(ch.charCodeAt(0)-0xFEE0);}).replace(/[^\d.]/g, ''));
 }
 
 document.getElementById('btn-save').addEventListener('click', function() {
+  if(this.disabled)return;
   var sbp = normalizeNum(document.getElementById('sbp').value);
   var dbp = normalizeNum(document.getElementById('dbp').value);
   var pulseRaw = document.getElementById('pulse').value.trim();
@@ -328,19 +358,9 @@ document.getElementById('btn-save').addEventListener('click', function() {
   if (pulse !== null && (!isFinite(pulse) || pulse < 30 || pulse > 220)) { SanroBoot.toast('脈拍は空欄、または30〜220で入力してください', 'error'); return; }
   if (!sbp || sbp < 60 || sbp > 250) { SanroBoot.toast('上の血圧を正しく入力してください (60〜250)', 'error'); return; }
   if (!dbp || dbp < 30 || dbp > 200) { SanroBoot.toast('下の血圧を正しく入力してください (30〜200)', 'error'); return; }
-  var btn = this;
-  setBusy(btn, true);
-  SanroBoot.apiPost('bp_save', { sbp: sbp, dbp: dbp, pulse: pulse, timing: selectedTiming }).then(function(data) {
-    if (data && data.ok) {
-      SanroBoot.toast('✅ ' + sbp + '/' + dbp + ' を記録しました', 'success');
-      document.getElementById('sbp').value = '';
-      document.getElementById('dbp').value = '';
-      document.getElementById('pulse').value = '';
-      loadRecent();
-    } else {
-      SanroBoot.toast('記録失敗: ' + (data && data.error ? data.error : 'unknown'), 'error');
-    }
-  }).then(function(){ setBusy(btn, false); }, function(){ setBusy(btn, false); });
+  return healthSubmit('bp',{sbp:sbp,dbp:dbp,pulse:pulse,timing:selectedTiming},this,function(){
+    document.getElementById('sbp').value='';document.getElementById('dbp').value='';document.getElementById('pulse').value='';bpDataCache=null;loadRecent();
+  });
 });
 
 // v3.25.0: 記録中のローディング表示（ボタン無効化＋ラベル切替）
@@ -364,16 +384,35 @@ function setBusy(btn, busy) {
 var bpChart = null;
 var haChart = null;
 
+
+var uiModalReturnFocus = null;
+function uiModalFocus(modal) {
+  uiModalReturnFocus = document.activeElement;
+  var first = modal.querySelector('button'); if(first) first.focus();
+  modal.onkeydown = function(e) {
+    if(e.key === 'Escape') { e.preventDefault(); first.click(); return; }
+    if(e.key !== 'Tab') return;
+    var nodes = Array.prototype.filter.call(modal.querySelectorAll('button,a[href],input,select,textarea,[tabindex="0"]'),function(n){return !n.disabled && n.getClientRects().length;});
+    if(!nodes.length)return;
+    var start=nodes[0],end=nodes[nodes.length-1];
+    if(e.shiftKey && document.activeElement===start){e.preventDefault();end.focus();}
+    else if(!e.shiftKey && document.activeElement===end){e.preventDefault();start.focus();}
+  };
+}
+function uiModalRestore(){if(uiModalReturnFocus&&uiModalReturnFocus.isConnected)uiModalReturnFocus.focus();uiModalReturnFocus=null;}
+
 function openModal(id) {
   var el = document.getElementById(id);
   if (!el) return;
   el.classList.add('active');
+  uiModalFocus(el);
   document.body.style.overflow = 'hidden';
 }
 function closeModal(id) {
   var el = document.getElementById(id);
   if (!el) return;
   el.classList.remove('active');
+  uiModalRestore();
   document.body.style.overflow = '';
 }
 
@@ -587,7 +626,7 @@ function renderBpGraph(days) {
         interaction: { intersect: false, mode: 'index' },
         scales: {
           y: { min:60, max:200, ticks:{ stepSize:20 } },
-          x: { ticks:{ maxRotation:0, autoSkip:true, maxTicksLimit:8, font:{ size:11 } } }
+          x: { ticks:{ maxRotation:0, autoSkip:true, maxTicksLimit:4, font:{ size:13 } } }
         },
         plugins: {
           legend: { display: false },
@@ -735,7 +774,7 @@ function renderHaGraph() {
             min: 4, max: 11,
             ticks: { stepSize: 1, callback: function(v) { return v + '%'; } }
           },
-          x: { ticks: { maxRotation: 0, autoSkip: true, maxTicksLimit: 8, font: { size: 11 } } }
+          x: { ticks: { maxRotation: 0, autoSkip: true, maxTicksLimit: 5, font: { size: 13 } } }
         },
         plugins: {
           legend: { display: false },
@@ -808,21 +847,13 @@ function loadHba1cRecent() {
 }
 
 document.getElementById('btn-hba1c-save').addEventListener('click', function() {
+  if(this.disabled)return;
   var val = normalizeNum(document.getElementById('hba1c-val').value);
   if (!(val >= 3.0 && val <= 20.0)) { SanroBoot.toast('HbA1cを正しく入力してください (3.0〜20.0)', 'error'); return; }
   var memo = document.getElementById('hba1c-memo').value || '';
-  var btn = this;
-  setBusy(btn, true);
-  SanroBoot.apiPost('hba1c_save', { value: val, memo: memo }).then(function(data) {
-    if (data && data.ok) {
-      SanroBoot.toast('✅ HbA1c ' + data.value + '% を記録しました', 'success');
-      document.getElementById('hba1c-val').value = '';
-      document.getElementById('hba1c-memo').value = '';
-      loadHba1cRecent();
-    } else {
-      SanroBoot.toast('記録失敗: ' + (data && data.error ? data.error : 'unknown'), 'error');
-    }
-  }).then(function(){ setBusy(btn, false); }, function(){ setBusy(btn, false); });
+  return healthSubmit('ha',{value:val,memo:memo},this,function(){
+    document.getElementById('hba1c-val').value='';document.getElementById('hba1c-memo').value='';haDataCache=null;loadHba1cRecent();
+  });
 });
 
 // v3.17.9: btn-close 廃止 (共通 sanro-back-btn が SanroBoot.close を呼ぶ)

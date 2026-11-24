@@ -2,16 +2,24 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>体重を記録 - サンロくんのほけんしつ</title>
 <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <link rel="stylesheet" href="/common/common.css?v=loadui2">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 // LIFF内ブラウザ強キャッシュ対策（検査値と同方式）: バージョン違いで強制リロード
-(function(){var V='v3.31.9';try{var s=localStorage.getItem('weight_version');if(s&&s!==V){localStorage.setItem('weight_version',V);location.replace(location.pathname+'?v='+V+'&t='+Date.now());return;}localStorage.setItem('weight_version',V);}catch(e){}})();
+(function(){var V='v3.31.10';try{var s=localStorage.getItem('weight_version');if(s&&s!==V){localStorage.setItem('weight_version',V);location.replace(location.pathname+'?v='+V+'&t='+Date.now());return;}localStorage.setItem('weight_version',V);}catch(e){}})();
 </script>
-</head>
+<style>
+/* Readable controls without changing clinical values. */
+button:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid #92400e;outline-offset:3px}
+.g-tabs button.active,.sanro-chip.selected{background:#f59e0b!important;color:#422006!important;border-color:#b45309!important}
+.g-label,.g-sub,.g-legend,.g-table,.g-table th,.wg-label,.wg-sub,.wg-table,.wg-table th,.wg-section-title{font-size:14px!important;color:#57534e!important}
+.g-tabs button{font-size:14px!important;min-height:44px}
+.sample-save-status{margin:12px 0;padding:12px;background:#fff7ed;color:#78350f;border:1px solid #d97706;border-radius:10px;line-height:1.6}
+.sample-save-status button{min-height:44px;margin-top:8px;padding:8px 12px}
+</style></head>
 <body>
 <div class="sanro-header">
   <div class="sanro-header-title">⚖️ 体重を記録</div>
@@ -102,7 +110,7 @@
   </div>
 </div>
 
-<script src="/common/common.js?v=v3.31.9"></script>
+<script src="/common/common.js?v=v3.31.10"></script>
 <script>
 SanroBoot.init({
   liffId: '2009608282-XNKKXND6',
@@ -189,19 +197,38 @@ document.getElementById('btn-save').addEventListener('click', function() {
       SanroBoot.toast('✅ ' + n + 'kg を記録しました', 'success'); input.value = ''; loadRecent();
     } else SanroBoot.toast('保存を確認できません。同じ値のまま再度押すと確認できます。', 'error');
   }).catch(function() { SanroBoot.toast('通信を確認して、同じ値のままもう一度押してください。', 'error'); }).then(function() {
-    weightSavePending = false; btn.disabled = false; input.disabled = false; btn.textContent = label;
+    weightSavePending = false; btn.disabled = false; input.disabled = !!weightSaveRequest; btn.textContent = weightSaveRequest ? '保存を再確認' : '記録する';
+    var status=document.getElementById('weight-save-status');if(!status){status=document.createElement('div');status.id='weight-save-status';status.className='sample-save-status';status.setAttribute('role','status');btn.insertAdjacentElement('afterend',status);}status.textContent=weightSaveRequest?'保存結果を確認できません。保存を再確認すると同じ記録を重ねず確認できます。':'記録しました';
   });
 });
 
 // ================================================================
 // 体重グラフ モーダル（全画面シート型）
 // ================================================================
+
+var uiModalReturnFocus = null;
+function uiModalFocus(modal) {
+  uiModalReturnFocus = document.activeElement;
+  var first = modal.querySelector('button'); if(first) first.focus();
+  modal.onkeydown = function(e) {
+    if(e.key === 'Escape') { e.preventDefault(); first.click(); return; }
+    if(e.key !== 'Tab') return;
+    var nodes = Array.prototype.filter.call(modal.querySelectorAll('button,a[href],input,select,textarea,[tabindex="0"]'),function(n){return !n.disabled && n.getClientRects().length;});
+    if(!nodes.length)return;
+    var start=nodes[0],end=nodes[nodes.length-1];
+    if(e.shiftKey && document.activeElement===start){e.preventDefault();end.focus();}
+    else if(!e.shiftKey && document.activeElement===end){e.preventDefault();start.focus();}
+  };
+}
+function uiModalRestore(){if(uiModalReturnFocus&&uiModalReturnFocus.isConnected)uiModalReturnFocus.focus();uiModalReturnFocus=null;}
+
 var weightChart = null;
 var wgDataCache = null;
 
 function openWeightModal() {
   var modal = document.getElementById('graph-modal');
   modal.classList.add('active');
+  uiModalFocus(modal);
   document.body.style.overflow = 'hidden';
   if (wgDataCache) {
     // プリフェッチ済み → 即描画（ローディング表示なし）
@@ -212,6 +239,7 @@ function openWeightModal() {
 }
 function closeWeightModal() {
   document.getElementById('graph-modal').classList.remove('active');
+  uiModalRestore();
   document.body.style.overflow = '';
 }
 
@@ -251,7 +279,9 @@ function renderWeightGraph() {
   // 直近30件
   var recent30 = allData.slice(-30);
   var labels = recent30.map(function(d) { return fmtDateWg(d.date); });
-  var values = recent30.map(function(d) { return d.weight; });
+  var values = recent30.map(function(d) { return Number(d.weight); });
+  var lo=Math.min.apply(null,values),hi=Math.max.apply(null,values),center=(lo+hi)/2;
+  var span=Math.max(2,hi-lo+0.4),axisMin=Math.floor((center-span/2)*10)/10,axisMax=Math.ceil((center+span/2)*10)/10;
 
   // テーブル（新しい順）
   var tableRows = allData.slice().reverse().slice(0, 30).map(function(r) {
@@ -267,6 +297,7 @@ function renderWeightGraph() {
     '</div>' +
     // グラフ
     '<div class="wg-chart-wrap">' +
+      '<div style="font-size:14px;color:#57534e;padding:4px 6px 10px">表示範囲 ' + axisMin.toFixed(1) + '〜' + axisMax.toFixed(1) + ' kg（変化幅 ' + (hi-lo).toFixed(1) + ' kg）</div>' +
       '<div class="wg-chart-canvas"><canvas id="weightChartCanvas"></canvas></div>' +
     '</div>' +
     // テーブル
@@ -305,10 +336,10 @@ function renderWeightGraph() {
         plugins: { legend: { display: false } },
         scales: {
           y: {
-            beginAtZero: false,
+            beginAtZero: false, min:axisMin,max:axisMax,
             ticks: { callback: function(v) { return v + 'kg'; } }
           },
-          x: { ticks: { maxRotation: 0, autoSkip: true, maxTicksLimit: 8, font: { size: 11 } } }
+          x: { ticks: { maxRotation: 0, autoSkip: true, maxTicksLimit: 5, font: { size: 13 } } }
         }
       }
     });

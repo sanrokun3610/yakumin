@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>記録をみる - サンロくんのほけんしつ</title>
 <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <link rel="stylesheet" href="/common/common.css?v=loadui2">
@@ -11,7 +11,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js"></script>
 <script>
 // LIFF内ブラウザ強キャッシュ対策: バージョン違いで強制リロード
-(function(){var V='v3.31.9';try{var s=localStorage.getItem('records_version');if(s&&s!==V){localStorage.setItem('records_version',V);location.replace(location.pathname+'?v='+V+'&t='+Date.now());return;}localStorage.setItem('records_version',V);}catch(e){}})();
+(function(){var V='v3.31.10';try{var s=localStorage.getItem('records_version');if(s&&s!==V){localStorage.setItem('records_version',V);location.replace(location.pathname+'?v='+V+'&t='+Date.now());return;}localStorage.setItem('records_version',V);}catch(e){}})();
 </script>
 <script>
 // padStart polyfill: 古いLINE内WebViewで String.padStart 未対応だとカレンダー描画が例外で落ちる対策
@@ -42,6 +42,7 @@ if (!Array.prototype.find) {
 }
 </script>
 <style>
+body{font-size:16px;line-height:1.5;}
 /* ===== 共通モーダル基盤 ===== */
 .rc-modal-overlay{
   display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:100;
@@ -67,56 +68,56 @@ if (!Array.prototype.find) {
 .rc-modal-close{
   background:#6b7280;border:none;color:#fff;
   font-size:14px;font-weight:600;padding:7px 16px;border-radius:8px;
-  cursor:pointer;min-height:40px;min-width:72px;
+  cursor:pointer;min-height:44px;min-width:72px;
   flex-shrink:0;order:-1;
 }
 .rc-modal-close:active{background:#4b5563;}
 
 /* ===== 共通グラフ部品（blood_pressureページ踏襲） ===== */
 .g-section{background:#fff;border-radius:12px;margin:10px 12px 0;padding:14px;}
-.g-section-title{font-size:13px;color:#78350f;font-weight:bold;margin-bottom:10px;display:flex;align-items:center;gap:5px;}
+.g-section-title{font-size:14px;color:#78350f;font-weight:bold;margin-bottom:10px;display:flex;align-items:center;gap:5px;}
 .g-chart-wrap{background:#fff;border:1px solid #e5e5e5;border-radius:12px;margin:10px 12px 0;padding:10px 8px 6px;}
 .g-chart-canvas{position:relative;width:100%;height:220px;}
-.g-legend{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;font-size:12px;color:#555;padding:0 2px;}
+.g-legend{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;font-size:14px;color:#555;padding:0 2px;}
 .g-legend span{display:flex;align-items:center;gap:4px;}
 .g-dot{display:inline-block;width:10px;height:10px;border-radius:50%;flex-shrink:0;}
 .g-tabs{display:flex;gap:6px;margin:10px 12px 0;}
 .g-tabs button{
-  flex:1;padding:12px 4px;font-size:13px;font-weight:600;
+  flex:1;padding:12px 4px;font-size:14px;font-weight:600;
   border:2px solid #fcd34d;background:#fffbeb;color:#78350f;
   border-radius:8px;min-height:44px;cursor:pointer;
 }
-.g-tabs button.active{background:#f59e0b;color:#fff;border-color:#d97706;}
+.g-tabs button.active{background:#92400e;color:#fff;border-color:#78350f;}
 .g-tabs button:active{transform:scale(0.97);}
 .bp-summary{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 12px 0;}
 .bp-card{background:#fff;border-radius:12px;padding:14px;box-shadow:0 1px 3px rgba(0,0,0,0.07);}
-.bp-card .g-label{font-size:12px;color:#666;font-weight:600;}
+.bp-card .g-label{font-size:14px;color:#666;font-weight:600;}
 .bp-card .g-value{font-size:26px;font-weight:bold;margin-top:4px;color:#78350f;letter-spacing:-0.5px;}
-.bp-card .g-sub{font-size:11px;color:#888;margin-top:2px;}
+.bp-card .g-sub{font-size:14px;color:#595959;margin-top:2px;}
 .g-zone-list{list-style:none;}
 .g-zone-item{display:flex;align-items:center;gap:8px;padding:4px 0;}
 .g-zone-chip{width:14px;height:14px;border-radius:3px;flex-shrink:0;}
-.g-table{width:100%;border-collapse:collapse;font-size:13px;}
+.g-table{width:100%;border-collapse:collapse;font-size:14px;}
 .g-table th,.g-table td{padding:7px 4px;border-bottom:1px solid #f0f0f0;text-align:right;}
 .g-table th:first-child,.g-table td:first-child{text-align:left;color:#666;}
-.g-table th{background:#fafafa;color:#666;font-size:11px;font-weight:600;}
-.g-no-data{text-align:center;padding:20px;color:#888;font-size:13px;}
+.g-table th{background:#fafafa;color:#666;font-size:14px;font-weight:600;}
+.g-no-data{text-align:center;padding:20px;color:#595959;font-size:14px;}
 /* g-loading: common.css の共通スタイルを使用（ここでは上書きしない） */
-.g-error{text-align:center;padding:20px;color:#dc2626;font-size:13px;}
+.g-error{text-align:center;padding:20px;color:#b91c1c;font-size:14px;}
 .ha-latest-card{
   background:#fff;border-radius:12px;margin:10px 12px 0;padding:16px;
   box-shadow:0 1px 3px rgba(0,0,0,0.07);
 }
-.ha-latest-card .g-label{font-size:12px;color:#666;font-weight:600;}
+.ha-latest-card .g-label{font-size:14px;color:#666;font-weight:600;}
 .ha-latest-card .g-value{font-size:32px;font-weight:bold;margin-top:6px;color:#78350f;}
-.ha-latest-card .g-sub{font-size:12px;color:#888;margin-top:4px;}
+.ha-latest-card .g-sub{font-size:14px;color:#595959;margin-top:4px;}
 .wg-latest-card{
   background:#fff;border-radius:12px;margin:10px 12px 0;padding:16px;
   box-shadow:0 1px 3px rgba(0,0,0,0.07);
 }
-.wg-latest-card .g-label{font-size:12px;color:#666;font-weight:600;}
+.wg-latest-card .g-label{font-size:14px;color:#666;font-weight:600;}
 .wg-latest-card .g-value{font-size:32px;font-weight:bold;margin-top:6px;color:#16a34a;}
-.wg-latest-card .g-sub{font-size:12px;color:#888;margin-top:4px;}
+.wg-latest-card .g-sub{font-size:14px;color:#595959;margin-top:4px;}
 
 /* ===== カレンダー ===== */
 .rc-cal-nav{
@@ -131,8 +132,8 @@ if (!Array.prototype.find) {
 .rc-cal-nav-btn:active{background:#f3f4f6;}
 .rc-cal-month{font-size:18px;font-weight:bold;color:#78350f;}
 .rc-cal-today-btn{
-  background:#f59e0b;border:none;border-radius:8px;
-  padding:8px 14px;font-size:13px;font-weight:600;color:#fff;cursor:pointer;
+  background:#92400e;border:none;border-radius:8px;
+  padding:8px 14px;font-size:14px;font-weight:600;color:#fff;cursor:pointer;
   min-height:44px;
 }
 .rc-cal-today-btn:active{background:#d97706;}
@@ -141,32 +142,32 @@ if (!Array.prototype.find) {
   display:grid;grid-template-columns:repeat(7,1fr);
   gap:3px;margin-bottom:3px;
 }
-.rc-cal-header{font-size:11px;color:#888;text-align:center;padding:4px 0;font-weight:600;}
+.rc-cal-header{font-size:14px;color:#595959;text-align:center;padding:4px 0;font-weight:600;}
 .rc-cal-header.sun{color:#dc2626;}
 .rc-cal-header.sat{color:#2563eb;}
 .rc-cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;}
 .rc-cal-day{
-  aspect-ratio:1;border:1px solid #e5e5e5;border-radius:6px;
-  padding:3px;font-size:11px;position:relative;
+  min-height:44px;aspect-ratio:1;border:1px solid #e5e5e5;border-radius:6px;
+  padding:3px;font-size:14px;position:relative;
   display:flex;flex-direction:column;align-items:center;
   cursor:pointer;background:#fff;
   transition:background 0.1s;
 }
 .rc-cal-day:active{background:#fef9c3;}
 .rc-cal-day.empty{background:#f5f5f4;border-color:#eee;cursor:default;}
-.rc-cal-day.future{background:#f9f9f9;color:#ccc;cursor:default;}
+.rc-cal-day.future{background:#f9f9f9;color:#666;cursor:default;}
 /* 本日はハイライトしない（色不要）。番号だけ太字で控えめに示す */
 .rc-cal-day.today .rc-cal-num{font-weight:bold;}
 .rc-cal-day.has-record{background:#ecfdf5;border-color:#bbf7d0;}
 /* 選択中の日だけ色をつける（どこを選んでいるか分かるように） */
 .rc-cal-day.selected{background:#fde68a;border:2px solid #f59e0b;}
 .rc-cal-day.selected .rc-cal-num{color:#78350f;font-weight:bold;}
-.rc-cal-num{font-size:13px;font-weight:600;color:#333;line-height:1.2;}
+.rc-cal-num{font-size:14px;font-weight:600;color:#333;line-height:1.2;}
 .rc-cal-dots{display:flex;justify-content:center;gap:2px;margin-top:auto;padding-bottom:1px;flex-wrap:wrap;}
 .rc-cal-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
 .rc-cal-legend{
   display:flex;gap:10px;flex-wrap:wrap;
-  margin:8px 12px 0;font-size:11px;color:#666;
+  margin:8px 12px 0;font-size:14px;color:#666;
   padding:8px 12px;background:#fff;border-radius:8px;
 }
 .rc-cal-legend span{display:flex;align-items:center;gap:4px;}
@@ -177,12 +178,12 @@ if (!Array.prototype.find) {
   background:#fff;border-radius:12px;padding:14px;
   box-shadow:0 1px 3px rgba(0,0,0,0.07);
 }
-.rc-summary-title{font-size:13px;color:#78350f;font-weight:bold;margin-bottom:10px;}
+.rc-summary-title{font-size:14px;color:#78350f;font-weight:bold;margin-bottom:10px;}
 .rc-summary-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
 .rc-summary-item{background:#fffbeb;border-radius:8px;padding:10px;text-align:center;}
-.rc-summary-item .s-label{font-size:11px;color:#92400e;font-weight:600;}
+.rc-summary-item .s-label{font-size:14px;color:#92400e;font-weight:600;}
 .rc-summary-item .s-value{font-size:22px;font-weight:bold;color:#78350f;margin-top:2px;}
-.rc-summary-item .s-sub{font-size:10px;color:#888;margin-top:1px;}
+.rc-summary-item .s-sub{font-size:14px;color:#595959;margin-top:1px;}
 
 /* 日タップ詳細パネル */
 .rc-day-detail{
@@ -192,11 +193,13 @@ if (!Array.prototype.find) {
 .rc-day-detail-title{font-size:14px;font-weight:bold;color:#78350f;margin-bottom:8px;}
 .rc-day-detail-row{
   display:flex;justify-content:space-between;align-items:baseline;
-  padding:6px 0;border-bottom:1px dashed #eee;font-size:13px;color:#444;
+  padding:6px 0;border-bottom:1px dashed #eee;font-size:14px;color:#444;
 }
 .rc-day-detail-row:last-child{border-bottom:none;}
 .rc-day-detail-val{font-weight:700;color:#78350f;}
-.rc-day-detail-none{font-size:13px;color:#888;text-align:center;padding:12px 0;}
+.rc-day-detail-none{font-size:14px;color:#595959;text-align:center;padding:12px 0;}
+button:focus-visible,[role="button"]:focus-visible{outline:3px solid #1d4ed8;outline-offset:2px;}
+@media(max-width:360px){.rc-cal-nav{padding:12px 8px 0;gap:4px}.rc-cal-nav-btn{padding:8px}.rc-cal-grid-wrap{padding:10px 6px 0}.g-table{font-size:14px}}
 </style>
 </head>
 <body>
@@ -278,7 +281,7 @@ if (!Array.prototype.find) {
   </div>
 </div>
 
-<script src="/common/common.js?v=v3.31.9"></script>
+<script src="/common/common.js?v=v3.31.10"></script>
 <script>
 SanroBoot.init({
   liffId: '2009608282-t5sF6Kl3',
@@ -286,50 +289,43 @@ SanroBoot.init({
   onReady: function(APP) {
     document.getElementById('content').classList.remove('hidden');
     loadTodayMeals();
-    // #3 プリフェッチ: 画面描画後にバックグラウンドでグラフ・カレンダーデータを先読み
-    setTimeout(function() {
-      // 体重
-      if (!rcWeightCache) {
-        SanroBoot.apiGet('weight_data').then(function(res) {
-          var data = (res && res.data) || [];
-          data.sort(function(a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; });
-          rcWeightCache = data;
-        }).catch(function() {});
-      }
-      // 血圧（90日分 = カレンダーとグラフ両方をカバー）
-      if (!rcBpCache) {
-        SanroBoot.apiGet('blood_pressure_data', { days: 90 }).then(function(data) {
-          rcBpCache = (data && data.history) ? data.history : [];
-          // カレンダー用にも共有
-          if (!calBpData.length) calBpData = rcBpCache;
-        }).catch(function() {});
-      }
-      // HbA1c
-      if (!rcHaCache) {
-        SanroBoot.apiGet('hba1c_data').then(function(data) {
-          rcHaCache = (data && data.history)
-            ? data.history.slice().sort(function(a, b) { return new Date(a.date) - new Date(b.date); })
-            : [];
-        }).catch(function() {});
-      }
-      // カレンダー用: 今月の食事データ
-      var now = new Date();
-      var currentMonth = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
-      SanroBoot.apiGet('meals_api', { action: 'getMonthly', month: currentMonth }).then(function(res) {
-        if (!Object.keys(calMealData).length) calMealData = res || {};
-      }).catch(function() {});
-    }, 800);
+    // Fetch graphs/calendar only when opened; share successful reads across views.
+
   }
 });
+
+if (typeof Chart !== 'undefined' && Chart.defaults) { Chart.defaults.font.size = 14;Chart.defaults.color = '#444'; }
+var recordsCache = Object.create(null), recordsPending = Object.create(null);
+function recordsRead(page, params, kind) {
+  var app = SanroBoot.getApp(), key = JSON.stringify([app.userId, app.sig, page, params || {}]);
+  var saved = recordsCache[key];
+  if (saved && Date.now() - saved.at < 60000) return Promise.resolve(saved.value);
+  if (recordsPending[key]) return recordsPending[key];
+  var request = SanroBoot.apiGet(page, params).then(function(value) {
+    if (!value || typeof value !== 'object' || Array.isArray(value) || value.ok === false || value.error) throw Error('records_unavailable');
+    if (kind && !Array.isArray(value[kind])) throw Error('records_unavailable');
+    recordsCache[key] = {value:value,at:Date.now()};
+    return value;
+  });
+  recordsPending[key] = request;
+  function clear() { if (recordsPending[key] === request) delete recordsPending[key]; }
+  request.then(clear, clear); return request;
+}
+function recordsRetry(container, retry, message) {
+  container.innerHTML = '';
+  var note = document.createElement('p');note.className = 'g-error';note.textContent = message || '読み込めませんでした。記録がないという意味ではありません。';container.appendChild(note);
+  var button = document.createElement('button');button.type = 'button';button.className = 'sanro-btn outline';button.textContent = 'もう一度読み込む';
+  button.addEventListener('click', function(){button.disabled=true;retry();});container.appendChild(button);
+}
 
 // ================================================================
 // 今日の食事（既存ロジック流用）
 // ================================================================
 function loadTodayMeals() {
-  SanroBoot.apiGet('records_today').then(function(data) {
+  recordsRead('records_today', {}, 'items').then(function(data) {
     var box = document.getElementById('today-meals');
     if (!data || !data.ok || !data.items || data.items.length === 0) {
-      box.innerHTML = '<div style="padding:12px;color:#888;font-size:12px;text-align:center">今日の記録はまだありません</div>';
+      box.innerHTML = '<div style="padding:12px;color:#595959;font-size:14px;text-align:center">今日の記録はまだありません</div>';
       return;
     }
     box.innerHTML = '';
@@ -361,25 +357,43 @@ function loadTodayMeals() {
     }).join('');
     box.appendChild(nutri);
   }).catch(function() {
-    document.getElementById('today-meals').innerHTML = '<div style="color:#dc2626">読込失敗</div>';
+    recordsRetry(document.getElementById('today-meals'), loadTodayMeals);
   });
 }
 
 // ================================================================
 // モーダル共通ユーティリティ
 // ================================================================
+var activeRecordsModal = null, recordsReturnFocus = null, recordsBodyOverflow = '';
 function openModal(id) {
-  var el = document.getElementById(id);
-  if (!el) return;
-  el.classList.add('active');
-  document.body.style.overflow = 'hidden';
+  var el = document.getElementById(id);if (!el) return;
+  if (activeRecordsModal) closeModal(activeRecordsModal);
+  recordsReturnFocus = document.activeElement;recordsBodyOverflow = document.body.style.overflow;
+  activeRecordsModal = id;el.classList.add('active');document.body.style.overflow = 'hidden';
+  document.getElementById('content').setAttribute('inert','');
+  var close = el.querySelector('.rc-modal-close');if (close) close.focus();
 }
 function closeModal(id) {
-  var el = document.getElementById(id);
-  if (!el) return;
+  var el = document.getElementById(id);if (!el) return;
   el.classList.remove('active');
-  document.body.style.overflow = '';
+  if (id === 'rc-cal-modal') { calendarRequest++;mealDetailRequest++; }
+  if (activeRecordsModal !== id) return;
+  activeRecordsModal = null;document.body.style.overflow = recordsBodyOverflow;
+  document.getElementById('content').removeAttribute('inert');
+  if (recordsReturnFocus && recordsReturnFocus.focus) recordsReturnFocus.focus();
 }
+document.addEventListener('keydown', function(event) {
+  if (!activeRecordsModal) return;
+  if (event.key === 'Escape') { event.preventDefault();closeModal(activeRecordsModal);return; }
+  if (event.key !== 'Tab') return;
+  var modal = document.getElementById(activeRecordsModal);
+  var nodes = Array.prototype.filter.call(modal.querySelectorAll('button,[href],input,select,textarea,[tabindex="0"]'), function(el){return !el.disabled && el.offsetParent !== null;});
+  if (!nodes.length) return;
+  if (nodes.indexOf(document.activeElement) < 0) { event.preventDefault();(event.shiftKey ? nodes[nodes.length-1] : nodes[0]).focus();return; }
+  var first = nodes[0], last = nodes[nodes.length-1];
+  if (event.shiftKey && document.activeElement === first) { event.preventDefault();last.focus(); }
+  else if (!event.shiftKey && document.activeElement === last) { event.preventDefault();first.focus(); }
+});
 
 // 閉じるボタン + 背景タップ
 ['rc-weight-modal','rc-bp-modal','rc-ha-modal','rc-cal-modal'].forEach(function(id) {
@@ -402,11 +416,7 @@ var rcWeightCache = null;
 
 document.getElementById('btn-weight-graph').addEventListener('click', function() {
   openModal('rc-weight-modal');
-  if (rcWeightCache) {
-    renderRcWeightGraph();
-  } else {
-    loadRcWeightGraph();
-  }
+  loadRcWeightGraph();
 });
 
 function fmtDateWg(s) {
@@ -416,14 +426,13 @@ function fmtDateWg(s) {
 
 function loadRcWeightGraph() {
   document.getElementById('rc-weight-content').innerHTML = '<div class="g-loading"></div>';
-  SanroBoot.apiGet('weight_data').then(function(res) {
+  recordsRead('weight_data', {}, 'data').then(function(res) {
     var data = (res && res.data) || [];
     data.sort(function(a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; });
     rcWeightCache = data;
     renderRcWeightGraph();
   }).catch(function() {
-    document.getElementById('rc-weight-content').innerHTML =
-      '<div class="g-error">データの取得に失敗しました。<br>もう一度お試しください。</div>';
+    recordsRetry(document.getElementById('rc-weight-content'), loadRcWeightGraph);
   });
 }
 
@@ -438,7 +447,9 @@ function renderRcWeightGraph() {
   var latestVal = latest ? Number(latest.weight) : null;
   var recent30 = allData.slice(-30);
   var labels = recent30.map(function(d) { return fmtDateWg(d.date); });
-  var values = recent30.map(function(d) { return d.weight; });
+  var values = recent30.map(function(d) { return Number(d.weight); });
+  var lo=Math.min.apply(null,values),hi=Math.max.apply(null,values),center=(lo+hi)/2;
+  var span=Math.max(2,hi-lo+0.4),axisMin=Math.floor((center-span/2)*10)/10,axisMax=Math.ceil((center+span/2)*10)/10;
   var tableRows = allData.slice().reverse().slice(0, 30).map(function(r) {
     return '<tr><td>' + fmtDateWg(r.date) + '</td><td>' + r.weight + ' kg</td></tr>';
   }).join('');
@@ -450,6 +461,7 @@ function renderRcWeightGraph() {
       '<div class="g-sub">' + (latest ? fmtDateWg(latest.date) + ' 時点' : '') + '</div>' +
     '</div>' +
     '<div class="g-chart-wrap">' +
+      '<div style="font-size:14px;color:#57534e;padding:4px 6px 10px">表示範囲 ' + axisMin.toFixed(1) + '〜' + axisMax.toFixed(1) + ' kg（変化幅 ' + (hi-lo).toFixed(1) + ' kg）</div>' +
       '<div class="g-chart-canvas"><canvas id="rcWeightCanvas"></canvas></div>' +
     '</div>' +
     '<div class="g-section">' +
@@ -468,9 +480,9 @@ function renderRcWeightGraph() {
         labels: labels,
         datasets: [{
           label: '体重(kg)', data: values,
-          borderColor: '#22c55e', backgroundColor: 'rgba(34,197,94,0.12)',
+          borderColor: '#15803d', backgroundColor: 'rgba(34,197,94,0.12)',
           fill: true, tension: 0.3, pointRadius: 4, pointHoverRadius: 6,
-          pointBackgroundColor: '#22c55e', spanGaps: true,
+          pointBackgroundColor: '#15803d', spanGaps: true,
         }]
       },
       options: {
@@ -478,8 +490,8 @@ function renderRcWeightGraph() {
         interaction: { intersect: false, mode: 'index' },
         plugins: { legend: { display: false } },
         scales: {
-          y: { beginAtZero: false, ticks: { callback: function(v) { return v + 'kg'; } } },
-          x: { ticks: { maxRotation: 0, autoSkip: true, maxTicksLimit: 8, font: { size: 11 } } }
+          y: { beginAtZero: false, min:axisMin, max:axisMax, ticks: { callback: function(v) { return v + 'kg'; } } },
+          x: { ticks: { maxRotation: 0, autoSkip: true, maxTicksLimit: 8, font: { size: 14 }, color: '#444' } }
         }
       }
     });
@@ -494,11 +506,7 @@ var rcBpCache = null;
 
 document.getElementById('btn-bp-graph').addEventListener('click', function() {
   openModal('rc-bp-modal');
-  if (rcBpCache) {
-    renderRcBpGraph(7);
-  } else {
-    loadRcBpGraph(7);
-  }
+  loadRcBpGraph(7);
 });
 
 function fmtDateBp(s) {
@@ -509,20 +517,19 @@ function fmtDateBp(s) {
 function zoneColorBp(sbp, dbp) {
   if (sbp >= 160 || dbp >= 100) return '#B71C1C';
   if (sbp >= 145 || dbp >= 90)  return '#F44336';
-  if (sbp >= 135 || dbp >= 85)  return '#FF9800';
-  if (sbp >= 125 || dbp >= 75)  return '#FFC107';
-  if (sbp >= 115)                return '#9CCC65';
-  return '#4CAF50';
+  if (sbp >= 135 || dbp >= 85)  return '#9a3412';
+  if (sbp >= 125 || dbp >= 75)  return '#854d0e';
+  if (sbp >= 115)                return '#3f6212';
+  return '#166534';
 }
 
 function loadRcBpGraph(days) {
   document.getElementById('rc-bp-content').innerHTML = '<div class="g-loading"></div>';
-  SanroBoot.apiGet('blood_pressure_data', { days: Math.max(days, 30) }).then(function(data) {
+  recordsRead('blood_pressure_data', { days:90 }, 'history').then(function(data) {
     rcBpCache = (data && data.history) ? data.history : [];
     renderRcBpGraph(days);
   }).catch(function() {
-    document.getElementById('rc-bp-content').innerHTML =
-      '<div class="g-error">データの取得に失敗しました。<br>もう一度お試しください。</div>';
+    recordsRetry(document.getElementById('rc-bp-content'), function(){loadRcBpGraph(days);});
   });
 }
 
@@ -599,7 +606,7 @@ function renderRcBpGraph(days) {
         '<li class="g-zone-item"><div class="g-zone-chip" style="background:#F44336"></div>II度高血圧（145〜159）</li>' +
         '<li class="g-zone-item"><div class="g-zone-chip" style="background:#B71C1C"></div>III度高血圧（≥160）※医師相談を</li>' +
       '</ul>' +
-      '<div style="font-size:11px;color:#888;margin-top:8px">※数値はあくまで目安です。判断は医師にご相談ください。</div>' +
+      '<div style="font-size:14px;color:#595959;margin-top:8px">※数値はあくまで目安です。判断は医師にご相談ください。</div>' +
     '</div>' +
     '<div class="g-section">' +
       '<div class="g-section-title">直近の記録</div>' +
@@ -635,7 +642,7 @@ function renderRcBpGraph(days) {
         interaction: { intersect: false, mode: 'index' },
         scales: {
           y: { min:60, max:200, ticks:{ stepSize:20 } },
-          x: { ticks:{ maxRotation:0, autoSkip:true, maxTicksLimit:8, font:{ size:11 } } }
+          x: { ticks:{ maxRotation:0, autoSkip:true, maxTicksLimit:8, font: { size: 14 }, color: '#444' } }
         },
         plugins: {
           legend: { display: false },
@@ -663,11 +670,7 @@ var rcHaCache = null;
 
 document.getElementById('btn-hba1c-graph').addEventListener('click', function() {
   openModal('rc-ha-modal');
-  if (rcHaCache) {
-    renderRcHaGraph();
-  } else {
-    loadRcHaGraph();
-  }
+  loadRcHaGraph();
 });
 
 function fmtDateHa(s) {
@@ -676,9 +679,9 @@ function fmtDateHa(s) {
 }
 function zoneColorHa(v) {
   if (v >= 7.0) return '#dc2626';
-  if (v >= 6.5) return '#ea580c';
-  if (v >= 6.0) return '#ca8a04';
-  return '#16a34a';
+  if (v >= 6.5) return '#9a3412';
+  if (v >= 6.0) return '#854d0e';
+  return '#166534';
 }
 function zoneNameHa(v) {
   if (v >= 7.0) return '要管理';
@@ -689,14 +692,13 @@ function zoneNameHa(v) {
 
 function loadRcHaGraph() {
   document.getElementById('rc-ha-content').innerHTML = '<div class="g-loading"></div>';
-  SanroBoot.apiGet('hba1c_data').then(function(data) {
+  recordsRead('hba1c_data', {}, 'history').then(function(data) {
     rcHaCache = (data && data.history)
       ? data.history.slice().sort(function(a, b) { return new Date(a.date) - new Date(b.date); })
       : [];
     renderRcHaGraph();
   }).catch(function() {
-    document.getElementById('rc-ha-content').innerHTML =
-      '<div class="g-error">データの取得に失敗しました。<br>もう一度お試しください。</div>';
+    recordsRetry(document.getElementById('rc-ha-content'), loadRcHaGraph);
   });
 }
 
@@ -735,7 +737,7 @@ function renderRcHaGraph() {
         '<li class="g-zone-item"><div class="g-zone-chip" style="background:#ea580c"></div>高（6.5〜6.9%）</li>' +
         '<li class="g-zone-item"><div class="g-zone-chip" style="background:#dc2626"></div>要管理（≥7.0%）※医師相談を</li>' +
       '</ul>' +
-      '<div style="font-size:11px;color:#888;margin-top:8px">※数値はあくまで目安です。判断は医師にご相談ください。</div>' +
+      '<div style="font-size:14px;color:#595959;margin-top:8px">※数値はあくまで目安です。判断は医師にご相談ください。</div>' +
     '</div>' +
     '<div class="g-section">' +
       '<div class="g-section-title">直近の記録</div>' +
@@ -763,7 +765,7 @@ function renderRcHaGraph() {
         interaction: { intersect: false, mode: 'index' },
         scales: {
           y: { min:4, max:11, ticks:{ stepSize:1, callback:function(v){ return v+'%'; } } },
-          x: { ticks:{ maxRotation:0, autoSkip:true, maxTicksLimit:8, font:{ size:11 } } }
+          x: { ticks:{ maxRotation:0, autoSkip:true, maxTicksLimit:8, font: { size: 14 }, color: '#444' } }
         },
         plugins: {
           legend: { display: false },
@@ -804,58 +806,25 @@ document.getElementById('btn-calendar').addEventListener('click', function() {
   loadCalendar(calMonth);
 });
 
+var calendarRequest = 0;
 function loadCalendar(month) {
-  mealDetailRequest++;
+  var request = ++calendarRequest;mealDetailRequest++;
   var content = document.getElementById('rc-cal-content');
-  content.innerHTML = '<div class="g-loading"></div>';
-
-  // 取得を「値 or null」に正規化し、8秒で打ち切る。reject も「いつまでも返事が来ない(ハング)」も
-  // 必ず前に進める＝「読み込み中のまま固まる」を根絶。
-  function softGet(thunk) {
-    return new Promise(function(resolve) {
-      var done = false;
-      var t = setTimeout(function() { if (!done) { done = true; resolve(null); } }, 8000);
-      try {
-        Promise.resolve(thunk()).then(
-          function(v) { if (!done) { done = true; clearTimeout(t); resolve(v); } },
-          function() { if (!done) { done = true; clearTimeout(t); resolve(null); } }
-        );
-      } catch (e) { if (!done) { done = true; clearTimeout(t); resolve(null); } }
-    });
-  }
-
-  // 同時リクエスト過多(プリフェッチ4＋カレンダー4)で詰まるのを避けるため、今月は
-  // プリフェッチ済みキャッシュ(calMealData/rcBpCache/rcWeightCache)を再利用し、再fetchしない。
-  var now = new Date();
-  var thisMonth = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
-  var isThisMonth = (month === thisMonth);
-
-  var p1 = (isThisMonth && Object.keys(calMealData).length)
-    ? Promise.resolve(calMealData)
-    : softGet(function() { return SanroBoot.apiGet('meals_api', { action: 'getMonthly', month: month }); });
-  var p2 = softGet(function() { return SanroBoot.apiGet('meals_api', { action: 'getSummary', month: month }); });
-  var p3 = (isThisMonth && rcBpCache && rcBpCache.length)
-    ? Promise.resolve({ history: rcBpCache })
-    : softGet(function() { return SanroBoot.apiGet('blood_pressure_data', { days: 90 }); });
-  var p4 = (isThisMonth && rcWeightCache && rcWeightCache.length)
-    ? Promise.resolve({ data: rcWeightCache })
-    : softGet(function() { return SanroBoot.apiGet('weight_data'); });
-
-  Promise.all([p1, p2, p3, p4]).then(function(results) {
-    var r0 = results[0];
-    calMealData = (r0 && !r0.error) ? r0 : {};
-    var r1 = results[1];
-    calSummary  = (r1 && !r1.error) ? r1 : {};
-    calBpData   = (results[2] && results[2].history) ? results[2].history : [];
-    calWgData   = (results[3] && results[3].data) ? results[3].data : [];
-    calMonth    = month;
-    try {
-      renderCalendar(month, null);
-    } catch (e) {
-      // 診断のためエラー内容も表示（原因特定後にメッセージは簡素化してよい）
-      content.innerHTML = '<div class="g-error">カレンダー表示でエラーが出ました。<br>もう一度開いてみてください。'
-        + '<br><span style="font-size:10px;color:#999">(' + (e && e.message ? e.message : String(e)) + ')</span></div>';
-    }
+  content.innerHTML = '<div class="g-loading" role="status"></div>';
+  // All four sources must succeed: missing data must never look like a zero record.
+  return Promise.all([
+    recordsRead('meals_api', {action:'getMonthly',month:month}),
+    recordsRead('meals_api', {action:'getSummary',month:month}),
+    recordsRead('blood_pressure_data', {days:90}, 'history'),
+    recordsRead('weight_data', {}, 'data')
+  ]).then(function(results) {
+    if (request !== calendarRequest) return;
+    calMealData = results[0];calSummary = results[1];
+    calBpData = results[2].history;calWgData = results[3].data;calMonth = month;
+    renderCalendar(month, null);
+  }).catch(function() {
+    if (request !== calendarRequest) return;
+    recordsRetry(content, function(){loadCalendar(month);}, month.replace('-', '年') + '月の記録を読み込めませんでした。もう一度お試しください。');
   });
 }
 
@@ -938,7 +907,7 @@ function renderCalendar(month, selectedDate) {
       if (info.hasBp)     dots += '<div class="rc-cal-dot" style="background:#1976D2" title="血圧"></div>';
     }
 
-    cells += '<div class="' + cls + '" data-date="' + ds + '">' +
+    cells += '<div class="' + cls + '" data-date="' + ds + '" role="button" tabindex="' + (isFuture ? '-1' : '0') + '" aria-label="' + ds + 'の記録">' +
       '<div class="rc-cal-num">' + dd + '</div>' +
       '<div class="rc-cal-dots">' + dots + '</div>' +
     '</div>';
@@ -1011,8 +980,8 @@ function renderCalendar(month, selectedDate) {
     '<div class="rc-cal-legend">' +
       '<span><div class="rc-cal-dot" style="background:#16a34a;display:inline-block;width:10px;height:10px;border-radius:50%;"></div> 食事</span>' +
       '<span><div class="rc-cal-dot" style="background:#22c55e;display:inline-block;width:10px;height:10px;border-radius:50%;"></div> 体重</span>' +
-      '<span><div class="rc-cal-dot" style="background:#1976D2;display:inline-block;width:10px;height:10px;border-radius:50%;"></div> 血圧</span>' +
-      '<span style="color:#ccc;">▪ 未来</span>' +
+      '<span><div class="rc-cal-dot" style="background:#1976D2;display:inline-block;width:10px;height:10px;border-radius:50%;"></div> 血圧（直近90日）</span>' +
+      '<span style="color:#666;">▪ 未来</span>' +
     '</div>' +
     // 日タップ詳細
     detailHtml +
@@ -1072,12 +1041,14 @@ function renderCalendar(month, selectedDate) {
 
   // 日タップ
   Array.prototype.forEach.call(document.querySelectorAll('.rc-cal-day[data-date]'), function(cell) {
+    cell.addEventListener('keydown', function(event){if(event.key==='Enter'||event.key===' '){event.preventDefault();cell.click();}});
     cell.addEventListener('click', function() {
       var ds = this.getAttribute('data-date');
       if (!ds || ds > todayStr) return; // 未来タップ無効
       renderCalendar(month, ds);
       // タップした日が見えるようにスクロール
-      try { this.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); } catch(e) {}
+      var selected = document.getElementById('rc-cal-grid').querySelector('[data-date="' + ds + '"]');
+      try { if(selected){selected.focus({preventScroll:true});selected.scrollIntoView({behavior:'smooth',block:'nearest'});} } catch(e) {}
     });
   });
 }

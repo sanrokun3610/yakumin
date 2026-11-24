@@ -12,16 +12,25 @@
   - 食事時間（朝/昼/夜 ドロップダウン）を追加
   - API: settings_save { field:'birthdate' } / { field:'gender' } / { field:'meal' }
 -->
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>設定 - サンロくんのほけんしつ</title>
 <script>
 // LIFF内ブラウザ強キャッシュ対策（weight/records と同方式）: バージョン違いで強制リロード。
 // 旧「設定→再登録フォームへ即転送」版がキャッシュに残るのを防ぐため導入（設定だけ未導入だった）。
-(function(){var V='v3.31.9';try{var s=localStorage.getItem('settings_version');if(s&&s!==V){localStorage.setItem('settings_version',V);var next=new URL(location.href);next.searchParams.set('v',V);next.searchParams.set('t',String(Date.now()));location.replace(next.href);return;}localStorage.setItem('settings_version',V);}catch(e){}})();
+(function(){var V='v3.31.10';try{var s=localStorage.getItem('settings_version');if(s&&s!==V){localStorage.setItem('settings_version',V);var next=new URL(location.href);next.searchParams.set('v',V);next.searchParams.set('t',String(Date.now()));location.replace(next.href);return;}localStorage.setItem('settings_version',V);}catch(e){}})();
 </script>
 <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <link rel="stylesheet" href="/common/common.css?v=loadui2">
-</head>
+<style>
+nav[aria-label] a{display:inline-flex;align-items:center;min-height:44px;padding:4px 12px;border:1px solid #d97706;border-radius:22px;background:#fff7ed;color:#78350f;font-size:14px;text-decoration:none;font-weight:600}
+/* Readable controls without changing clinical values. */
+button:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid #92400e;outline-offset:3px}
+.g-tabs button.active,.sanro-chip.selected{background:#f59e0b!important;color:#422006!important;border-color:#b45309!important}
+.g-label,.g-sub,.g-legend,.g-table,.g-table th,.wg-label,.wg-sub,.wg-table,.wg-table th,.wg-section-title{font-size:14px!important;color:#57534e!important}
+.g-tabs button{font-size:14px!important;min-height:44px}
+.sample-save-status{margin:12px 0;padding:12px;background:#fff7ed;color:#78350f;border:1px solid #d97706;border-radius:10px;line-height:1.6}
+.sample-save-status button{min-height:44px;margin-top:8px;padding:8px 12px}
+</style></head>
 <body>
 <div id="settings-loading-overlay" style="position:fixed;inset:0;z-index:9999;background:#f5f5f4;display:flex;flex-direction:column;align-items:center;justify-content:center">
   <div style="width:42px;height:42px;border:4px solid #fde68a;border-top:4px solid #f59e0b;border-radius:50%;animation:sset-spin 0.9s linear infinite;margin-bottom:14px"></div>
@@ -36,6 +45,8 @@
 
 <div id="content" class="hidden">
 
+  <nav class="sanro-section" aria-label="設定の項目" style="display:flex;gap:12px;flex-wrap:wrap"><a href="#daily-settings">日々の設定</a><a href="#basic-settings">基本情報</a><a href="#feedback-section">修正依頼・進捗</a></nav>
+  <details id="basic-settings" class="sanro-section"><summary style="font-size:16px;font-weight:bold;padding:12px;cursor:pointer">基本情報（生年月日・性別・身長）</summary>
   <!-- ===== 1. 生年月日 ===== -->
   <div class="sanro-section">
     <div class="sanro-section-title">🎂 生年月日</div>
@@ -88,6 +99,8 @@
     <button class="sanro-btn secondary" id="btn-edit-body">身長・体重を変える</button>
   </div>
 
+  </details>
+  <div id="daily-settings"></div>
   <!-- ===== 4. 活動量 ===== -->
   <div class="sanro-section">
     <div class="sanro-section-title">🚶 活動量</div>
@@ -222,7 +235,7 @@
     <button type="button" class="sanro-btn secondary hidden" id="feedback-more">過去の修正を見る</button>
   </section>
 
-  <p id="sanro-app-version" style="font-size:12px;color:#76563d;margin:16px 0 0">アプリバージョン 3.31.9</p>
+  <p id="sanro-app-version" style="font-size:12px;color:#76563d;margin:16px 0 0">アプリバージョン 3.31.10</p>
   <!-- v3.17.9 くまさんFB: 「完了してLINEに戻る」廃止 → ヘッダー左上の共通 ← 戻るに統一 -->
 </div>
 
@@ -314,7 +327,7 @@
 .hidden{display:none !important}
 </style>
 
-<script src="/common/common.js?v=v3.31.9"></script>
+<script src="/common/common.js?v=v3.31.10"></script>
 <script>
 SanroBoot.init({
   liffId: '2009608282-1EPIatV3',
@@ -332,8 +345,11 @@ SanroBoot.init({
 var GOAL_LABELS = { 'diet': 'ダイエット', 'bulkup': '体力アップ', 'health': '健康維持', 'diabetes': '糖尿病管理' };
 var ACTIVITY_LABELS = { 'low': '少なめ', 'mid': 'ふつう', 'high': '多め' };
 
+var settingsReadGeneration=0;
 function loadUserInfo() {
-  SanroBoot.apiGet('user_info').then(function(data) {
+  var readGeneration=++settingsReadGeneration;
+  return SanroBoot.apiGet('user_info').then(function(data) {
+    if(readGeneration!==settingsReadGeneration)return;
     if (!data || !data.ok) {
       hideSettingsLoading();
       SanroBoot.toast('情報取得失敗', 'error');
@@ -408,40 +424,29 @@ function hideSettingsLoading() {
 // 保険: 万一 onReady/読込が来なくても操作不能に陥らないよう15秒で解除
 setTimeout(hideSettingsLoading, 15000);
 
-Array.prototype.forEach.call(document.querySelectorAll('[data-level]'), function(btn) {
-  btn.addEventListener('click', function() {
-    var level = this.getAttribute('data-level');
-    // タップ即時に選択表示（楽観的UI＝反応を良くする）。保存は裏で実行。
-    Array.prototype.forEach.call(document.querySelectorAll('[data-level]'), function(b) { b.classList.toggle('selected', b === btn); });
-    SanroBoot.apiPost('settings_save', { field: 'activity', value: level }).then(function(data) {
-      if (data && data.ok) {
-        SanroBoot.toast('✅ 活動量を「' + ACTIVITY_LABELS[level] + '」に変更しました', 'success');
-        loadUserInfo();
-      } else {
-        SanroBoot.toast('変更失敗: ' + (data && data.error ? data.error : 'unknown'), 'error');
-        loadUserInfo();
-      }
-    }).catch(function() { loadUserInfo(); });
-  });
-});
+// One settings mutation at a time; no optimistic success or stale refetch overwrite.
+var settingsChoicePending=false;
+function saveSettingChoice(selector,attribute,field,labels){
+ Array.prototype.forEach.call(document.querySelectorAll(selector),function(btn){btn.addEventListener('click',function(){
+  if(settingsChoicePending)return;settingsChoicePending=true;settingsReadGeneration++;
+  var value=btn.getAttribute(attribute),all=document.querySelectorAll('[data-level],[data-goal],[data-gender]');
+  Array.prototype.forEach.call(all,function(b){b.disabled=true;});
+  var status=document.getElementById('settings-choice-status');if(!status){status=document.createElement('div');status.id='settings-choice-status';status.setAttribute('role','status');status.style='padding:10px;color:#78350f';}btn.parentNode.insertAdjacentElement('afterend',status);status.textContent='保存中…';
+  SanroBoot.apiPost('settings_save',{field:field,value:value}).then(function(data){
+   if(!data||!data.ok)throw Error('save_rejected');
+   Array.prototype.forEach.call(document.querySelectorAll(selector),function(b){b.classList.toggle('selected',b===btn);});
+   if(field==='activity')document.getElementById('activity-current-value').textContent=labels[value];
+   else if(field==='goal')document.getElementById('info-goal').textContent=labels[value];
+   else document.getElementById('info-gender-disp').textContent=value;
+   status.textContent='変更しました';
+   return loadUserInfo();
+  }).catch(function(){status.textContent='変更を確認できません。画面を開き直して現在の設定を確認してください。';}).then(function(){settingsChoicePending=false;Array.prototype.forEach.call(all,function(b){b.disabled=false;});});
+ });});
+}
+saveSettingChoice('[data-level]','data-level','activity',ACTIVITY_LABELS);
+saveSettingChoice('[data-goal]','data-goal','goal',GOAL_LABELS);
 
-Array.prototype.forEach.call(document.querySelectorAll('[data-goal]'), function(btn) {
-  btn.addEventListener('click', function() {
-    var goal = this.getAttribute('data-goal');
-    // タップ即時に選択表示（楽観的UI）。保存は裏で実行。
-    Array.prototype.forEach.call(document.querySelectorAll('[data-goal]'), function(b) { b.classList.toggle('selected', b === btn); });
-    SanroBoot.apiPost('settings_save', { field: 'goal', value: goal }).then(function(data) {
-      if (data && data.ok) {
-        SanroBoot.toast('✅ 目的を「' + GOAL_LABELS[goal] + '」に変更しました', 'success');
-        loadUserInfo();
-      } else {
-        SanroBoot.toast('変更失敗: ' + (data && data.error ? data.error : 'unknown'), 'error');
-        loadUserInfo();
-      }
-    }).catch(function() { loadUserInfo(); });
-  });
-});
-
+document.querySelector('a[href="#basic-settings"]').addEventListener('click',function(){document.getElementById('basic-settings').open=true;});
 document.getElementById('btn-edit-body').addEventListener('click', function() {
   var h = prompt('身長を cm で入力（例: 160）', document.getElementById('info-height').textContent.replace(/[^\d.]/g, '') || '');
   if (!h) return;
@@ -552,22 +557,8 @@ document.getElementById('btn-save-birthdate').addEventListener('click', function
 });
 
 // 性別 チップ保存
-Array.prototype.forEach.call(document.querySelectorAll('[data-gender]'), function(btn) {
-  btn.addEventListener('click', function() {
-    var gender = this.getAttribute('data-gender');
-    // タップ即時に選択表示（楽観的UI）。保存は裏で実行。
-    Array.prototype.forEach.call(document.querySelectorAll('[data-gender]'), function(b) { b.classList.toggle('selected', b === btn); });
-    SanroBoot.apiPost('settings_save', { field: 'gender', value: gender }).then(function(data) {
-      if (data && data.ok) {
-        SanroBoot.toast('✅ 性別を「' + gender + '」に変更しました', 'success');
-        loadUserInfo();
-      } else {
-        SanroBoot.toast('変更失敗: ' + (data && data.error ? data.error : 'unknown'), 'error');
-        loadUserInfo();
-      }
-    }).catch(function() { loadUserInfo(); });
-  });
-});
+saveSettingChoice('[data-gender]','data-gender','gender',{});
+
 
 // 食事時間 保存
 document.getElementById('btn-save-meal').addEventListener('click', function() {
