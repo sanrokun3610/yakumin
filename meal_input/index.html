@@ -18,7 +18,7 @@ try {
 if (window.__PHOTO_MODE) document.documentElement.className += ' photo-mode';
 // v3.18.0: LIFF 内ブラウザ強キャッシュ対策 - バージョン違いで強制リロード
 (function() {
-  var CURRENT_VERSION = 'v3.31.8';
+  var CURRENT_VERSION = 'v3.31.9';
   window.__APP_BUILD = CURRENT_VERSION;  // build表示用（版マーカーと同一の単一定数）
   // 古い sig キャッシュも強制削除 (くまさんFB対応)
   try {
@@ -1813,15 +1813,26 @@ function onCandidatePick(c) {
 }
 
 function fetchSizesAndShow(c) {
+  var generation = (state.sizeRequestGeneration || 0) + 1;
+  state.sizeRequestGeneration = generation;
   var url = APP.deployUrl + "?page=meal_input_sizes&" + APP.qsBase +
     "&chain=" + encodeURIComponent(c.chain) + "&menu=" + encodeURIComponent(c.menu);
-  fetch(url).then(function(r){return r.json();}).then(function(data) {
-    var sizes = (data && data.sizes) || [];
+  fetch(url).then(function(r) {
+    if (!r.ok) throw new Error('sizes_unavailable');
+    return r.json();
+  }).then(function(data) {
+    if (generation !== state.sizeRequestGeneration || state.selected !== c) return;
+    if (!data || data.error || !Array.isArray(data.sizes)) throw new Error('sizes_unavailable');
+    var sizes = data.sizes;
     if (sizes.length === 0) { saveRecord(c, null, null, null); return; }
     if (sizes.length === 1) { saveRecord(c, sizes[0].size, sizes[0].kcal, sizes[0]); return; }
     state.sizes = sizes;
     showSizeModal(c, sizes);
-  }).catch(function() { saveRecord(c, null, null, null); });
+  }).catch(function() {
+    if (generation !== state.sizeRequestGeneration || state.selected !== c) return;
+    state.processing = false;
+    alert("サイズを確認できなかったため、記録していません。通信を確認して食品をもう一度選んでください。");
+  });
 }
 
 function showAmountModal(c, _) {
@@ -1846,7 +1857,9 @@ function showAmountModal(c, _) {
   });
   $("amount-manual").classList.remove("hidden");
   $("amount-manual").value = "";
-  $("amount-manual").placeholder = "0.5〜10 で入力";
+  var measured = unit === "g" || unit === "ml";
+  var minimum = measured ? 1 : 0.5, maximum = measured ? 3000 : 10;
+  $("amount-manual").placeholder = minimum + "〜" + maximum + unit + " で入力";
   $("amount-manual-confirm").classList.remove("hidden");
   $("amount-manual-confirm").onclick = function() {
     var raw = $("amount-manual").value.trim()
@@ -1854,8 +1867,8 @@ function showAmountModal(c, _) {
       .replace(/．/g, ".")
       .replace(/[人前杯個皿枚本切れ貫gml\s]/g, "");
     var n = Number(raw);
-    if (isNaN(n) || n < 0.5 || n > 10) { alert("0.5〜10 の範囲で入力してください"); return; }
-    var rounded = Math.round(n * 2) / 2;
+    if (!isFinite(n) || n < minimum || n > maximum) { alert(minimum + "〜" + maximum + unit + " の範囲で入力してください"); return; }
+    var rounded = measured ? Math.round(n * 10) / 10 : Math.round(n * 2) / 2;
     var baseAmount = c.defaultAmount || 1;
     var multiplier = rounded / baseAmount;
     var kcal = Math.round((c.kcal || 0) * multiplier);

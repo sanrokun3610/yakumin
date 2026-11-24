@@ -9,7 +9,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 // LIFF内ブラウザ強キャッシュ対策（検査値と同方式）: バージョン違いで強制リロード
-(function(){var V='v3.31.8';try{var s=localStorage.getItem('weight_version');if(s&&s!==V){localStorage.setItem('weight_version',V);location.replace(location.pathname+'?v='+V+'&t='+Date.now());return;}localStorage.setItem('weight_version',V);}catch(e){}})();
+(function(){var V='v3.31.9';try{var s=localStorage.getItem('weight_version');if(s&&s!==V){localStorage.setItem('weight_version',V);location.replace(location.pathname+'?v='+V+'&t='+Date.now());return;}localStorage.setItem('weight_version',V);}catch(e){}})();
 </script>
 </head>
 <body>
@@ -102,7 +102,7 @@
   </div>
 </div>
 
-<script src="/common/common.js?v=v3.31.8"></script>
+<script src="/common/common.js?v=v3.31.9"></script>
 <script>
 SanroBoot.init({
   liffId: '2009608282-XNKKXND6',
@@ -166,20 +166,30 @@ function loadRecent() {
   });
 }
 
+var weightSavePending = false, weightSaveRequest = null;
+function weightSaveUuid() {
+  if (window.crypto.randomUUID) return window.crypto.randomUUID();
+  var bytes = new Uint8Array(16); window.crypto.getRandomValues(bytes);
+  bytes[6] = (bytes[6] & 15) | 64; bytes[8] = (bytes[8] & 63) | 128;
+  var h = Array.from(bytes, function(x) { return x.toString(16).padStart(2, '0'); }).join('');
+  return h.slice(0,8)+'-'+h.slice(8,12)+'-'+h.slice(12,16)+'-'+h.slice(16,20)+'-'+h.slice(20);
+}
 document.getElementById('btn-save').addEventListener('click', function() {
-  var v = document.getElementById('weight-input').value.trim()
-    .replace(/[０-９]/g, function(ch){return String.fromCharCode(ch.charCodeAt(0)-0xFEE0);})
-    .replace(/．/g, '.').replace(/[kgKG\s]/g, '');
+  if (weightSavePending) return;
+  var input = document.getElementById('weight-input'), btn = this;
+  var v = input.value.trim().replace(/[０-９]/g, function(ch){return String.fromCharCode(ch.charCodeAt(0)-0xFEE0);}).replace(/．/g, '.').replace(/[kgKG\s]/g, '');
   var n = Number(v);
-  if (isNaN(n) || n < 20 || n > 200) { SanroBoot.toast('20〜200 kg の範囲で入力してください', 'error'); return; }
-  SanroBoot.apiPost('weight_save', { weight: n }).then(function(data) {
+  if (!isFinite(n) || n < 20 || n > 200) { SanroBoot.toast('20〜200 kg の範囲で入力してください', 'error'); return; }
+  if (!weightSaveRequest || weightSaveRequest.weight !== n) weightSaveRequest = { weight: n, requestId: 'ws1:' + Date.now() + ':' + weightSaveUuid() };
+  weightSavePending = true; btn.disabled = true; input.disabled = true;
+  var label = btn.textContent; btn.textContent = '記録中…';
+  SanroBoot.apiPost('weight_save', weightSaveRequest).then(function(data) {
     if (data && data.ok) {
-      SanroBoot.toast('✅ ' + n + 'kg を記録しました', 'success');
-      document.getElementById('weight-input').value = '';
-      loadRecent();
-    } else {
-      SanroBoot.toast('記録失敗: ' + (data && data.error ? data.error : 'unknown'), 'error');
-    }
+      weightSaveRequest = null; wgDataCache = null;
+      SanroBoot.toast('✅ ' + n + 'kg を記録しました', 'success'); input.value = ''; loadRecent();
+    } else SanroBoot.toast('保存を確認できません。同じ値のまま再度押すと確認できます。', 'error');
+  }).catch(function() { SanroBoot.toast('通信を確認して、同じ値のままもう一度押してください。', 'error'); }).then(function() {
+    weightSavePending = false; btn.disabled = false; input.disabled = false; btn.textContent = label;
   });
 });
 

@@ -192,13 +192,24 @@ window.SanroBoot = (function() {
   }
 
   // v3.17.14: sig 期限切れ自動リカバリ
+  var authRecoveryScheduled = false;
   function __checkAuthError(data) {
     if (!data || !data.error) return false;
     if (data.error === 'unauthorized' || data.error === 'signature_invalid' || data.error === 'no_user_id') {
       try { localStorage.removeItem(__sigCacheKey()); } catch (e) {}
+      if (authRecoveryScheduled) return true;
+      var current = new URL(location.href);
+      if (current.searchParams.get('_auth_retry') === '1') { toast('認証を確認できません。LINEから画面を開き直してください。', 'error'); return true; }
+      authRecoveryScheduled = true;
       toast('セッション期限切れ。再読み込みします...', 'info');
       setTimeout(function() {
-        location.replace(location.pathname + '?_t=' + Date.now());
+        var source = new URL(location.href), next = new URL(source.pathname, source.origin);
+        ['open', 'mode', 'liff.state', 'liff.referrer', 'v'].forEach(function(key) {
+          if (source.searchParams.has(key)) next.searchParams.set(key, source.searchParams.get(key));
+        });
+        next.searchParams.set('_auth_retry', '1');
+        next.searchParams.set('_t', String(Date.now()));
+        location.replace(next.pathname + next.search + next.hash);
       }, 800);
       return true;
     }

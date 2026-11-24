@@ -112,7 +112,7 @@
 <script>
 // v3.25.0: LIFF内ブラウザ強キャッシュ対策 - バージョン違いで強制リロード（meal_input式）
 (function() {
-  var CURRENT_VERSION = 'v3.31.8';
+  var CURRENT_VERSION = 'v3.31.9';
   window.__APP_BUILD = CURRENT_VERSION;
   try {
     var stored = localStorage.getItem('blood_pressure_version');
@@ -228,7 +228,7 @@
   </div>
 </div>
 
-<script src="/common/common.js?v=v3.31.8"></script>
+<script src="/common/common.js?v=v3.31.9"></script>
 <script>
 SanroBoot.init({
   liffId: '2009608282-AvUr4Jtb',
@@ -323,12 +323,14 @@ function normalizeNum(v) {
 document.getElementById('btn-save').addEventListener('click', function() {
   var sbp = normalizeNum(document.getElementById('sbp').value);
   var dbp = normalizeNum(document.getElementById('dbp').value);
-  var pulse = normalizeNum(document.getElementById('pulse').value);
+  var pulseRaw = document.getElementById('pulse').value.trim();
+  var pulse = pulseRaw === '' ? null : normalizeNum(pulseRaw);
+  if (pulse !== null && (!isFinite(pulse) || pulse < 30 || pulse > 220)) { SanroBoot.toast('脈拍は空欄、または30〜220で入力してください', 'error'); return; }
   if (!sbp || sbp < 60 || sbp > 250) { SanroBoot.toast('上の血圧を正しく入力してください (60〜250)', 'error'); return; }
   if (!dbp || dbp < 30 || dbp > 200) { SanroBoot.toast('下の血圧を正しく入力してください (30〜200)', 'error'); return; }
   var btn = this;
   setBusy(btn, true);
-  SanroBoot.apiPost('bp_save', { sbp: sbp, dbp: dbp, pulse: pulse || 0, timing: selectedTiming }).then(function(data) {
+  SanroBoot.apiPost('bp_save', { sbp: sbp, dbp: dbp, pulse: pulse, timing: selectedTiming }).then(function(data) {
     if (data && data.ok) {
       SanroBoot.toast('✅ ' + sbp + '/' + dbp + ' を記録しました', 'success');
       document.getElementById('sbp').value = '';
